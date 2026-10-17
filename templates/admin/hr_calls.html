@@ -1,0 +1,57 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title"><span>فیلتر و جستجو</span></div>
+  <form class="filter-bar" method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="جستجوی نام، کد ملی، موبایل یا کد پیگیری...">
+    <select name="status">
+      <option value="">همه وضعیت‌ها</option>
+      {% for s in REQUEST_STATUSES %}
+      <option value="{{ s }}" {{ 'selected' if status == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">اعمال</button>
+    {% if q or status %}<a href="{{ url_for('admin_hr_calls') }}" class="btn btn-outline btn-sm">پاک کردن</a>{% endif %}
+  </form>
+
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>کد پیگیری</th><th>نام و نام خانوادگی</th><th>کد ملی</th><th>موبایل</th>
+          <th>استان / شهرستان</th><th>مدرک</th><th>فایل‌ها</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        {% set file_count = (1 if r.national_card_file else 0) + (1 if r.military_file else 0) + (1 if r.education_file else 0) + (1 if r.license_file else 0) + (1 if r.center_license_file else 0) + (1 if r.center_permit_file else 0) + (1 if r.property_file else 0) %}
+        <tr>
+          <td><span class="code-tag">{{ r.tracking_code }}</span></td>
+          <td>{{ r.first_name }} {{ r.last_name }}</td>
+          <td dir="ltr" style="text-align:right">{{ r.national_code }}</td>
+          <td dir="ltr" style="text-align:right">{{ r.mobile }}</td>
+          <td>{{ r.province }} / {{ r.county }}</td>
+          <td>{{ r.education_level or '—' }}</td>
+          <td><span class="code-tag">📎 {{ file_count }}</span></td>
+          <td><span class="status-pill st-{{ r.status | replace(' ', '-') }}">{{ r.status }}</span></td>
+          <td>{{ r.created_at[:10] }}</td>
+          <td>
+            <div class="actions">
+              <a href="{{ url_for('admin_hr_call_detail', rid=r.id) }}" class="btn btn-outline btn-sm">مشاهده</a>
+              <form method="post" action="{{ url_for('admin_hr_call_delete', rid=r.id) }}" data-confirm="این فراخوان و فایل‌های پیوست آن حذف شود؟" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">📭</div>فراخوانی یافت نشد.</div>
+  {% endif %}
+</div>
+{% endblock %}

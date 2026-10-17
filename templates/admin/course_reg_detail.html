@@ -1,0 +1,57 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>ثبت‌نام دوره — {{ row.first_name }} {{ row.last_name }} (<span class="code-tag">{{ row.tracking_code }}</span>)</span>
+    <a href="{{ url_for('admin_course_regs') }}" class="btn btn-outline btn-sm">بازگشت</a>
+  </div>
+
+  <div class="detail-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+    {% set fields = [
+      ('نام', row.first_name), ('نام خانوادگی', row.last_name),
+      ('کد ملی', row.national_code), ('موبایل', row.mobile),
+      ('تلفن ثابت', row.phone), ('ایمیل', row.email),
+      ('مدرک تحصیلی', row.education), ('شهر', row.city),
+      ('دوره', row.course_title), ('مدرس', row.teacher),
+      ('زمان‌بندی دوره', row.schedule), ('تاریخ ثبت', row.created_at),
+    ] %}
+    {% for label, val in fields %}
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px">
+      <div style="font-size:.75rem;color:#64748b;margin-bottom:4px">{{ label }}</div>
+      <div style="font-size:.92rem;font-weight:700;color:#1e293b">{{ val or '—' }}</div>
+    </div>
+    {% endfor %}
+    {% if row.note %}
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;grid-column:1/-1">
+      <div style="font-size:.75rem;color:#64748b;margin-bottom:4px">توضیحات متقاضی</div>
+      <div style="font-size:.92rem;font-weight:700;color:#1e293b;line-height:2">{{ row.note }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="panel" style="margin-top:22px">
+    <div class="panel-title"><span>تغییر وضعیت و یادداشت مدیریت</span></div>
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="field" style="margin-bottom:12px">
+        <label>وضعیت</label>
+        <select name="status">
+          {% for s in REQUEST_STATUSES %}
+          <option value="{{ s }}" {{ 'selected' if row.status == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>یادداشت مدیریت</label>
+        <textarea name="admin_note" rows="3">{{ row.admin_note }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+    </form>
+  </div>
+
+  <form method="post" action="{{ url_for('admin_course_reg_delete', rid=row.id) }}" data-confirm="این ثبت‌نام برای همیشه حذف شود؟" style="margin-top:18px">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-danger">حذف کامل این ثبت‌نام</button>
+  </form>
+</div>
+{% endblock %}

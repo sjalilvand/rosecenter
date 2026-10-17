@@ -23,8 +23,14 @@
       <a href="{{ url_for('admin_bookings') }}" class="{{ 'active' if 'bookings' in request.path }}">
         <span class="a-ic">📅</span> درخواست‌های نوبت
       </a>
-      <a href="{{ url_for('admin_cooperation') }}" class="{{ 'active' if 'cooperation' in request.path }}">
-        <span class="a-ic">🤝</span> درخواست‌های همکاری
+      <a href="{{ url_for('admin_hr_calls') }}" class="{{ 'active' if 'hr-calls' in request.path }}">
+        <span class="a-ic">🤝</span> فراخوان‌های همکاری
+      </a>
+      <a href="{{ url_for('admin_courses') }}" class="{{ 'active' if '/admin/courses' in request.path }}">
+        <span class="a-ic">📚</span> دوره‌های آموزشی
+      </a>
+      <a href="{{ url_for('admin_course_regs') }}" class="{{ 'active' if 'course-regs' in request.path }}">
+        <span class="a-ic">🎓</span> ثبت‌نام‌های دوره
       </a>
       <a href="{{ url_for('admin_messages') }}" class="{{ 'active' if 'messages' in request.path }}">
         <span class="a-ic">✉️</span> پیام‌های تماس

@@ -1,114 +1,1150 @@
-{% extends "base.html" %}
-{% block content %}
-<section class="page-hero">
-  <div class="container">
-    <h1>درخواست همکاری</h1>
-    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>درخواست همکاری</span></nav>
-    <p class="lead">به جمع شبکه بزرگ مشاوران و روانشناسان راه زندگی بپیوندید.</p>
-  </div>
-</section>
+{# فراخوان همکاری — نسخه فلسک مطابق فرم Google Apps Script (۴ مرحله + کپچا + آپلود فایل) #}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>فراخوان همکاری | {{ settings.site_name }}</title>
 
-<section class="section">
-  <div class="container split-page">
-    <aside class="side-panel">
-      <h3>مزایای همکاری با ما</h3>
-      <p>پیوستن به مجموعه‌ای که بزرگ‌ترین شبکه کنشگران متخصص علوم یاورانه کشور را مدیریت می‌کند.</p>
-      <ul>
-        <li>پشتیبانی و راهنمایی مستمر تیم تخصصی</li>
-        <li>رشد حرفه‌ای از طریق آموزش و کارگاه‌های تخصصی</li>
-        <li>همکاری و شبکه‌سازی با روانشناسان با تجربه</li>
-        <li>رتبه‌بندی حرفه‌ای و فرصت ارتقا</li>
-        <li>مشارکت در پروژه‌های تأثیرگذار اجتماعی</li>
-        <li>انعطاف‌پذیری در زمان و محل ارائه خدمات</li>
-      </ul>
-      <div class="side-contact">
-        <a href="tel:{{ settings.phone1 }}"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>{{ settings.phone1 }}</a>
-        <a href="mailto:{{ settings.email }}"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>{{ settings.email }}</a>
-      </div>
-    </aside>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
 
-    <div>
-      <div class="prose" style="margin-bottom:26px">
-        <h2 style="margin-top:0">تعهدات ما به مشاوران و روانشناسان</h2>
-        <ul>
-          <li>فراهم کردن محیط کاری امن و حرفه‌ای</li>
-          <li>پشتیبانی و راهنمایی مستمر در موارد تخصصی و اداری</li>
-          <li>فرصت‌های رشد حرفه‌ای از طریق کارگاه‌ها و دوره‌های آموزشی</li>
-          <li>شفافیت در حقوق، مزایا و قراردادها</li>
-        </ul>
-        <h2>تعهدات مشاوران و روانشناسان به مجموعه</h2>
-        <ul>
-          <li>رعایت اصول اخلاقی و حرفه‌ای در برخورد با مراجعین</li>
-          <li>انجام وظایف محوله با دقت و تعهد</li>
-          <li>حفظ محرمانگی اطلاعات مراجعین</li>
-          <li>شرکت در آموزش‌ها و ارتقای مهارت‌های تخصصی</li>
-          <li>همکاری در پروژه‌ها و برنامه‌های مجموعه</li>
-        </ul>
-        <p>
-          اگر علاقه‌مند به همکاری به‌عنوان مشاور یا روانشناس هستید، فرم زیر را تکمیل کنید. پس از ثبت،
-          تیم ما رزومه و اطلاعات شما را بررسی می‌کند و در صورت تأیید، به مرحله بعدی معرفی و همکاری هدایت خواهید شد.
-        </p>
-      </div>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
+      animation: {
+        'fade-up': 'fadeUp 0.5s ease-out forwards',
+        'shake': 'shake 0.4s ease-in-out',
+        'slide-in': 'slideIn 0.4s ease-out',
+      },
+      keyframes: {
+        fadeUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+        shake: { '0%, 100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-6px)' }, '75%': { transform: 'translateX(6px)' } },
+        slideIn: { from: { opacity: '0', transform: 'translateY(-20px)' }, to: { opacity: '1', transform: 'translateY(0)' } }
+      }
+    }
+  }
+}
+</script>
 
-      <div class="form-card">
-        <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:18px">فرم ثبت درخواست همکاری</h3>
-        <form method="post" action="{{ url_for('cooperation') }}">
-          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-          <div class="form-row">
-            <div class="field">
-              <label>نام و نام خانوادگی <span class="req">*</span></label>
-              <input type="text" name="full_name" required placeholder="مثلاً: دکتر علی رضایی">
-            </div>
-            <div class="field">
-              <label>شماره تماس <span class="req">*</span></label>
-              <input type="tel" name="phone" required placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" style="text-align:right">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="field">
-              <label>ایمیل (اختیاری)</label>
-              <input type="email" name="email" placeholder="example@mail.com" dir="ltr" style="text-align:right">
-            </div>
-            <div class="field">
-              <label>استان محل سکونت</label>
-              <select name="province">
-                <option value="">انتخاب کنید…</option>
-                {% for p in provinces %}<option value="{{ p.province }}">{{ p.province }}</option>{% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="field">
-              <label>رشته / حوزه تخصصی</label>
-              <input type="text" name="field" placeholder="مثلاً: روانشناسی بالینی">
-            </div>
-            <div class="field">
-              <label>مدرک تحصیلی</label>
-              <select name="degree">
-                <option value="">انتخاب کنید…</option>
-                <option>کارشناسی</option>
-                <option>کارشناسی ارشد</option>
-                <option>دکتری</option>
-                <option>سایر</option>
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label>سابقه همکاری (سال)</label>
-            <input type="text" name="experience" placeholder="مثلاً: ۵ سال">
-          </div>
-          <div class="field">
-            <label>توضیحات و سوابق تکمیلی</label>
-            <textarea name="message" placeholder="درباره تجربه‌ها، رویکردهای درمانی و حوزه‌های کاری خود بنویسید..."></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">ثبت درخواست همکاری</button>
-          <p class="hint" style="font-size:.8rem;color:var(--ink-soft);margin-top:12px;text-align:center">
-            پس از ثبت، یک کد پیگیری دریافت می‌کنید که می‌توانید از طریق صفحه
-            <a href="{{ url_for('tracking') }}">پیگیری درخواست</a> وضعیت آن را مشاهده کنید.
-          </p>
-        </form>
-      </div>
+<style>
+  :root {
+    --theme-1: #667eea;
+    --theme-2: #764ba2;
+    --theme-3: #f093fb;
+    --theme-4: #4facfe;
+    --theme-accent: #667eea;
+    --theme-accent-dark: #764ba2;
+  }
+  body { font-family: 'Vazirmatn', sans-serif; }
+  .animated-bg {
+    background: linear-gradient(-45deg, var(--theme-1), var(--theme-2), var(--theme-3), var(--theme-4));
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+  }
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .dark .animated-bg {
+    background: linear-gradient(-45deg, #1e1b4b, #312e81, #4c1d95, #1e3a8a);
+  }
+  .glass-card { background: rgba(255,255,255,0.97); backdrop-filter: blur(20px); }
+  .dark .glass-card { background: rgba(30,30,50,0.97); }
+  .form-input { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .form-input:focus {
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+  }
+  .form-input.error { border-color: #ef4444 !important; box-shadow: 0 0 0 4px rgba(239,68,68,0.15) !important; }
+  .form-input.success { border-color: #10b981 !important; box-shadow: 0 0 0 4px rgba(16,185,129,0.15) !important; }
+  .submit-btn {
+    background: linear-gradient(135deg, var(--theme-accent) 0%, var(--theme-accent-dark) 100%);
+    background-size: 200% 200%;
+    transition: all 0.4s ease;
+  }
+  .submit-btn:hover:not(:disabled) { background-position: 100% 100%; transform: translateY(-3px); box-shadow: 0 15px 35px rgba(102,126,234,0.5); }
+  .file-drop { transition: all 0.3s ease; border: 2px dashed #d1d5db; }
+  .file-drop:hover, .file-drop.dragover { border-color: var(--theme-accent); background: rgba(102,126,234,0.05); }
+  .dark .file-drop { border-color: #4b5563; }
+  .file-drop.error { border-color: #ef4444; background: rgba(239,68,68,0.05); }
+  .file-drop.success { border-color: #10b981; background: rgba(16,185,129,0.05); }
+  .step-content { display: none; }
+  .step-content.active { display: block; animation: fadeUp 0.5s ease-out; }
+  .progress-bar { transition: width 0.5s ease; }
+  .step-dot { transition: all 0.3s ease; }
+  .step-dot.active { background: var(--theme-accent); transform: scale(1.2); }
+  .step-dot.completed { background: #10b981; }
+  .dark .step-dot { background: #4b5563; }
+  .dark .step-dot.active { background: var(--theme-accent); }
+  .dark .step-dot.completed { background: #34d399; }
+  .theme-swatch {
+    width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+    transition: all 0.3s ease; border: 3px solid transparent;
+    position: relative;
+  }
+  .theme-swatch:hover { transform: scale(1.2); }
+  .theme-swatch.active { border-color: white; box-shadow: 0 0 0 3px rgba(0,0,0,0.2); }
+  .theme-swatch.active::after {
+    content: '✓';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: bold; font-size: 14px;
+    text-shadow: 0 0 3px rgba(0,0,0,0.5);
+  }
+  .datepicker-plot-area { font-family: 'Vazirmatn', sans-serif !important; }
+  .captcha-box img { border-radius: 12px; cursor: pointer; border: 1px solid #e5e7eb; }
+  .dark .captcha-box img { border-color: #4b5563; }
+</style>
+</head>
+
+<body class="min-h-screen animated-bg py-8 px-4 transition-colors duration-500">
+
+<div class="fixed top-4 left-4 z-50 flex flex-col gap-2">
+  <button id="themeToggle" class="w-12 h-12 rounded-full glass-card shadow-lg flex items-center justify-center hover:scale-110 transition-transform" title="تغییر دارک/روشن">
+    <i id="themeIcon" class="fa-solid fa-moon text-gray-700 dark:text-yellow-300 text-lg"></i>
+  </button>
+  <a href="/" class="w-12 h-12 rounded-full glass-card shadow-lg flex items-center justify-center hover:scale-110 transition-transform" title="بازگشت به سایت">
+    <i class="fa-solid fa-house text-gray-700 dark:text-gray-300 text-lg"></i>
+  </a>
+</div>
+
+<div class="fixed top-4 right-4 z-50">
+  <div class="glass-card rounded-2xl p-3 shadow-lg">
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center font-semibold">
+      <i class="fa-solid fa-palette"></i> تم رنگی
+    </p>
+    <div class="flex gap-2">
+      <div class="theme-swatch active" data-theme="purple" style="background: linear-gradient(135deg, #667eea, #764ba2);" title="بنفش"></div>
+      <div class="theme-swatch" data-theme="green" style="background: linear-gradient(135deg, #10b981, #059669);" title="سبز"></div>
+      <div class="theme-swatch" data-theme="blue" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" title="آبی"></div>
+      <div class="theme-swatch" data-theme="orange" style="background: linear-gradient(135deg, #f97316, #ea580c);" title="نارنجی"></div>
+      <div class="theme-swatch" data-theme="pink" style="background: linear-gradient(135deg, #ec4899, #be185d);" title="صورتی"></div>
     </div>
   </div>
-</section>
-{% endblock %}
+</div>
+
+<div class="glass-card w-full max-w-3xl mx-auto rounded-3xl p-6 md:p-10 relative z-10 shadow-2xl mt-16 md:mt-0">
+
+  <div class="text-center mb-6">
+    <div class="w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-lg mb-4" style="background: linear-gradient(135deg, var(--theme-accent), var(--theme-accent-dark));">
+      <i class="fa-solid fa-briefcase text-white text-3xl"></i>
+    </div>
+    <h1 class="text-2xl md:text-3xl font-bold mb-1" style="background: linear-gradient(135deg, var(--theme-accent), var(--theme-accent-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+      فراخوان همکاری
+    </h1>
+    <p class="text-gray-500 dark:text-gray-400 text-sm">لطفاً اطلاعات زیر را با دقت تکمیل کنید</p>
+  </div>
+
+  <div class="mb-6">
+    <div class="flex justify-between items-center mb-3">
+      <div class="flex items-center gap-2">
+        <span class="step-dot w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold active" data-step="1">۱</span>
+        <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">مشخصات فردی</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="step-dot w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold" data-step="2">۲</span>
+        <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">مدارک</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="step-dot w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold" data-step="3">۳</span>
+        <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">مرکز</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="step-dot w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold" data-step="4">۴</span>
+        <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">تأیید</span>
+      </div>
+    </div>
+    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+      <div id="progressBar" class="progress-bar h-full rounded-full" style="width:25%; background: linear-gradient(to left, var(--theme-accent), var(--theme-accent-dark));"></div>
+    </div>
+    <p class="text-center text-xs text-gray-400 dark:text-gray-500 mt-1">مرحله <span id="currentStepNum">۱</span> از ۴</p>
+  </div>
+
+  <form id="mainForm" action="/cooperation/" method="post" enctype="multipart/form-data" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    <!-- مرحله ۱ -->
+    <div class="step-content active" data-step="1">
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-user ml-1" style="color: var(--theme-accent);"></i> نام <span class="text-red-500">*</span>
+            </label>
+            <input type="text" name="firstName" id="firstName" placeholder="مثلاً: علی"
+              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200">
+            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-user ml-1" style="color: var(--theme-accent);"></i> نام خانوادگی <span class="text-red-500">*</span>
+            </label>
+            <input type="text" name="lastName" id="lastName" placeholder="مثلاً: رضایی"
+              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200">
+            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+        </div>
+
+        <div class="group">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-id-card ml-1" style="color: var(--theme-accent);"></i> کد ملی <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input type="text" name="nationalCode" id="nationalCode" placeholder="۱۰ رقم بدون خط تیره" maxlength="10" dir="ltr"
+              class="form-input w-full px-4 py-3 pl-11 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-left">
+            <i id="ncStatusIcon" class="fa-solid fa-circle-info absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg transition-all"></i>
+          </div>
+          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+          <p class="text-xs text-gray-400 mt-1"><i class="fa-solid fa-info-circle"></i> کد ملی به‌صورت زنده اعتبارسنجی می‌شود</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-calendar ml-1" style="color: var(--theme-accent);"></i> تاریخ تولد (شمسی) <span class="text-red-500">*</span>
+            </label>
+            <input type="text" name="birthDate" id="birthDate" placeholder="روی فیلد کلیک کنید" readonly
+              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 cursor-pointer">
+            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-venus-mars ml-1" style="color: var(--theme-accent);"></i> جنسیت <span class="text-red-500">*</span>
+            </label>
+            <div class="flex gap-3">
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="gender" value="مرد" class="peer sr-only">
+                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">
+                  <i class="fa-solid fa-mars"></i> مرد
+                </div>
+              </label>
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="gender" value="زن" class="peer sr-only">
+                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 font-semibold transition">
+                  <i class="fa-solid fa-venus"></i> زن
+                </div>
+              </label>
+            </div>
+            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+        </div>
+
+        <div id="militarySection" class="group hidden animate-fade-up">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-shield ml-1" style="color: var(--theme-accent);"></i> وضعیت خدمت سربازی <span class="text-red-500">*</span>
+          </label>
+          <div class="flex flex-wrap gap-3">
+            <label class="flex-1 min-w-[120px] cursor-pointer">
+              <input type="radio" name="militaryStatus" value="پایان خدمت" class="peer sr-only">
+              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 text-sm font-semibold transition">پایان خدمت</div>
+            </label>
+            <label class="flex-1 min-w-[120px] cursor-pointer">
+              <input type="radio" name="militaryStatus" value="معاف" class="peer sr-only">
+              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 text-sm font-semibold transition">معاف</div>
+            </label>
+          </div>
+        </div>
+
+        <div id="militaryFileGroup" class="group hidden animate-fade-up">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-file-shield ml-1" style="color: var(--theme-accent);"></i> تصویر کارت پایان خدمت
+          </label>
+          <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="military">
+            <input type="file" id="militaryFile" name="militaryFile" class="hidden" accept="image/*,.pdf">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
+            <p class="text-xs text-gray-500 dark:text-gray-400">حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
+          </div>
+          <div class="file-info hidden mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- مرحله ۲ -->
+    <div class="step-content" data-step="2">
+      <div class="space-y-4">
+        <div class="group">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-id-card ml-1" style="color: var(--theme-accent);"></i> تصویر کارت ملی <span class="text-red-500">*</span>
+          </label>
+          <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="nationalCard">
+            <input type="file" id="nationalCardFile" name="nationalCardFile" class="hidden" accept="image/*,.pdf">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
+            <p class="text-xs text-gray-500 dark:text-gray-400">حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
+          </div>
+          <div class="file-info hidden mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
+        </div>
+
+        <div class="group">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-graduation-cap ml-1" style="color: var(--theme-accent);"></i> آخرین مدرک تحصیلی <span class="text-red-500">*</span>
+          </label>
+          <select name="educationLevel" id="educationLevel"
+            class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 cursor-pointer">
+            <option value="">انتخاب کنید...</option>
+            <option>دیپلم</option>
+            <option>فوق دیپلم</option>
+            <option>کارشناسی</option>
+            <option>کارشناسی ارشد</option>
+            <option>دکتری</option>
+            <option>فوق دکتری</option>
+          </select>
+          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+
+        <div class="group">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-file-pdf ml-1" style="color: var(--theme-accent);"></i> تصویر آخرین مدرک تحصیلی <span class="text-red-500">*</span>
+          </label>
+          <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="education">
+            <input type="file" id="educationFile" name="educationFile" class="hidden" accept="image/*,.pdf">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
+            <p class="text-xs text-gray-500 dark:text-gray-400">حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
+          </div>
+          <div class="file-info hidden mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
+        </div>
+
+        <div class="group">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-certificate ml-1" style="color: var(--theme-accent);"></i> وضعیت پروانه <span class="text-red-500">*</span>
+          </label>
+          <div class="flex gap-3">
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="licenseStatus" value="دارد" class="peer sr-only" onchange="toggleLicense(true)">
+              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">
+                <i class="fa-solid fa-check-circle"></i> دارد
+              </div>
+            </label>
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="licenseStatus" value="ندارد" class="peer sr-only" onchange="toggleLicense(false)">
+              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition">
+                <i class="fa-solid fa-times-circle"></i> ندارد
+              </div>
+            </label>
+          </div>
+          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+
+        <div id="licenseSection" class="hidden space-y-4 p-4 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/10 animate-fade-up">
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-file-certificate text-emerald-500 ml-1"></i> تصویر پروانه (حداکثر ۵۰KB)
+            </label>
+            <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="license">
+              <input type="file" id="licenseFile" name="licenseFile" class="hidden" accept="image/*,.pdf">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
+              <p class="text-xs text-gray-500 dark:text-gray-400">کلیک یا رها کردن</p>
+            </div>
+            <div class="file-info hidden mt-2 p-2 rounded-lg bg-white dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
+          </div>
+
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-file-certificate text-emerald-500 ml-1"></i> پروانه فعالیت مرکز (حداکثر ۵۰KB)
+            </label>
+            <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="centerLicense">
+              <input type="file" id="centerLicenseFile" name="centerLicenseFile" class="hidden" accept="image/*,.pdf">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
+              <p class="text-xs text-gray-500 dark:text-gray-400">کلیک یا رها کردن</p>
+            </div>
+            <div class="file-info hidden mt-2 p-2 rounded-lg bg-white dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
+          </div>
+
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-align-right text-emerald-500 ml-1"></i> توضیحات پروانه فعالیت
+            </label>
+            <textarea name="licenseDesc" id="licenseDesc" rows="3" placeholder="توضیحات..."
+              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none text-gray-800 dark:text-gray-200 resize-none"></textarea>
+          </div>
+
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-file-shield text-emerald-500 ml-1"></i> تصویر مجوز مرکز (حداکثر ۵۰KB)
+            </label>
+            <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="centerPermit">
+              <input type="file" id="centerPermitFile" name="centerPermitFile" class="hidden" accept="image/*,.pdf">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
+              <p class="text-xs text-gray-500 dark:text-gray-400">کلیک یا رها کردن</p>
+            </div>
+            <div class="file-info hidden mt-2 p-2 rounded-lg bg-white dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-house ml-1" style="color: var(--theme-accent);"></i> وضعیت مالکیت مرکز <span class="text-red-500">*</span>
+          </label>
+          <div class="flex gap-3">
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="ownershipStatus" value="سند دارد" class="peer sr-only" onchange="toggleProperty(true)">
+              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">
+                <i class="fa-solid fa-file-contract"></i> سند دارد
+              </div>
+            </label>
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="ownershipStatus" value="استیجاری" class="peer sr-only" onchange="toggleProperty(false)">
+              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">
+                <i class="fa-solid fa-key"></i> استیجاری
+              </div>
+            </label>
+          </div>
+          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+
+        <div id="propertyFileGroup" class="group hidden animate-fade-up">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-file ml-1" style="color: var(--theme-accent);"></i> مدارک مربوط به ملک (حداکثر ۵۰KB)
+          </label>
+          <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="property">
+            <input type="file" id="propertyFile" name="propertyFile" class="hidden" accept="image/*,.pdf">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
+            <p class="text-xs text-gray-500 dark:text-gray-400">حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
+          </div>
+          <div class="file-info hidden mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- مرحله ۳ -->
+    <div class="step-content" data-step="3">
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-map ml-1" style="color: var(--theme-accent);"></i> استان <span class="text-red-500">*</span>
+            </label>
+            <select name="province" id="province"
+              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 cursor-pointer">
+              <option value="">انتخاب کنید...</option>
+            </select>
+            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-city ml-1" style="color: var(--theme-accent);"></i> شهرستان <span class="text-red-500">*</span>
+            </label>
+            <select name="county" id="county" disabled
+              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+              <option value="">ابتدا استان را انتخاب کنید</option>
+            </select>
+            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-phone ml-1" style="color: var(--theme-accent);"></i> تلفن مرکز <span class="text-red-500">*</span>
+            </label>
+            <input type="tel" name="centerPhone" id="centerPhone" placeholder="01123456789" dir="ltr" maxlength="11"
+              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-left">
+            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fa-solid fa-envelope ml-1" style="color: var(--theme-accent);"></i> کد پستی <span class="text-red-500">*</span>
+            </label>
+            <input type="text" name="postalCode" id="postalCode" placeholder="۱۰ رقم" maxlength="10" dir="ltr"
+              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-left">
+            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+        </div>
+
+        <div class="group">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-location-dot ml-1" style="color: var(--theme-accent);"></i> نشانی کامل و پستی <span class="text-red-500">*</span>
+          </label>
+          <textarea name="fullAddress" id="fullAddress" rows="3" placeholder="استان، شهرستان، خیابان، پلاک..."
+            class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 resize-none"></textarea>
+          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="group">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">اتاق مشاوره فردی</label>
+            <input type="number" name="individualRooms" id="individualRooms" min="0" placeholder="۰"
+              class="form-input w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center">
+          </div>
+          <div class="group">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">اتاق مشاوره گروهی</label>
+            <input type="number" name="groupRooms" id="groupRooms" min="0" placeholder="۰"
+              class="form-input w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center">
+          </div>
+          <div class="group">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">اتاق کودک</label>
+            <input type="number" name="childRooms" id="childRooms" min="0" placeholder="۰"
+              class="form-input w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center">
+          </div>
+          <div class="group">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">تعداد مشاورین</label>
+            <input type="number" name="counselorsCount" id="counselorsCount" min="0" placeholder="۰"
+              class="form-input w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center">
+          </div>
+        </div>
+
+        <div class="group">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-couch ml-1" style="color: var(--theme-accent);"></i> فضایی برای انتظار مراجعین
+          </label>
+          <div class="flex gap-3">
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="waitingArea" value="دارد" class="peer sr-only">
+              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">دارد</div>
+            </label>
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="waitingArea" value="ندارد" class="peer sr-only">
+              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition">ندارد</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">پذیرش طراحی و تجهیز با الگوی شرکت</label>
+            <div class="flex gap-3">
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="designAcceptance" value="آری" class="peer sr-only">
+                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">آری</div>
+              </label>
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="designAcceptance" value="خیر" class="peer sr-only">
+                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition">خیر</div>
+              </label>
+            </div>
+          </div>
+          <div class="group">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">سهولت دسترسی برای مراجعین</label>
+            <div class="flex gap-3">
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="accessibility" value="آری" class="peer sr-only">
+                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">آری</div>
+              </label>
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="accessibility" value="خیر" class="peer sr-only">
+                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition">خیر</div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-mobile-screen ml-1" style="color: var(--theme-accent);"></i> شماره همراه برای تماس ضروری <span class="text-red-500">*</span>
+          </label>
+          <input type="tel" name="mobile" id="mobile" placeholder="09123456789" dir="ltr" maxlength="11"
+            class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-left">
+          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- مرحله ۴ -->
+    <div class="step-content" data-step="4">
+      <div class="space-y-4">
+        <div class="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-2" style="border-color: var(--theme-accent);">
+          <p class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">
+            <i class="fa-solid fa-clipboard-check" style="color: var(--theme-accent);"></i> خلاصه اطلاعات:
+          </p>
+          <div id="summary" class="text-sm text-gray-600 dark:text-gray-300 space-y-1.5 max-h-96 overflow-y-auto"></div>
+        </div>
+
+        <div class="captcha-box p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fa-solid fa-shield-halved ml-1" style="color: var(--theme-accent);"></i> کد امنیتی (کپچا) <span class="text-red-500">*</span>
+          </label>
+          <div class="flex items-center gap-3">
+            <img src="/captcha.png" alt="کپچا" id="captchaImg" width="170" height="54"
+                 title="برای دریافت عبارت جدید کلیک کنید" onclick="refreshCaptcha()">
+            <input type="text" name="captcha" id="captchaInput" placeholder="حاصل را وارد کنید" maxlength="2" inputmode="numeric"
+              class="form-input flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center text-lg font-bold">
+          </div>
+          <p class="text-xs text-gray-400 mt-2">نتیجه عبارت بالا را وارد کنید — با کلیک روی تصویر عبارت جدید می‌گیرید</p>
+        </div>
+
+        <label class="flex items-center gap-3 cursor-pointer p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 transition">
+          <input type="checkbox" name="terms" id="terms" class="w-5 h-5 rounded border-gray-300 focus:ring-2">
+          <span class="text-sm text-gray-700 dark:text-gray-300">
+            صحت تمام اطلاعات وارد شده را تأیید می‌کنم و <a href="#" class="underline" style="color: var(--theme-accent);">قوانین و مقررات</a> را می‌پذیرم. <span class="text-red-500">*</span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button type="button" id="prevBtn" class="hidden px-6 py-3 rounded-xl font-bold text-gray-600 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+        <i class="fa-solid fa-arrow-right ml-1"></i> قبلی
+      </button>
+      <button type="button" id="nextBtn" class="flex-1 py-3 rounded-xl font-bold text-white submit-btn flex items-center justify-center gap-2">
+        مرحله بعد <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <button type="submit" id="submitBtn" class="hidden flex-1 py-3 rounded-xl font-bold text-white submit-btn items-center justify-center gap-2">
+        <span id="btnText">ارسال نهایی</span>
+        <i class="fa-solid fa-paper-plane" id="btnIcon"></i>
+        <svg id="spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <p class="text-center text-xs text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1 mt-4">
+      <i class="fa-solid fa-shield-halved"></i> اطلاعات شما به‌صورت امن روی سرور مرکز رز ذخیره می‌شود
+    </p>
+  </form>
+
+  <div id="toast" class="hidden mt-5 p-4 rounded-xl text-center font-semibold animate-slide-in"></div>
+  <div id="successBox" class="hidden mt-5 p-6 rounded-xl text-center bg-green-50 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700">
+    <i class="fa-solid fa-circle-check text-green-500 text-4xl mb-3"></i>
+    <p class="font-bold text-green-700 dark:text-green-300 text-lg mb-2">درخواست شما با موفقیت ثبت شد!</p>
+    <p class="text-sm text-gray-600 dark:text-gray-300">کد پیگیری شما:</p>
+    <p id="trackingCode" class="text-2xl font-black tracking-wider my-2 text-green-600 dark:text-green-400" dir="ltr"></p>
+    <p class="text-xs text-gray-500 dark:text-gray-400">وضعیت درخواست را می‌توانید از صفحه «پیگیری درخواست» سایت دنبال کنید.</p>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  تم‌ها
+// ═══════════════════════════════════════════════════════════════════
+const THEMES = {
+  purple: { 1: '#667eea', 2: '#764ba2', 3: '#f093fb', 4: '#4facfe', accent: '#667eea', accentDark: '#764ba2' },
+  green:  { 1: '#10b981', 2: '#059669', 3: '#6ee7b7', 4: '#34d399', accent: '#10b981', accentDark: '#059669' },
+  blue:   { 1: '#3b82f6', 2: '#1d4ed8', 3: '#60a5fa', 4: '#93c5fd', accent: '#3b82f6', accentDark: '#1d4ed8' },
+  orange: { 1: '#f97316', 2: '#ea580c', 3: '#fdba74', 4: '#fb923c', accent: '#f97316', accentDark: '#ea580c' },
+  pink:   { 1: '#ec4899', 2: '#be185d', 3: '#f9a8d4', 4: '#f472b6', accent: '#ec4899', accentDark: '#be185d' }
+};
+
+function applyTheme(themeName) {
+  const t = THEMES[themeName];
+  if (!t) return;
+  const root = document.documentElement;
+  root.style.setProperty('--theme-1', t[1]);
+  root.style.setProperty('--theme-2', t[2]);
+  root.style.setProperty('--theme-3', t[3]);
+  root.style.setProperty('--theme-4', t[4]);
+  root.style.setProperty('--theme-accent', t.accent);
+  root.style.setProperty('--theme-accent-dark', t.accentDark);
+  document.querySelectorAll('.theme-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.theme === themeName);
+  });
+  localStorage.setItem('formTheme', themeName);
+}
+
+document.querySelectorAll('.theme-swatch').forEach(s => {
+  s.addEventListener('click', () => applyTheme(s.dataset.theme));
+});
+applyTheme(localStorage.getItem('formTheme') || 'purple');
+
+// ═══════════════════════════════════════════════════════════════════
+//  دارک مود
+// ═══════════════════════════════════════════════════════════════════
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const html = document.documentElement;
+
+function setDark(dark) {
+  html.classList.toggle('dark', dark);
+  themeIcon.className = dark ? 'fa-solid fa-sun text-yellow-300 text-lg' : 'fa-solid fa-moon text-gray-700 text-lg';
+  localStorage.setItem('darkMode', dark ? 'dark' : 'light');
+}
+if (localStorage.darkMode === 'dark' || (!localStorage.darkMode && window.matchMedia('(prefers-color-scheme: dark)').matches)) setDark(true);
+else setDark(false);
+themeToggle.addEventListener('click', () => setDark(!html.classList.contains('dark')));
+
+// ═══════════════════════════════════════════════════════════════════
+//  استان‌ها و شهرستان‌ها
+// ═══════════════════════════════════════════════════════════════════
+const PROVINCES = {
+  'آذربایجان شرقی': ['تبریز','مراغه','مرند','اهر','بناب','میانه','سراب','شبستر','آذرشهر','اسکو','بستان‌آباد','عجب‌شیر','ملکان','هریس','هشترود','جلفا','چاراویماق','ورزقان','خداآفرین','کلیبر'],
+  'آذربایجان غربی': ['ارومیه','خوی','میاندوآب','مهاباد','بوکان','سلماس','نقده','پیرانشهر','ماکو','سردشت','تکاب','شاهین‌دژ','اشنویه','چالدران','پلدشت','شوط','چایپاره'],
+  'اردبیل': ['اردبیل','پارس‌آباد','مشکین‌شهر','خلخال','گرمی','بیله‌سوار','نمین','نیر','کوثر','سرعین','اصلاندوز'],
+  'اصفهان': ['اصفهان','کاشان','خمینی‌شهر','نجف‌آباد','شهرضا','فلاورجان','لنجان','مبارکه','گلپایگان','نطنز','اردستان','نائین','خوانسار','سمیرم','فریدن','فریدون‌شهر','چادگان','دهاقان','برخوار','تیران و کرون'],
+  'ایلام': ['ایلام','دهلران','آبدانان','ایوان','مهران','دره‌شهر','چرداول','ملکشاهی','بدره','سیروان'],
+  'بوشهر': ['بوشهر','برازجان','گناوه','کنگان','دیلم','دیر','جم','دشتی','تنگستان','عسلویه'],
+  'تهران': ['تهران','اسلامشهر','شهریار','قدس','ملارد','پاکدشت','ورامین','رباط‌کریم','پردیس','دماوند','فیروزکوه','شمیرانات','بهارستان','پیشوا','قرچک','چهاردانگه'],
+  'چهارمحال و بختیاری': ['شهرکرد','بروجن','فارسان','لردگان','اردل','کیار','سامان','بن','فلارد'],
+  'خراسان جنوبی': ['بیرجند','قائن','فردوس','نهبندان','سربیشه','طبس','درمیان','زیرکوه','خوسف','بشرویه','سرایان'],
+  'خراسان رضوی': ['مشهد','نیشابور','سبزوار','تربت حیدریه','تربت جام','قوچان','کاشمر','گناباد','خواف','تایباد','بردسکن','چناران','درگز','سرخس','فریمان','کلات','جغتای','خلیل‌آباد','رشتخوار','باخرز','جوین','بجستان','مه‌ولات','زاوه','صالح‌آباد'],
+  'خراسان شمالی': ['بجنورد','شیروان','اسفراین','آشخانه','گرمه','جاجرم','فاروج','راز','مانه و سملقان'],
+  'خوزستان': ['اهواز','آبادان','خرمشهر','دزفول','اندیمشک','بهبهان','ماهشهر','شوشتر','شوش','ایذه','مسجدسلیمان','رامهرمز','امیدیه','باغ‌ملک','هندیجان','لالی','هفتگل','رامشیر','دشت آزادگان','کارون','باوی','حمیدیه','گتوند','شادگان'],
+  'زنجان': ['زنجان','ابهر','خرمدره','قیدار','صائین‌قلعه','ماه‌نشان','طارم','ایجرود','سلطانیه'],
+  'سمنان': ['سمنان','شاهرود','دامغان','گرمسار','مهدی‌شهر','میامی','آرادان','بسطام'],
+  'سیستان و بلوچستان': ['زاهدان','زابل','چابهار','ایرانشهر','سراوان','خاش','کنارک','نیک‌شهر','میرجاوه','سرباز','قصرقند','فنوج','هیرمند','زهک','نیمروز','هامون','دلگان','مهرستان','سیب و سوران'],
+  'فارس': ['شیراز','مرودشت','کازرون','جهرم','فسا','داراب','لار','نی‌ریز','آباده','اقلید','صفاشهر','استهبان','زرین‌دشت','لامرد','مهر','خنج','فراشبند','سروستان','خرامه','رستم','کوار','بیضا','پاسارگاد','خرم‌بید','بوانات','قیر و کارزین'],
+  'قزوین': ['قزوین','الوند','آبیک','بوئین‌زهرا','تاکستان','آوج','شال','خرمدشت','محمدیه','اقبالیه'],
+  'قم': ['قم','جعفریه','دستجرد','سلفچگان','کهک','قنوات'],
+  'کردستان': ['سنندج','سقز','مریوان','بانه','قروه','بیجار','کامیاران','دیواندره','دهگلان','سروآباد'],
+  'کرمان': ['کرمان','سیرجان','رفسنجان','جیرفت','بم','زرند','کهنوج','بردسیر','شهربابک','راور','انار','بافت','رابر','منوجان','فهرج','ریگان','نرماشیر','قلعه‌گنج','ارزوئیه','کوهبنان','رودبار جنوب'],
+  'کرمانشاه': ['کرمانشاه','اسلام‌آباد غرب','هرسین','کنگاور','سنقر','پاوه','جوانرود','صحنه','قصر شیرین','سرپل ذهاب','گیلانغرب','روانسر','دالاهو','ثلاث باباجانی'],
+  'کهگیلویه و بویراحمد': ['یاسوج','دوگنبدان','دهدشت','سی‌سخت','چرام','لنده','باشت','دنا','بهمئی','مارگون'],
+  'گلستان': ['گرگان','گنبدکاووس','علی‌آباد','بندرترکمن','آق‌قلا','کردکوی','بندرگز','مینودشت','رامیان','آزادشهر','کلاله','گمیشان','مراوه‌تپه','گالیکش'],
+  'گیلان': ['رشت','بندر انزلی','لاهیجان','لنگرود','آستارا','تالش','رودسر','فومن','صومعه‌سرا','آستانه اشرفیه','ماسال','رودبار','املش','سیاهکل','شفت','خمام','رضوانشهر'],
+  'لرستان': ['خرم‌آباد','بروجرد','دورود','الیگودرز','کوهدشت','نورآباد','ازنا','پل‌دختر','الشتر','چگنی','رومشکان'],
+  'مازندران': ['ساری','بابل','آمل','قائم‌شهر','بهشهر','چالوس','نوشهر','بابلسر','تنکابن','رامسر','جویبار','نکا','نور','محمودآباد','فریدونکنار','سوادکوه','گلوگاه','عباس‌آباد','میاندورود','سیمرغ','کلاردشت','سوادکوه شمالی'],
+  'مرکزی': ['اراک','ساوه','خمین','محلات','دلیجان','شازند','تفرش','آشتیان','زرندیه','کمیجان','خنداب','فرمهین'],
+  'هرمزگان': ['بندرعباس','قشم','میناب','بندرلنگه','رودان','پارسیان','بستک','جاسک','حاجی‌آباد','خمیر','ابوموسی','سیریک','بشاگرد'],
+  'همدان': ['همدان','ملایر','نهاوند','تویسرکان','اسدآباد','بهار','کبودرآهنگ','رزن','فامنین','لالجین'],
+  'یزد': ['یزد','میبد','اردکان','بافق','مهریز','ابرکوه','تفت','خاتم','اشکذر','بهاباد','مروست']
+};
+
+const provinceSelect = document.getElementById('province');
+const countySelect = document.getElementById('county');
+Object.keys(PROVINCES).sort().forEach(p => {
+  const opt = document.createElement('option');
+  opt.value = p; opt.textContent = p;
+  provinceSelect.appendChild(opt);
+});
+
+provinceSelect.addEventListener('change', function() {
+  countySelect.innerHTML = '<option value="">انتخاب کنید...</option>';
+  if (this.value) {
+    countySelect.disabled = false;
+    PROVINCES[this.value].sort().forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      countySelect.appendChild(opt);
+    });
+  } else {
+    countySelect.disabled = true;
+    countySelect.innerHTML = '<option value="">ابتدا استان را انتخاب کنید</option>';
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  تقویم شمسی
+// ═══════════════════════════════════════════════════════════════════
+$(document).ready(function() {
+  $('#birthDate').persianDatepicker({
+    format: 'YYYY/MM/DD',
+    initialValue: false,
+    autoClose: true,
+    persianDigit: false,
+    observer: true,
+    calendar: { persian: { locale: 'fa', showHint: true } },
+    navigator: { scroll: { enabled: false } },
+    toolbox: { calendarSwitch: { enabled: false } },
+    timePicker: { enabled: false },
+    onSelect: function() {
+      if (typeof validateField === 'function') validateField(document.getElementById('birthDate'));
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  اعتبارسنجی
+// ═══════════════════════════════════════════════════════════════════
+function checkCodeMeli(code) {
+  var L = code.length;
+  if (L < 8 || parseInt(code, 10) == 0) return false;
+  code = ('0000' + code).substr(L + 4 - 10);
+  if (parseInt(code.substr(3, 6), 10) == 0) return false;
+  var c = parseInt(code.substr(9, 1), 10);
+  var s = 0;
+  for (var i = 0; i < 9; i++) s += parseInt(code.substr(i, 1), 10) * (10 - i);
+  s = s % 11;
+  return (s < 2 && c == s) || (s >= 2 && c == (11 - s));
+}
+
+function checkPostalCode(code) {
+  if (!/^\d{10}$/.test(code)) return false;
+  if (/^(\d)\1{9}$/.test(code)) return false;
+  return true;
+}
+
+document.getElementById('nationalCode').addEventListener('input', function() {
+  const icon = document.getElementById('ncStatusIcon');
+  const errorEl = this.closest('.group').querySelector('.error-text');
+  this.value = this.value.replace(/\D/g, '');
+  const val = this.value;
+  if (val.length === 0) {
+    icon.className = 'fa-solid fa-circle-info absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg transition-all';
+    this.classList.remove('success', 'error');
+    if (errorEl) errorEl.classList.add('hidden');
+    return;
+  }
+  if (val.length < 10) {
+    icon.className = 'fa-solid fa-hourglass-half absolute left-4 top-1/2 -translate-y-1/2 text-yellow-500 text-lg transition-all';
+    this.classList.remove('success', 'error');
+    if (errorEl) errorEl.classList.add('hidden');
+    return;
+  }
+  if (checkCodeMeli(val)) {
+    icon.className = 'fa-solid fa-circle-check absolute left-4 top-1/2 -translate-y-1/2 text-green-500 text-lg transition-all';
+    this.classList.add('success'); this.classList.remove('error');
+    if (errorEl) errorEl.classList.add('hidden');
+  } else {
+    icon.className = 'fa-solid fa-circle-xmark absolute left-4 top-1/2 -translate-y-1/2 text-red-500 text-lg transition-all';
+    this.classList.add('error'); this.classList.remove('success');
+    if (errorEl) { errorEl.textContent = 'کد ملی وارد شده معتبر نیست'; errorEl.classList.remove('hidden'); }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  مدیریت فایل‌ها — همه حداکثر ۵۰KB
+// ═══════════════════════════════════════════════════════════════════
+const fileStore = {};
+
+document.querySelectorAll('.file-drop').forEach(dropEl => {
+  const key = dropEl.dataset.file;
+  const input = dropEl.querySelector('input[type=file]');
+  const infoEl = dropEl.parentElement.querySelector('.file-info');
+
+  dropEl.addEventListener('click', () => input.click());
+  dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('dragover'); });
+  dropEl.addEventListener('dragleave', () => dropEl.classList.remove('dragover'));
+  dropEl.addEventListener('drop', e => {
+    e.preventDefault(); dropEl.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0], dropEl, input, infoEl, key);
+  });
+  input.addEventListener('change', () => {
+    if (input.files.length) handleFile(input.files[0], dropEl, input, infoEl, key);
+  });
+});
+
+function handleFile(file, dropEl, input, infoEl, key) {
+  const sizeKB = file.size / 1024;
+  const constraints = {
+    nationalCard: { max: 50, label: 'کارت ملی' },
+    military:     { max: 50, label: 'کارت پایان خدمت' },
+    education:    { max: 50, label: 'مدرک تحصیلی' },
+    license:      { max: 50, label: 'پروانه' },
+    centerLicense:{ max: 50, label: 'پروانه مرکز' },
+    centerPermit: { max: 50, label: 'مجوز مرکز' },
+    property:     { max: 50, label: 'مدارک ملک' }
+  };
+  const c = constraints[key] || { max: 50, label: 'فایل' };
+
+  if (sizeKB > c.max) {
+    showToast(`❌ حجم فایل ${c.label} نباید بیشتر از ${c.max} کیلوبایت باشد (حجم فایل شما: ${sizeKB.toFixed(1)} KB)`, 'error');
+    input.value = '';
+    return;
+  }
+
+  fileStore[key] = file;
+  dropEl.classList.add('success');
+  dropEl.classList.remove('error');
+
+  const previewIcon = file.type.startsWith('image/') ? 'fa-image' : 'fa-file-pdf';
+  const previewColor = file.type.startsWith('image/') ? 'text-purple-500' : 'text-red-500';
+
+  infoEl.innerHTML = `
+    <i class="fa-solid ${previewIcon} ${previewColor} text-lg"></i>
+    <div class="flex-1 min-w-0">
+      <p class="text-gray-700 dark:text-gray-200 truncate font-semibold">${file.name}</p>
+      <p class="text-gray-400">${sizeKB.toFixed(1)} KB</p>
+    </div>
+    <button type="button" class="text-red-500 hover:text-red-700 transition" onclick="removeFile('${key}')">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  `;
+  infoEl.classList.remove('hidden');
+  dropEl.querySelector('p').textContent = '✓ فایل انتخاب شد — برای تغییر کلیک کنید';
+}
+
+function removeFile(key) {
+  delete fileStore[key];
+  const dropEl = document.querySelector(`.file-drop[data-file="${key}"]`);
+  if (!dropEl) return;
+  const infoEl = dropEl.parentElement.querySelector('.file-info');
+  const input = dropEl.querySelector('input[type=file]');
+  input.value = '';
+  dropEl.classList.remove('success', 'error');
+  dropEl.querySelector('p').textContent = 'کلیک یا رها کردن';
+  infoEl.classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  نمایش شرطی
+// ═══════════════════════════════════════════════════════════════════
+function toggleLicense(show) {
+  document.getElementById('licenseSection').classList.toggle('hidden', !show);
+}
+function toggleProperty(show) {
+  document.getElementById('propertyFileGroup').classList.toggle('hidden', !show);
+}
+
+document.querySelectorAll('input[name="gender"]').forEach(r => {
+  r.addEventListener('change', function() {
+    const isMale = this.value === 'مرد';
+    document.getElementById('militarySection').classList.toggle('hidden', !isMale);
+    document.getElementById('militaryFileGroup').classList.toggle('hidden', !isMale);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  مدیریت مراحل
+// ═══════════════════════════════════════════════════════════════════
+let currentStep = 1;
+const totalSteps = 4;
+const progressBar = document.getElementById('progressBar');
+const currentStepNum = document.getElementById('currentStepNum');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const submitBtn = document.getElementById('submitBtn');
+
+function showStep(step) {
+  document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.step-content[data-step="${step}"]`).classList.add('active');
+  document.querySelectorAll('.step-dot').forEach(dot => {
+    const s = parseInt(dot.dataset.step);
+    dot.classList.toggle('active', s === step);
+    dot.classList.toggle('completed', s < step);
+  });
+  progressBar.style.width = (step / totalSteps) * 100 + '%';
+  currentStepNum.textContent = ['۱','۲','۳','۴'][step-1] || step;
+  prevBtn.classList.toggle('hidden', step === 1);
+  nextBtn.classList.toggle('hidden', step === totalSteps);
+  submitBtn.classList.toggle('hidden', step !== totalSteps);
+  submitBtn.classList.toggle('flex', step === totalSteps);
+  if (step === totalSteps) buildSummary();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+prevBtn.addEventListener('click', () => { if (currentStep > 1) { currentStep--; showStep(currentStep); } });
+nextBtn.addEventListener('click', () => {
+  if (validateStep(currentStep)) { currentStep++; showStep(currentStep); }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  اعتبارسنجی مراحل
+// ═══════════════════════════════════════════════════════════════════
+const VALIDATORS = {
+  firstName: v => !v.trim() ? 'نام الزامی است' : v.trim().length < 2 ? 'نام باید حداقل ۲ حرف باشد' : null,
+  lastName: v => !v.trim() ? 'نام خانوادگی الزامی است' : v.trim().length < 2 ? 'نام خانوادگی باید حداقل ۲ حرف باشد' : null,
+  nationalCode: v => {
+    if (!v) return 'کد ملی الزامی است';
+    if (!/^\d{10}$/.test(v)) return 'کد ملی باید دقیقاً ۱۰ رقم باشد';
+    if (!checkCodeMeli(v)) return 'کد ملی وارد شده معتبر نیست';
+    return null;
+  },
+  birthDate: v => !v ? 'تاریخ تولد الزامی است' : null,
+  educationLevel: v => !v ? 'مدرک تحصیلی را انتخاب کنید' : null,
+  province: v => !v ? 'استان را انتخاب کنید' : null,
+  county: v => !v ? 'شهرستان را انتخاب کنید' : null,
+  centerPhone: v => {
+    if (!v) return 'تلفن مرکز الزامی است';
+    if (!/^0\d{10}$/.test(v)) return 'تلفن باید با ۰ شروع شده و ۱۱ رقم باشد';
+    return null;
+  },
+  postalCode: v => {
+    if (!v) return 'کد پستی الزامی است';
+    if (!checkPostalCode(v)) return 'کد پستی باید ۱۰ رقم معتبر باشد';
+    return null;
+  },
+  fullAddress: v => !v.trim() ? 'نشانی الزامی است' : v.trim().length < 10 ? 'نشانی باید حداقل ۱۰ کاراکتر باشد' : null,
+  mobile: v => {
+    if (!v) return 'شماره همراه الزامی است';
+    if (!/^09\d{9}$/.test(v)) return 'شماره همراه باید با ۰۹ شروع شده و ۱۱ رقم باشد';
+    return null;
+  }
+};
+
+function validateField(input) {
+  const name = input.name;
+  const validator = VALIDATORS[name];
+  if (!validator) return true;
+  const error = validator(input.value);
+  const errorEl = input.closest('.group')?.querySelector('.error-text');
+  if (error) {
+    input.classList.add('error'); input.classList.remove('success');
+    if (errorEl) { errorEl.textContent = error; errorEl.classList.remove('hidden'); }
+    input.classList.add('animate-shake');
+    setTimeout(() => input.classList.remove('animate-shake'), 500);
+    return false;
+  }
+  input.classList.remove('error'); input.classList.add('success');
+  if (errorEl) errorEl.classList.add('hidden');
+  return true;
+}
+
+function validateStep(step) {
+  let valid = true;
+  const stepEl = document.querySelector(`.step-content[data-step="${step}"]`);
+
+  stepEl.querySelectorAll('input[type="text"], input[type="tel"], input[type="number"], textarea, select').forEach(input => {
+    if (input.name in VALIDATORS) {
+      if (!validateField(input)) valid = false;
+    }
+  });
+
+  if (step === 1) {
+    if (!document.querySelector('input[name="gender"]:checked')) {
+      const errEl = document.querySelector('input[name="gender"]').closest('.group').querySelector('.error-text');
+      if (errEl) { errEl.textContent = 'جنسیت را انتخاب کنید'; errEl.classList.remove('hidden'); }
+      valid = false;
+    }
+    if (document.querySelector('input[name="gender"]:checked')?.value === 'مرد') {
+      if (!document.querySelector('input[name="militaryStatus"]:checked')) {
+        showToast('❌ وضعیت خدمت سربازی را انتخاب کنید', 'error');
+        valid = false;
+      }
+    }
+  }
+
+  if (step === 2) {
+    if (!document.querySelector('input[name="licenseStatus"]:checked')) {
+      const errEl = document.querySelector('input[name="licenseStatus"]').closest('.group').querySelector('.error-text');
+      if (errEl) { errEl.textContent = 'وضعیت پروانه را انتخاب کنید'; errEl.classList.remove('hidden'); }
+      valid = false;
+    }
+    if (!document.querySelector('input[name="ownershipStatus"]:checked')) {
+      const errEl = document.querySelector('input[name="ownershipStatus"]').closest('.group').querySelector('.error-text');
+      if (errEl) { errEl.textContent = 'وضعیت مالکیت را انتخاب کنید'; errEl.classList.remove('hidden'); }
+      valid = false;
+    }
+    if (!fileStore.nationalCard) {
+      showToast('❌ آپلود تصویر کارت ملی الزامی است', 'error');
+      valid = false;
+    }
+    if (!fileStore.education) {
+      showToast('❌ آپلود تصویر مدرک تحصیلی الزامی است', 'error');
+      valid = false;
+    }
+  }
+
+  return valid;
+}
+
+document.querySelectorAll('input, textarea, select').forEach(input => {
+  if (input.name in VALIDATORS) {
+    input.addEventListener('blur', () => validateField(input));
+    input.addEventListener('input', () => {
+      if (input.classList.contains('error')) validateField(input);
+    });
+  }
+});
+
+['nationalCode', 'postalCode', 'mobile', 'centerPhone'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  خلاصه
+// ═══════════════════════════════════════════════════════════════════
+function buildSummary() {
+  const summary = document.getElementById('summary');
+  const fd = new FormData(document.getElementById('mainForm'));
+  const d = Object.fromEntries(fd.entries());
+
+  const files = Object.keys(fileStore).map(k => {
+    const labels = { nationalCard: 'کارت ملی', military: 'پایان خدمت', education: 'مدرک', license: 'پروانه', centerLicense: 'پروانه مرکز', centerPermit: 'مجوز مرکز', property: 'مدارک ملک' };
+    return `<span class="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs px-2 py-1 rounded ml-1"><i class="fa-solid fa-check"></i> ${labels[k]}</span>`;
+  }).join('');
+
+  summary.innerHTML = `
+    <p><strong>نام:</strong> ${d.firstName || '—'} ${d.lastName || '—'}</p>
+    <p><strong>کد ملی:</strong> ${d.nationalCode || '—'}</p>
+    <p><strong>تاریخ تولد:</strong> ${d.birthDate || '—'}</p>
+    <p><strong>جنسیت:</strong> ${d.gender || '—'}</p>
+    ${d.gender === 'مرد' ? `<p><strong>وضعیت خدمت:</strong> ${d.militaryStatus || '—'}</p>` : ''}
+    <p><strong>مدرک:</strong> ${d.educationLevel || '—'}</p>
+    <p><strong>پروانه:</strong> ${d.licenseStatus || '—'}</p>
+    <p><strong>مالکیت:</strong> ${d.ownershipStatus || '—'}</p>
+    <p><strong>استان/شهرستان:</strong> ${d.province || '—'} / ${d.county || '—'}</p>
+    <p><strong>تلفن مرکز:</strong> ${d.centerPhone || '—'}</p>
+    <p><strong>موبایل:</strong> ${d.mobile || '—'}</p>
+    <p><strong>کد پستی:</strong> ${d.postalCode || '—'}</p>
+    <p><strong>نشانی:</strong> ${d.fullAddress || '—'}</p>
+    <p><strong>اتاق‌ها:</strong> فردی ${d.individualRooms || 0} / گروهی ${d.groupRooms || 0} / کودک ${d.childRooms || 0}</p>
+    <p><strong>تعداد مشاورین:</strong> ${d.counselorsCount || 0}</p>
+    <p><strong>فضای انتظار:</strong> ${d.waitingArea || '—'}</p>
+    <p><strong>پذیرش طراحی:</strong> ${d.designAcceptance || '—'} | <strong>دسترسی:</strong> ${d.accessibility || '—'}</p>
+    <p class="pt-2"><strong>فایل‌های پیوست:</strong> ${files || 'بدون فایل'}</p>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  توست
+// ═══════════════════════════════════════════════════════════════════
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = `mt-5 p-4 rounded-xl text-center font-semibold animate-slide-in ${
+    type === 'success' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-2 border-green-300 dark:border-green-700'
+                       : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-2 border-red-300 dark:border-red-700'
+  }`;
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 5000);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  کپچا
+// ═══════════════════════════════════════════════════════════════════
+function refreshCaptcha() {
+  const img = document.getElementById('captchaImg');
+  img.src = '/captcha.png?t=' + Date.now();
+  document.getElementById('captchaInput').value = '';
+}
+document.getElementById('captchaImg').addEventListener('click', refreshCaptcha);
+
+// ═══════════════════════════════════════════════════════════════════
+//  ارسال نهایی (fetch با FormData — فایل‌ها به‌صورت multipart)
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('mainForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (!document.getElementById('terms').checked) {
+    showToast('❌ لطفاً قوانین و مقررات را بپذیرید', 'error');
+    return;
+  }
+  if (!document.getElementById('captchaInput').value.trim()) {
+    showToast('❌ لطفاً پاسخ کپچا را وارد کنید', 'error');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  document.getElementById('btnText').textContent = 'در حال ارسال...';
+  document.getElementById('btnIcon').classList.add('hidden');
+  document.getElementById('spinner').classList.remove('hidden');
+
+  try {
+    const fd = new FormData(document.getElementById('mainForm'));
+
+    const response = await fetch('/cooperation/', { method: 'POST', body: fd });
+    const res = await response.json();
+
+    if (res.result === 'success') {
+      document.getElementById('toast').classList.add('hidden');
+      document.getElementById('successBox').classList.remove('hidden');
+      document.getElementById('trackingCode').textContent = res.tracking_code;
+      document.getElementById('mainForm').classList.add('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      showToast('❌ ' + (res.message || 'خطای ناشناخته'), 'error');
+      refreshCaptcha();
+    }
+
+    submitBtn.disabled = false;
+    document.getElementById('btnText').textContent = 'ارسال نهایی';
+    document.getElementById('btnIcon').classList.remove('hidden');
+    document.getElementById('spinner').classList.add('hidden');
+
+  } catch (err) {
+    showToast('❌ خطا در ارتباط با سرور: ' + err.message, 'error');
+    refreshCaptcha();
+    submitBtn.disabled = false;
+    document.getElementById('btnText').textContent = 'ارسال نهایی';
+    document.getElementById('btnIcon').classList.remove('hidden');
+    document.getElementById('spinner').classList.add('hidden');
+  }
+});
+
+showStep(1);
+</script>
+
+</body>
+</html>

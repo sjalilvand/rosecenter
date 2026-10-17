@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+  .jconv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 820px) { .jconv-grid { grid-template-columns: 1fr; } }
+  .jconv-card {
+    background: var(--paper, #fff); border: 1px solid var(--line, #e5e7eb);
+    border-radius: 18px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,.05);
+  }
+  .jconv-card h3 { font-weight: 800; font-size: 1.05rem; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .jconv-card .hint { color: var(--ink-soft, #6b7280); font-size: .82rem; margin-bottom: 16px; }
+  .jconv-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .jconv-row input, .jconv-row select {
+    flex: 1; padding: 11px 14px; border: 2px solid var(--line, #e5e7eb); border-radius: 12px;
+    font-family: inherit; font-size: .95rem; background: #fff; color: #1f2937;
+  }
+  .jconv-row input:focus, .jconv-row select:focus { outline: none; border-color: var(--rose, #be185d); }
+  .jconv-result {
+    margin-top: 14px; padding: 16px; border-radius: 14px; text-align: center;
+    background: linear-gradient(135deg, #fdf2f8, #ecfdf5); border: 1px dashed #d1d5db;
+    display: none;
+  }
+  .jconv-result.show { display: block; animation: fadeIn .4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .jconv-result .r-main { font-size: 1.45rem; font-weight: 900; color: #be185d; letter-spacing: 1px; }
+  .jconv-result .r-sub { font-size: .88rem; color: #374151; margin-top: 6px; }
+  .jconv-result .r-wd { display: inline-block; margin-top: 8px; background: #4f46e5; color: #fff; padding: 4px 14px; border-radius: 99px; font-size: .8rem; }
+  .today-chip {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    background: linear-gradient(135deg, #4f46e5, #be185d); color: #fff;
+    border-radius: 16px; padding: 18px 24px; margin-bottom: 28px;
+  }
+  .today-chip .t-main { font-size: 1.15rem; font-weight: 800; }
+  .today-chip .t-sub { font-size: .85rem; opacity: .9; }
+  .swap-btn {
+    background: var(--rose, #be185d); color: #fff; border: none; border-radius: 12px;
+    padding: 10px 22px; font-family: inherit; font-weight: 700; cursor: pointer; font-size: .9rem;
+  }
+  .swap-btn:hover { filter: brightness(1.1); }
+  .err-msg { color: #b91c1c; font-size: .85rem; margin-top: 8px; display: none; }
+</style>
+{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>تبدیل تاریخ شمسی و میلادی</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>تبدیل تاریخ</span></nav>
+    <p class="lead">تبدیل آنی تاریخ شمسی (جلالی) به میلادی و برعکس — با محاسبه دقیق سال‌های کبیسه و روز هفته.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="today-chip">
+      <div>
+        <div class="t-main">🗓 {{ today_fa }}</div>
+        <div class="t-sub" dir="ltr" style="text-align:right">Today: {{ today_j[0] }}/{{ '%02d'|format(today_j[1]) }}/{{ '%02d'|format(today_j[2]) }} Jalali</div>
+      </div>
+      <div class="t-sub">به وقت تهران (UTC+03:30)</div>
+    </div>
+
+    <div class="jconv-grid">
+      <!-- میلادی به شمسی -->
+      <div class="jconv-card">
+        <h3>🇬🇧 → 🇮🇷 تبدیل میلادی به شمسی</h3>
+        <p class="hint">سال، ماه و روز میلادی را وارد کنید</p>
+        <div class="jconv-row">
+          <input type="number" id="gY" placeholder="سال (۲۰۲۶)" min="1900" max="2400">
+          <select id="gM">
+            <option value="">ماه</option>
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+          <input type="number" id="gD" placeholder="روز" min="1" max="31">
+        </div>
+        <button type="button" class="btn btn-primary btn-block" onclick="convertG2J()">تبدیل به شمسی</button>
+        <div class="jconv-result" id="g2jResult"></div>
+        <p class="err-msg" id="g2jErr"></p>
+      </div>
+
+      <!-- شمسی به میلادی -->
+      <div class="jconv-card">
+        <h3>🇮🇷 → 🇬🇧 تبدیل شمسی به میلادی</h3>
+        <p class="hint">سال، ماه و روز شمسی را وارد کنید</p>
+        <div class="jconv-row">
+          <input type="number" id="jY" placeholder="سال (۱۴۰۵)" min="1300" max="1700">
+          <select id="jM">
+            <option value="">ماه</option>
+            {% for m in months %}
+            <option value="{{ loop.index }}">{{ loop.index }} — {{ m }}</option>
+            {% endfor %}
+          </select>
+          <input type="number" id="jD" placeholder="روز" min="1" max="31">
+        </div>
+        <button type="button" class="btn btn-primary btn-block" onclick="convertJ2G()">تبدیل به میلادی</button>
+        <div class="jconv-result" id="j2gResult"></div>
+        <p class="err-msg" id="j2gErr"></p>
+      </div>
+    </div>
+
+    <div class="form-card" style="margin-top:28px">
+      <h3 style="font-weight:800;font-size:1.05rem;margin-bottom:10px">📡 API عمومی تبدیل تاریخ</h3>
+      <p style="color:var(--ink-soft);font-size:.9rem;line-height:2">
+        این امکان برای توسعه‌دهندگان نیز در دسترس است؛ کافی است درخواست GET به آدرس‌های زیر بفرستید:
+        <br>
+        <code dir="ltr" style="display:inline-block;background:#f3f4f6;padding:6px 12px;border-radius:8px;margin-top:6px">/api/jalali/convert?mode=g2j&y=2026&m=10&d=18</code><br>
+        <code dir="ltr" style="display:inline-block;background:#f3f4f6;padding:6px 12px;border-radius:8px;margin-top:6px">/api/jalali/convert?mode=j2g&y=1405&m=7&d=26</code><br>
+        <code dir="ltr" style="display:inline-block;background:#f3f4f6;padding:6px 12px;border-radius:8px;margin-top:6px">/api/jalali/today</code>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function callApi(mode, y, m, d, resultId, errId) {
+  const resultEl = document.getElementById(resultId);
+  const errEl = document.getElementById(errId);
+  resultEl.classList.remove('show');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch(`/api/jalali/convert?mode=${mode}&y=${y}&m=${m}&d=${d}`);
+    const data = await res.json();
+    if (data.result !== 'ok') throw new Error(data.message || 'خطا');
+    return data;
+  } catch (e) {
+    errEl.textContent = '⛔ ' + (e.message || 'تاریخ وارد شده معتبر نیست');
+    errEl.style.display = 'block';
+    return null;
+  }
+}
+
+async function convertG2J() {
+  const y = document.getElementById('gY').value;
+  const m = document.getElementById('gM').value;
+  const d = document.getElementById('gD').value;
+  if (!y || !m || !d) return;
+  const data = await callApi('g2j', y, m, d, 'g2jResult', 'g2jErr');
+  if (!data) return;
+  const el = document.getElementById('g2jResult');
+  el.innerHTML = `
+    <div class="r-main">${data.jalali.text}</div>
+    <div class="r-sub">${data.jalali.weekday} ${data.jalali.d} ${data.jalali.month_name} ${data.jalali.y}</div>
+    <span class="r-wd">${data.jalali.weekday}</span>
+  `;
+  el.classList.add('show');
+}
+
+async function convertJ2G() {
+  const y = document.getElementById('jY').value;
+  const m = document.getElementById('jM').value;
+  const d = document.getElementById('jD').value;
+  if (!y || !m || !d) return;
+  const data = await callApi('j2g', y, m, d, 'j2gResult', 'j2gErr');
+  if (!data) return;
+  const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const el = document.getElementById('j2gResult');
+  el.innerHTML = `
+    <div class="r-main" dir="ltr">${data.gregorian.text}</div>
+    <div class="r-sub">${monthsEn[data.gregorian.m - 1]} ${data.gregorian.d}, ${data.gregorian.y}</div>
+    <span class="r-wd">${data.jalali.weekday}</span>
+  `;
+  el.classList.add('show');
+}
+</script>
+{% endblock %}

@@ -179,6 +179,90 @@ def init_db(app):
         )
     """)
 
+    # ---------- دوره‌های آموزشی آکادمی رز ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS courses (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            slug       TEXT UNIQUE NOT NULL,
+            title      TEXT NOT NULL,
+            summary    TEXT NOT NULL DEFAULT '',
+            content    TEXT NOT NULL DEFAULT '',
+            teacher    TEXT NOT NULL DEFAULT '',
+            price      TEXT NOT NULL DEFAULT 'رایگان',
+            duration   TEXT NOT NULL DEFAULT '',
+            capacity   INTEGER NOT NULL DEFAULT 0,
+            start_date TEXT NOT NULL DEFAULT '',
+            schedule   TEXT NOT NULL DEFAULT '',
+            level      TEXT NOT NULL DEFAULT 'عمومی',
+            is_open    INTEGER NOT NULL DEFAULT 1,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
+    # ---------- ثبت‌نام‌های دوره‌ها ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS course_registrations (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            tracking_code TEXT UNIQUE NOT NULL,
+            course_id     INTEGER NOT NULL,
+            first_name    TEXT NOT NULL,
+            last_name     TEXT NOT NULL,
+            national_code TEXT NOT NULL,
+            mobile        TEXT NOT NULL,
+            phone         TEXT NOT NULL DEFAULT '',
+            email         TEXT NOT NULL DEFAULT '',
+            education     TEXT NOT NULL DEFAULT '',
+            city          TEXT NOT NULL DEFAULT '',
+            note          TEXT NOT NULL DEFAULT '',
+            status        TEXT NOT NULL DEFAULT 'در انتظار بررسی',
+            admin_note    TEXT NOT NULL DEFAULT '',
+            created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+        )
+    """)
+
+    # ---------- فراخوان همکاری (فرم کامل مراکز مشاوره) ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS hr_calls (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            tracking_code     TEXT UNIQUE NOT NULL,
+            first_name        TEXT NOT NULL,
+            last_name         TEXT NOT NULL,
+            national_code     TEXT NOT NULL,
+            birth_date        TEXT NOT NULL DEFAULT '',
+            gender            TEXT NOT NULL DEFAULT '',
+            military_status   TEXT NOT NULL DEFAULT '',
+            military_file     TEXT NOT NULL DEFAULT '',
+            education_level   TEXT NOT NULL DEFAULT '',
+            education_file    TEXT NOT NULL DEFAULT '',
+            license_status    TEXT NOT NULL DEFAULT '',
+            license_file      TEXT NOT NULL DEFAULT '',
+            center_license_file TEXT NOT NULL DEFAULT '',
+            license_desc      TEXT NOT NULL DEFAULT '',
+            center_permit_file  TEXT NOT NULL DEFAULT '',
+            ownership_status  TEXT NOT NULL DEFAULT '',
+            property_file     TEXT NOT NULL DEFAULT '',
+            province          TEXT NOT NULL DEFAULT '',
+            county            TEXT NOT NULL DEFAULT '',
+            center_phone      TEXT NOT NULL DEFAULT '',
+            postal_code       TEXT NOT NULL DEFAULT '',
+            full_address      TEXT NOT NULL DEFAULT '',
+            individual_rooms  INTEGER NOT NULL DEFAULT 0,
+            group_rooms       INTEGER NOT NULL DEFAULT 0,
+            child_rooms       INTEGER NOT NULL DEFAULT 0,
+            counselors_count  INTEGER NOT NULL DEFAULT 0,
+            waiting_area      TEXT NOT NULL DEFAULT '',
+            design_acceptance TEXT NOT NULL DEFAULT '',
+            accessibility     TEXT NOT NULL DEFAULT '',
+            mobile            TEXT NOT NULL DEFAULT '',
+            national_card_file TEXT NOT NULL DEFAULT '',
+            status            TEXT NOT NULL DEFAULT 'در انتظار بررسی',
+            admin_note        TEXT NOT NULL DEFAULT '',
+            created_at        TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
     db.commit()
     db.close()
 

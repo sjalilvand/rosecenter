@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>ثبت‌نام دوره: {{ course.title }}</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><a href="{{ url_for('academy') }}">آکادمی رز</a><span class="sep">/</span><a href="{{ url_for('course_detail', slug=course.slug) }}">{{ course.title }}</a><span class="sep">/</span><span>ثبت‌نام</span></nav>
+    <p class="lead">فرم زیر را تکمیل کنید؛ کد پیگیری برای شما نمایش داده می‌شود و کارشناسان ما برای نهایی‌سازی ثبت‌نام تماس می‌گیرند.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    {% if success_code %}
+    <div class="form-card" style="max-width:680px;margin:0 auto;text-align:center">
+      <div style="font-size:3rem">🎉</div>
+      <h3 style="font-weight:800;font-size:1.3rem;margin:10px 0 6px">ثبت‌نام شما با موفقیت انجام شد!</h3>
+      <p style="color:var(--ink-soft);font-size:.92rem">دوره: <strong>{{ course.title }}</strong></p>
+      <div class="tracking-result" style="margin:18px auto">
+        <span style="font-size:.85rem;color:var(--ink-soft)">کد پیگیری ثبت‌نام شما:</span>
+        <div class="code" dir="ltr" style="text-align:right;font-size:1.3rem">{{ success_code }}</div>
+      </div>
+      <p style="font-size:.88rem;color:var(--ink-soft);margin-bottom:18px">
+        این کد را نگه دارید. وضعیت ثبت‌نام را از <a href="{{ url_for('tracking') }}?code={{ success_code }}">صفحه پیگیری درخواست</a> دنبال کنید.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <a href="{{ url_for('academy') }}" class="btn btn-primary">بازگشت به دوره‌ها</a>
+        <a href="{{ url_for('course_detail', slug=course.slug) }}" class="btn btn-outline">مشاهده صفحه دوره</a>
+      </div>
+    </div>
+
+    {% elif full %}
+    <div class="form-card" style="max-width:680px;margin:0 auto;text-align:center">
+      <div style="font-size:3rem">😕</div>
+      <h3 style="font-weight:800;font-size:1.2rem;margin:10px 0 6px">ظرفیت این دوره تکمیل شده است</h3>
+      <p style="color:var(--ink-soft);font-size:.92rem;margin-bottom:18px">می‌توانید برای اعلام ظرفیت‌های جدید با ما در تماس باشید.</p>
+      <a href="{{ url_for('academy') }}" class="btn btn-primary">بازگشت به دوره‌ها</a>
+    </div>
+
+    {% else %}
+    <div class="form-card" style="max-width:760px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <h3 style="font-weight:800;font-size:1.15rem">فرم ثبت‌نام دوره</h3>
+        <span style="font-size:.9rem;font-weight:700;color:var(--rose)">{{ course.price }}</span>
+      </div>
+      <form method="post" action="{{ url_for('course_register', course_id=course.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="form-row">
+          <div class="field">
+            <label for="reg_first">نام <span class="req">*</span></label>
+            <input type="text" id="reg_first" name="first_name" required placeholder="مثلاً: علی">
+          </div>
+          <div class="field">
+            <label for="reg_last">نام خانوادگی <span class="req">*</span></label>
+            <input type="text" id="reg_last" name="last_name" required placeholder="مثلاً: رضایی">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="reg_nc">کد ملی <span class="req">*</span></label>
+            <input type="text" id="reg_nc" name="national_code" required maxlength="10" dir="ltr" style="text-align:right" placeholder="۱۰ رقم بدون خط تیره" pattern="\d{10}" title="کد ملی باید ۱۰ رقم باشد">
+          </div>
+          <div class="field">
+            <label for="reg_mobile">شماره همراه <span class="req">*</span></label>
+            <input type="tel" id="reg_mobile" name="mobile" required maxlength="11" dir="ltr" style="text-align:right" placeholder="09123456789" pattern="09\d{9}" title="شماره همراه باید با ۰۹ شروع شده و ۱۱ رقم باشد">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="reg_phone">شماره تماس ثابت (اختیاری)</label>
+            <input type="tel" id="reg_phone" name="phone" maxlength="11" dir="ltr" style="text-align:right" placeholder="02112345678">
+          </div>
+          <div class="field">
+            <label for="reg_city">شهر (اختیاری)</label>
+            <input type="text" id="reg_city" name="city" placeholder="مثلاً: تهران">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="reg_edu">آخرین مدرک تحصیلی (اختیاری)</label>
+            <select id="reg_edu" name="education">
+              <option value="">انتخاب کنید…</option>
+              <option>دیپلم</option>
+              <option>فوق دیپلم</option>
+              <option>کارشناسی</option>
+              <option>کارشناسی ارشد</option>
+              <option>دکتری</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="reg_email">ایمیل (اختیاری)</label>
+            <input type="email" id="reg_email" name="email" dir="ltr" style="text-align:right" placeholder="you@example.com">
+          </div>
+        </div>
+        <div class="field">
+          <label for="reg_note">توضیحات (اختیاری)</label>
+          <textarea id="reg_note" name="note" placeholder="اگر سوال یا نکته‌ای درباره این دوره دارید بنویسید..."></textarea>
+        </div>
+        <div class="field">
+          <label for="reg_captcha">کد امنیتی (کپچا) <span class="req">*</span></label>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <img src="/captcha.png" alt="کپچا" width="170" height="54"
+                 style="border-radius:12px;cursor:pointer;border:1px solid var(--line)"
+                 title="برای دریافت عبارت جدید کلیک کنید"
+                 onclick="this.src='/captcha.png?t='+Date.now()">
+            <input type="text" id="reg_captcha" name="captcha" required maxlength="2" inputmode="numeric"
+                   placeholder="حاصل را وارد کنید" dir="ltr" style="text-align:right;width:160px">
+          </div>
+          <small style="color:var(--ink-soft);font-size:.8rem">نتیجه عبارت بالا را وارد کنید — با کلیک روی تصویر عبارت جدید می‌گیرید</small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">ثبت‌نام در دوره</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

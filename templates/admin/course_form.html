@@ -1,0 +1,69 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>{{ 'ویرایش دوره' if row else 'ایجاد دوره جدید' }}</span>
+    <a href="{{ url_for('admin_courses') }}" class="btn btn-outline btn-sm">بازگشت</a>
+  </div>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="field" style="margin-bottom:12px">
+      <label>عنوان دوره <span class="req">*</span></label>
+      <input type="text" name="title" required value="{{ row.title if row else '' }}" placeholder="مثلاً: دوره جامع تنظیم هیجان">
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>خلاصه (نمایش در کارت دوره)</label>
+      <textarea name="summary" rows="2" placeholder="توضیح کوتاه یک تا دو خطی">{{ row.summary if row else '' }}</textarea>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>شرح کامل دوره</label>
+      <textarea name="content" rows="6" placeholder="سرفصل‌ها، مخاطبان، پیش‌نیازها... (هر پاراگراف در یک خط)">{{ row.content if row else '' }}</textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+      <div class="field" style="margin-bottom:12px">
+        <label>مدرس</label>
+        <input type="text" name="teacher" value="{{ row.teacher if row else '' }}">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>قیمت (مثلاً «۲٬۵۰۰٬۰۰۰ تومان» یا «رایگان»)</label>
+        <input type="text" name="price" value="{{ row.price if row else 'رایگان' }}">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>مدت دوره</label>
+        <input type="text" name="duration" value="{{ row.duration if row else '' }}" placeholder="مثلاً: ۱۲ ساعت">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>ظرفیت (۰ = نامحدود)</label>
+        <input type="number" name="capacity" min="0" value="{{ row.capacity if row else 0 }}">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>تاریخ شروع (شمسی)</label>
+        <input type="text" name="start_date" value="{{ row.start_date if row else '' }}" placeholder="مثلاً: ۱۴۰۵/۰۸/۰۵">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>زمان‌بندی</label>
+        <input type="text" name="schedule" value="{{ row.schedule if row else '' }}" placeholder="مثلاً: پنجشنبه‌ها ۱۶ تا ۲۰">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>سطح</label>
+        <select name="level">
+          {% for lv in ['عمومی', 'متخصصان', 'دانشجویان'] %}
+          <option value="{{ lv }}" {{ 'selected' if row and row.level == lv }}>{{ lv }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>ترتیب نمایش</label>
+        <input type="number" name="sort_order" value="{{ row.sort_order if row else 0 }}">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" name="is_open" {{ 'checked' if (row and row.is_open) or not row }}>
+        ثبت‌نام برای این دوره باز است
+      </label>
+    </div>
+    <button type="submit" class="btn btn-primary">ذخیره دوره</button>
+  </form>
+</div>
+{% endblock %}

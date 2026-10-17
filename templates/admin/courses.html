@@ -1,0 +1,52 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>دوره‌های آموزشی</span>
+    <a href="{{ url_for('admin_course_new') }}" class="btn btn-primary btn-sm">+ دوره جدید</a>
+  </div>
+
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>عنوان</th><th>مدرس</th><th>قیمت</th><th>شروع</th>
+          <th>ظرفیت</th><th>ثبت‌نام‌شده</th><th>وضعیت</th><th>عملیات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><a href="{{ url_for('course_detail', slug=r.slug) }}" target="_blank">{{ r.title }}</a></td>
+          <td>{{ r.teacher or '—' }}</td>
+          <td>{{ r.price }}</td>
+          <td>{{ r.start_date or '—' }}</td>
+          <td>{{ r.capacity or '∞' }}</td>
+          <td><span class="code-tag">{{ r.regs }}</span></td>
+          <td>
+            {% if r.is_open %}
+            <span class="status-pill st-تأیید-شده">فعال</span>
+            {% else %}
+            <span class="status-pill st-رد-شده">غیرفعال</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="actions">
+              <a href="{{ url_for('admin_course_edit', rid=r.id) }}" class="btn btn-outline btn-sm">ویرایش</a>
+              <form method="post" action="{{ url_for('admin_course_delete', rid=r.id) }}" data-confirm="این دوره و ثبت‌نام‌های آن حذف شود؟" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">📚</div>هنوز دوره‌ای ساخته نشده است. با دکمه «دوره جدید» اولین دوره را بسازید.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -15,7 +15,43 @@
   </div>
 </section>
 
-<section class="section">
+<section class="section" id="courses">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">دوره‌های آموزشی</span>
+      <h2>ثبت‌نام آنلاین دوره‌ها</h2>
+    </div>
+    {% if courses %}
+    <div class="news-grid">
+      {% for c in courses %}
+      <article class="news-card">
+        <div class="news-card-body">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+            <span class="badge" style="background:var(--rose-soft);color:var(--rose)">{{ c.level }}</span>
+            {% if c.duration %}<span class="badge" style="background:#eef2ff;color:#4f46e5">{{ c.duration }}</span>{% endif %}
+            {% if not c.is_open %}<span class="badge" style="background:#fee2e2;color:#b91c1c">ثبت‌نام بسته است</span>
+            {% elif c.capacity and counts.get(c.id, 0) >= c.capacity %}<span class="badge" style="background:#fee2e2;color:#b91c1c">تکمیل ظرفیت</span>{% endif %}
+          </div>
+          <h3 style="font-size:1.02rem;font-weight:800;margin-bottom:8px">{{ c.title }}</h3>
+          <p style="color:var(--ink-soft);font-size:.87rem">{{ c.summary[:150] }}{% if c.summary|length > 150 %}…{% endif %}</p>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)">
+            <span style="font-size:.85rem;font-weight:700;color:var(--rose)">{{ c.price }}</span>
+            <a href="{{ url_for('course_detail', slug=c.slug) }}" class="btn btn-outline btn-sm">جزئیات و ثبت‌نام</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="text-align:center;padding:48px 16px;color:var(--ink-soft)">
+      <div class="big" style="font-size:2.4rem">🎓</div>
+      <p>در حال حاضر دوره فعالی وجود ندارد — به‌زودی دوره‌های جدید اعلام می‌شود.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section section-soft">
   <div class="container">
     <div class="section-head">
       <span class="tag">ویژگی‌های آموزشی</span>
@@ -56,7 +92,7 @@
   </div>
 </section>
 
-<section class="section section-soft">
+<section class="section">
   <div class="container">
     <div class="section-head">
       <span class="tag">پرسش‌های رایج</span>
@@ -66,8 +102,8 @@
       <details class="faq-item" open>
         <summary>چطور در دوره‌های آکادمی ثبت‌نام کنم؟<span class="plus">+</span></summary>
         <div class="faq-body">
-          به وب‌سایت <a href="{{ settings.academy_url }}" target="_blank" rel="noopener">{{ settings.academy_url }}</a> مراجعه کنید،
-          دوره مورد نظر را انتخاب کرده و مراحل ثبت‌نام آنلاین را دنبال کنید. هر دوره پیش‌نیازهای خاص خود را دارد که در صفحه توضیحات آن دوره ذکر شده است.
+          از بخش «دوره‌های آموزشی» در همین صفحه، دوره مورد نظر را انتخاب کنید و روی «جزئیات و ثبت‌نام» کلیک کنید.
+          فرم ثبت‌نام آنلاین را تکمیل کرده و کد پیگیری دریافت‌شده را نگه دارید. کارشناسان ما برای نهایی‌سازی ثبت‌نام و پرداخت با شما تماس می‌گیرند.
         </div>
       </details>
       <details class="faq-item">

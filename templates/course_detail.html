@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>{{ course.title }}</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><a href="{{ url_for('academy') }}">آکادمی رز</a><span class="sep">/</span><span>{{ course.title }}</span></nav>
+    <p class="lead">{{ course.summary }}</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container split-page">
+    <aside class="side-panel">
+      <h3>مشخصات دوره</h3>
+      <ul>
+        <li>مدرس: {{ course.teacher or 'به‌زودی اعلام می‌شود' }}</li>
+        <li>سطح دوره: {{ course.level }}</li>
+        {% if course.duration %}<li>مدت دوره: {{ course.duration }}</li>{% endif %}
+        {% if course.start_date %}<li>تاریخ شروع: {{ course.start_date }}</li>{% endif %}
+        {% if course.schedule %}<li>زمان‌بندی: {{ course.schedule }}</li>{% endif %}
+        <li>ظرفیت: {{ registered }} ثبت‌نام از {{ course.capacity or 'نامحدود' }}</li>
+      </ul>
+      <div class="side-contact">
+        <a href="tel:{{ settings.academy_phone1 }}">☎ {{ settings.academy_phone1 }}</a>
+        <a href="tel:{{ settings.academy_phone2 }}">☎ {{ settings.academy_phone2 }}</a>
+      </div>
+    </aside>
+
+    <div>
+      <div class="form-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <span style="font-size:1.3rem;font-weight:800;color:var(--rose)">{{ course.price }}</span>
+          {% if not course.is_open %}
+            <span style="background:#fee2e2;color:#b91c1c;padding:6px 14px;border-radius:99px;font-size:.85rem;font-weight:700">ثبت‌نام بسته است</span>
+          {% elif course.capacity and registered >= course.capacity %}
+            <span style="background:#fee2e2;color:#b91c1c;padding:6px 14px;border-radius:99px;font-size:.85rem;font-weight:700">تکمیل ظرفیت</span>
+          {% else %}
+            <a href="{{ url_for('course_register', course_id=course.id) }}" class="btn btn-primary">ثبت‌نام در این دوره</a>
+          {% endif %}
+        </div>
+        <div class="course-content" style="line-height:2;color:var(--ink-soft);font-size:.95rem">
+          {% for para in course.content.split('\n') if para.strip() %}
+          <p style="margin-bottom:12px">{{ para }}</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if others %}
+      <div style="margin-top:28px">
+        <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:14px">دوره‌های دیگر</h3>
+        <div class="news-grid">
+          {% for c in others %}
+          <article class="news-card">
+            <div class="news-card-body">
+              <h3 style="font-size:.95rem;font-weight:800;margin-bottom:6px">{{ c.title }}</h3>
+              <p style="color:var(--ink-soft);font-size:.85rem;margin-bottom:10px">{{ c.summary[:90] }}{% if c.summary|length > 90 %}…{% endif %}</p>
+              <a href="{{ url_for('course_detail', slug=c.slug) }}" class="btn btn-outline btn-sm">مشاهده</a>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

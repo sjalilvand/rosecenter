@@ -1,0 +1,84 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>فراخوان همکاری — {{ row.first_name }} {{ row.last_name }} (<span class="code-tag">{{ row.tracking_code }}</span>)</span>
+    <a href="{{ url_for('admin_hr_calls') }}" class="btn btn-outline btn-sm">بازگشت</a>
+  </div>
+
+  <div class="detail-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+    {% set fields = [
+      ('نام', row.first_name), ('نام خانوادگی', row.last_name),
+      ('کد ملی', row.national_code), ('تاریخ تولد', row.birth_date),
+      ('جنسیت', row.gender), ('وضعیت خدمت', row.military_status),
+      ('آخرین مدرک', row.education_level), ('وضعیت پروانه', row.license_status),
+      ('توضیحات پروانه', row.license_desc),
+      ('وضعیت مالکیت', row.ownership_status),
+      ('استان', row.province), ('شهرستان', row.county),
+      ('تلفن مرکز', row.center_phone), ('کد پستی', row.postal_code),
+      ('موبایل', row.mobile),
+      ('اتاق فردی', row.individual_rooms), ('اتاق گروهی', row.group_rooms),
+      ('اتاق کودک', row.child_rooms), ('تعداد مشاورین', row.counselors_count),
+      ('فضای انتظار', row.waiting_area), ('پذیرش طراحی', row.design_acceptance),
+      ('سهولت دسترسی', row.accessibility), ('تاریخ ثبت', row.created_at),
+    ] %}
+    {% for label, val in fields %}
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px">
+      <div style="font-size:.75rem;color:#64748b;margin-bottom:4px">{{ label }}</div>
+      <div style="font-size:.92rem;font-weight:700;color:#1e293b">{{ val or '—' }}</div>
+    </div>
+    {% endfor %}
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;grid-column:1/-1">
+      <div style="font-size:.75rem;color:#64748b;margin-bottom:4px">نشانی کامل</div>
+      <div style="font-size:.92rem;font-weight:700;color:#1e293b;line-height:2">{{ row.full_address or '—' }}</div>
+    </div>
+  </div>
+
+  <h3 style="font-weight:800;margin:22px 0 12px">📎 فایل‌های پیوست</h3>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">
+    {% set file_map = [
+      ('کارت ملی', row.national_card_file),
+      ('پایان خدمت', row.military_file),
+      ('مدرک تحصیلی', row.education_file),
+      ('پروانه', row.license_file),
+      ('پروانه مرکز', row.center_license_file),
+      ('مجوز مرکز', row.center_permit_file),
+      ('مدارک ملک', row.property_file),
+    ] %}
+    {% for label, fname in file_map %}
+      {% if fname %}
+      <a href="{{ url_for('admin_upload_file', filename=fname) }}" target="_blank" class="btn btn-outline btn-sm">
+        {{ label }} ⤓
+      </a>
+      {% endif %}
+    {% endfor %}
+    {% set has_files = row.national_card_file or row.military_file or row.education_file or row.license_file or row.center_license_file or row.center_permit_file or row.property_file %}
+    {% if not has_files %}<span style="color:#64748b;font-size:.9rem">فایلی پیوست نشده است.</span>{% endif %}
+  </div>
+
+  <div class="panel" style="margin-top:22px">
+    <div class="panel-title"><span>تغییر وضعیت و یادداشت مدیریت</span></div>
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="field" style="margin-bottom:12px">
+        <label>وضعیت</label>
+        <select name="status">
+          {% for s in REQUEST_STATUSES %}
+          <option value="{{ s }}" {{ 'selected' if row.status == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>یادداشت مدیریت (برای پیگیری داخلی)</label>
+        <textarea name="admin_note" rows="3">{{ row.admin_note }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+    </form>
+  </div>
+
+  <form method="post" action="{{ url_for('admin_hr_call_delete', rid=row.id) }}" data-confirm="این فراخوان و همه فایل‌های آن برای همیشه حذف شود؟" style="margin-top:18px">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-danger">حذف کامل این فراخوان</button>
+  </form>
+</div>
+{% endblock %}

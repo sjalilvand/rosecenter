@@ -7,7 +7,11 @@
   </div>
   <div class="stat-card">
     <span class="s-ic">🤝</span>
-    <div><b>{{ stats.cooperation }}{% if stats.cooperation_new %}<span class="badge-new">{{ stats.cooperation_new }} جدید</span>{% endif %}</b><span>درخواست همکاری</span></div>
+    <div><b>{{ stats.hr_calls }}{% if stats.hr_calls_new %}<span class="badge-new">{{ stats.hr_calls_new }} جدید</span>{% endif %}</b><span>فراخوان همکاری</span></div>
+  </div>
+  <div class="stat-card">
+    <span class="s-ic">🎓</span>
+    <div><b>{{ stats.course_regs }}{% if stats.course_regs_new %}<span class="badge-new">{{ stats.course_regs_new }} جدید</span>{% endif %}</b><span>ثبت‌نام دوره</span></div>
   </div>
   <div class="stat-card">
     <span class="s-ic">✉️</span>
@@ -19,9 +23,10 @@
   </div>
 </div>
 
-<div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+<div class="stat-grid" style="grid-template-columns:repeat(5,1fr)">
   <div class="stat-card"><span class="s-ic">📰</span><div><b>{{ stats.news }}</b><span>خبر منتشرشده</span></div></div>
   <div class="stat-card"><span class="s-ic">📍</span><div><b>{{ stats.centers }}</b><span>مرکز استانی</span></div></div>
+  <div class="stat-card"><span class="s-ic">📚</span><div><b>{{ stats.courses }}</b><span>دوره آموزشی</span></div></div>
   <div class="stat-card"><span class="s-ic">❓</span><div><b>{{ stats.faqs }}</b><span>سوال متداول</span></div></div>
   <div class="stat-card"><span class="s-ic">⭐</span><div><b>{{ stats.testimonials }}</b><span>نظر مراجعین</span></div></div>
 </div>
@@ -77,6 +82,62 @@
     </div>
     {% else %}
     <div class="empty-state"><div class="big">📭</div>هنوز پیامی دریافت نشده است.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel-grid">
+  <div class="panel">
+    <div class="panel-title">
+      آخرین فراخوان‌های همکاری
+      <a href="{{ url_for('admin_hr_calls') }}" class="btn btn-outline btn-sm">مشاهده همه</a>
+    </div>
+    {% if latest_hr %}
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>کد</th><th>نام</th><th>استان</th><th>وضعیت</th><th>تاریخ</th></tr></thead>
+        <tbody>
+          {% for h in latest_hr %}
+          <tr>
+            <td><span class="code-tag">{{ h.tracking_code }}</span></td>
+            <td><a href="{{ url_for('admin_hr_call_detail', rid=h.id) }}">{{ h.first_name }} {{ h.last_name }}</a></td>
+            <td>{{ h.province or '—' }}</td>
+            <td><span class="status-pill st-{{ h.status | replace(' ', '-') }}">{{ h.status }}</span></td>
+            <td>{{ h.created_at[:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="big">📭</div>هنوز فراخوانی ثبت نشده است.</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      آخرین ثبت‌نام‌های دوره
+      <a href="{{ url_for('admin_course_regs') }}" class="btn btn-outline btn-sm">مشاهده همه</a>
+    </div>
+    {% if latest_regs %}
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>کد</th><th>نام</th><th>دوره</th><th>وضعیت</th><th>تاریخ</th></tr></thead>
+        <tbody>
+          {% for r in latest_regs %}
+          <tr>
+            <td><span class="code-tag">{{ r.tracking_code }}</span></td>
+            <td><a href="{{ url_for('admin_course_reg_detail', rid=r.id) }}">{{ r.first_name }} {{ r.last_name }}</a></td>
+            <td>{{ r.course_title }}</td>
+            <td><span class="status-pill st-{{ r.status | replace(' ', '-') }}">{{ r.status }}</span></td>
+            <td>{{ r.created_at[:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="big">📭</div>هنوز ثبت‌نامی انجام نشده است.</div>
     {% endif %}
   </div>
 </div>
