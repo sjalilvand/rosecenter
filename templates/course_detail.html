@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}{{ course['title'] }} - آکادمی رز{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb">
+      <a href="{{ url_for('main.home') }}">خانه</a> /
+      <a href="{{ url_for('main.academy') }}">آکادمی رز</a> /
+      <span>{{ course['title'] }}</span>
+    </nav>
+    <div class="page-hero-icon">{{ '🎓' if course['level'] == 'عمومی' else '📚' }}</div>
+    <h1>{{ course['title'] }}</h1>
+    <p><span class="chip">{{ course['level'] }}</span></p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container detail-grid">
+    <article class="detail-main">
+      <div class="course-info-row">
+        {% if course['teacher'] %}<div class="info-pill"><strong>مدرس</strong>{{ course['teacher'] }}</div>{% endif %}
+        {% if course['duration'] %}<div class="info-pill"><strong>مدت</strong>{{ course['duration'] }}</div>{% endif %}
+        {% if course['start_date'] %}<div class="info-pill"><strong>شروع</strong>{{ course['start_date'] }}</div>{% endif %}
+        {% if course['price'] %}<div class="info-pill"><strong>شهریه</strong>{{ course['price'] }}</div>{% endif %}
+        {% if course['capacity'] %}<div class="info-pill"><strong>ظرفیت</strong>{{ course['capacity']|fa_num }} نفر</div>{% endif %}
+      </div>
+      {% for para in course['content'].split('\n\n') if para.strip() %}
+      <p>{{ para.strip() }}</p>
+      {% endfor %}
+    </article>
+
+    <aside class="detail-side">
+      <div class="side-card">
+        <h4>فرم ثبت‌نام دوره</h4>
+        <form method="post" class="form">
+          <div class="form-group">
+            <label for="full_name">نام و نام خانوادگی <span class="req">*</span></label>
+            <input type="text" id="full_name" name="full_name" required>
+          </div>
+          <div class="form-group">
+            <label for="phone">شماره تماس <span class="req">*</span></label>
+            <input type="tel" id="phone" name="phone" required placeholder="09xxxxxxxxx">
+          </div>
+          <div class="form-group">
+            <label for="email">ایمیل</label>
+            <input type="email" id="email" name="email">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">ثبت‌نام در دوره</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

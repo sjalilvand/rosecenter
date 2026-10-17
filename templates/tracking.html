@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}پیگیری درخواست - {{ settings.get('site_name') }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>پیگیری درخواست</h1>
+    <p>با ثبت شماره پیگیری، روند درخواست خود را مشاهده کنید</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container narrow">
+    <div class="card form-card">
+      <form method="get" class="form track-form">
+        <div class="form-group">
+          <label for="code">شماره پیگیری <span class="req">*</span></label>
+          <input type="text" id="code" name="code" value="{{ code }}" placeholder="مثلاً CNS-260101-12345" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">استعلام وضعیت</button>
+      </form>
+    </div>
+
+    {% if result %}
+    {% set r = result['row'] %}
+    <div class="card result-card">
+      <div class="result-head">
+        <div>
+          <span class="chip">{{ result['type'] }}</span>
+          <h2>کد پیگیری: <span class="ltr">{{ r['tracking_code'] }}</span></h2>
+        </div>
+        <span class="badge badge-{{ STATUS_CLASS.get(r['status'], 'muted') }}">{{ r['status']|status_label }}</span>
+      </div>
+
+      <div class="timeline">
+        <div class="tl-step {{ 'active' if r['status'] in ['pending','in_progress','done'] }}">
+          <span class="tl-dot"></span>
+          <div><strong>ثبت درخواست</strong><small>{{ r['created_at']|jdate(with_time=True) }}</small></div>
+        </div>
+        <div class="tl-step {{ 'active' if r['status'] in ['in_progress','done'] }}">
+          <span class="tl-dot"></span>
+          <div><strong>در حال بررسی توسط کارشناسان</strong></div>
+        </div>
+        <div class="tl-step {{ 'active' if r['status'] == 'done' }}">
+          <span class="tl-dot"></span>
+          <div><strong>تکمیل و اعلام نتیجه</strong></div>
+        </div>
+      </div>
+
+      <table class="detail-table">
+        {% if r['full_name'] is defined and r['full_name'] %}<tr><th>نام</th><td>{{ r['full_name'] }}</td></tr>{% endif %}
+        {% if r['name'] is defined and r['name'] %}<tr><th>نام</th><td>{{ r['name'] }}</td></tr>{% endif %}
+        {% if r['phone'] is defined and r['phone'] %}<tr><th>تلفن</th><td class="ltr">{{ r['phone'] }}</td></tr>{% endif %}
+        {% if r['service_type'] is defined and r['service_type'] %}<tr><th>نوع خدمت</th><td>{{ r['service_type'] }}</td></tr>{% endif %}
+        {% if r['preferred_date'] is defined and r['preferred_date'] %}<tr><th>تاریخ نوبت</th><td>{{ r['preferred_date']|jdate }} ساعت {{ r['preferred_time']|fa_num }}</td></tr>{% endif %}
+        {% if r['course_id'] is defined %}<tr><th>شناسه دوره</th><td>{{ r['course_id']|fa_num }}</td></tr>{% endif %}
+        {% if r['kind'] is defined and r['kind'] %}<tr><th>نوع پیام</th><td>{{ r['kind'] }}</td></tr>{% endif %}
+        {% if r['description'] is defined and r['description'] %}<tr><th>توضیحات</th><td>{{ r['description'] }}</td></tr>{% endif %}
+        {% if r['message'] is defined and r['message'] %}<tr><th>متن</th><td>{{ r['message'] }}</td></tr>{% endif %}
+      </table>
+    </div>
+    {% elif code %}
+    <div class="empty-state">
+      <p>هیچ درخواستی با کد <strong class="ltr">{{ code }}</strong> یافت نشد.</p>
+      <p class="muted">لطفاً کد پیگیری را بررسی کنید یا با پشتیبانی تماس بگیرید.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

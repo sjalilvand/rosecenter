@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}ثبت موفق - {{ settings.get('site_name') }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container narrow">
+    <div class="success-box">
+      <div class="success-icon">✓</div>
+      <h1>{{ title }}</h1>
+      <p>{{ desc }}</p>
+      <div class="code-box">
+        <small>شماره پیگیری شما</small>
+        <strong class="ltr">{{ code }}</strong>
+      </div>
+      <p class="muted">لطفاً این شماره را یادداشت کنید. برای مشاهده وضعیت درخواست، از بخش <a href="{{ url_for('main.tracking') }}?code={{ code }}">پیگیری درخواست</a> استفاده نمایید.</p>
+      <div class="hero-actions center mt-2">
+        <a href="{{ url_for('main.tracking') }}?code={{ code }}" class="btn btn-primary">پیگیری درخواست</a>
+        <a href="{{ url_for('main.home') }}" class="btn btn-outline">بازگشت به صفحه اصلی</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

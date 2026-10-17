@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}اخبار و اطلاعیه‌ها - {{ settings.get('site_name') }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>اخبار و اطلاعیه‌ها</h1>
+    <p>آخرین رویدادها، اطلاعیه‌ها و خبرهای مرکز رز</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="grid grid-3">
+      {% for n in items %}
+      <a href="{{ url_for('main.news_detail', slug=n['slug']) }}" class="card news-card reveal">
+        <div class="news-date">{{ n['created_at']|jdate }}</div>
+        <h3>{{ n['title'] }}</h3>
+        <p>{{ n['summary'][:140] }}{% if n['summary']|length > 140 %}…{% endif %}</p>
+        <span class="card-link">ادامه مطلب ←</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% if not items %}
+    <div class="empty-state">
+      <p>هنوز خبری منتشر نشده است.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

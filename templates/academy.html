@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}آکادمی رز - {{ settings.get('site_name') }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>آکادمی رز</h1>
+    <p>دوره‌های عمومی و کارگاه‌های تخصصی روانشناسی و مشاوره</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="grid grid-3">
+      {% for c in courses %}
+      <a href="{{ url_for('main.course_detail', slug=c['slug']) }}" class="card course-card reveal">
+        <div class="course-badge {{ 'pro' if c['level'] == 'تخصصی' else '' }}">{{ c['level'] }}</div>
+        <div class="card-icon">{{ '🎓' if c['level'] == 'عمومی' else '📚' }}</div>
+        <h3>{{ c['title'] }}</h3>
+        <p>{{ c['summary'][:110] }}{% if c['summary']|length > 110 %}…{% endif %}</p>
+        <div class="course-meta">
+          {% if c['teacher'] %}<span>👤 {{ c['teacher'] }}</span>{% endif %}
+          {% if c['duration'] %}<span>⏱ {{ c['duration'] }}</span>{% endif %}
+          {% if c['price'] %}<span>💰 {{ c['price'] }}</span>{% endif %}
+        </div>
+        <span class="card-link">جزئیات و ثبت‌نام ←</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% if not courses %}
+    <div class="empty-state">
+      <p>در حال حاضر دوره‌ای برای ثبت‌نام موجود نیست.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

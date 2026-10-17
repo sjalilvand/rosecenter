@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ settings.get('site_name', 'مرکز خدمات روانشناسی و مشاوره رز') }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ settings.get('footer_text', 'کلینیک‌های زنجیره‌ای روانشناسی و مشاوره رز - روان‌درمانی، مشاوره و آموزش') }}{% endblock %}">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- نوار بالایی -->
+<div class="topbar">
+  <div class="container topbar-inner">
+    <div class="topbar-contact">
+      <span>📞 {{ settings.get('phone1', '۰۲۱-۹۱۶۹۱۵۰۶') }}</span>
+      <span class="hide-sm">✉️ {{ settings.get('email', 'rosepsychology2@gmail.com') }}</span>
+    </div>
+    <div class="topbar-links">
+      <a href="{{ url_for('main.tracking') }}">پیگیری درخواست</a>
+      <a href="{{ url_for('main.feedback') }}">پیشنهاد و انتقاد</a>
+    </div>
+  </div>
+</div>
+
+<!-- هدر -->
+<header class="header" id="header">
+  <div class="container header-inner">
+    <a href="{{ url_for('main.home') }}" class="brand">
+      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="لوگو" class="brand-logo">
+      <div class="brand-text">
+        <strong>مرکز مشاوره رز</strong>
+        <small>{{ settings.get('tagline', 'مسیر شما به سوی زندگی بهتر') }}</small>
+      </div>
+    </a>
+
+    <nav class="nav" id="nav">
+      <ul>
+        <li><a href="{{ url_for('main.home') }}">خانه</a></li>
+        <li class="has-dropdown">
+          <a href="{{ url_for('main.services') }}">خدمات</a>
+          <ul class="dropdown">
+            <li><a href="{{ url_for('main.services') }}#روان-درمانی">روان درمانی</a></li>
+            <li><a href="{{ url_for('main.services') }}#مشاوره">مشاوره</a></li>
+            <li><a href="{{ url_for('main.services') }}#آموزش">آموزش</a></li>
+            <li><a href="{{ url_for('main.services') }}#سایر-خدمات">سایر خدمات</a></li>
+          </ul>
+        </li>
+        <li><a href="{{ url_for('main.centers') }}">مراکز استانی</a></li>
+        <li><a href="{{ url_for('main.cooperation') }}">درخواست همکاری</a></li>
+        <li><a href="{{ url_for('main.academy') }}">آکادمی رز</a></li>
+        <li><a href="{{ url_for('main.news') }}">اخبار و اطلاعیه‌ها</a></li>
+        <li><a href="{{ url_for('main.about') }}">درباره ما</a></li>
+        <li><a href="{{ url_for('main.contact') }}">تماس با ما</a></li>
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <a href="{{ url_for('main.consultation') }}" class="btn btn-primary btn-sm">درخواست مشاوره</a>
+      <button class="menu-toggle" id="menuToggle" aria-label="منو">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- پیام‌های سیستم -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="container flashes">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">
+      <span>{{ '✅' if category == 'success' else '⚠️' }} {{ message }}</span>
+      <button onclick="this.parentElement.remove()">×</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<!-- محتوای اصلی -->
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<!-- فوتر -->
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-col">
+      <div class="brand brand-light">
+        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="لوگو" class="brand-logo">
+        <strong>{{ settings.get('site_name', 'مرکز خدمات روانشناسی و مشاوره رز') }}</strong>
+      </div>
+      <p>{{ settings.get('footer_text', 'در کلینیک‌های زنجیره‌ای روانشناسی و مشاوره رز، ما همراه شما هستیم تا در مسیر زندگی، رشد و احساس آرامش کنید. تیمی از روانشناسان و مشاوران متخصص با بهره‌گیری از روش‌های علمی، راهکارهای مؤثری برای دغدغه‌های شما ارائه می‌دهند.') }}</p>
+    </div>
+    <div class="footer-col">
+      <h4>لینک‌های مفید</h4>
+      <ul>
+        <li><a href="{{ url_for('main.home') }}">صفحه اصلی</a></li>
+        <li><a href="{{ url_for('main.centers') }}">مراکز استانی</a></li>
+        <li><a href="{{ url_for('main.cooperation') }}">درخواست همکاری</a></li>
+        <li><a href="{{ url_for('main.news') }}">اخبار و اطلاعیه‌ها</a></li>
+        <li><a href="{{ url_for('main.about') }}">درباره ما</a></li>
+        <li><a href="{{ url_for('main.contact') }}">تماس با ما</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>خدمات ما</h4>
+      <ul>
+        <li><a href="{{ url_for('main.services') }}#مشاوره">مشاوره</a></li>
+        <li><a href="{{ url_for('main.services') }}#روان-درمانی">روان درمانی</a></li>
+        <li><a href="{{ url_for('main.services') }}#آموزش">آموزش</a></li>
+        <li><a href="{{ url_for('main.appointment') }}">رزرو نوبت آنلاین</a></li>
+        <li><a href="{{ url_for('main.academy') }}">آکادمی رز</a></li>
+        <li><a href="{{ url_for('main.tracking') }}">پیگیری درخواست</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>اطلاعات تماس</h4>
+      <ul class="footer-contact">
+        <li>📍 {{ settings.get('address', 'خیابان پاسداران، بالاتر از میدان نوبنیاد، بین کوهستان ششم و هفتم، جنب بانک کشاورزی، پلاک 620') }}</li>
+        <li>📞 {{ settings.get('phone1', '۰۲۱-۹۱۶۹۱۵۰۶') }}<br>📞 {{ settings.get('phone2', '۰۲۱-۲۶۲۴۶۲۸۲') }}</li>
+        <li>✉️ {{ settings.get('email', 'rosepsychology2@gmail.com') }}</li>
+        <li>🕘 {{ settings.get('working_hours', 'شنبه تا پنجشنبه، ۹ تا ۲۰') }}</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      © {{ now_year }} تمامی حقوق برای {{ settings.get('site_name', 'مرکز خدمات روانشناسی و مشاوره رز') }} محفوظ است.
+    </div>
+  </div>
+</footer>
+
+<button class="back-top" id="backTop" aria-label="بازگشت به بالا">↑</button>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

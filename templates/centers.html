@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}مراکز استانی - {{ settings.get('site_name') }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>مراکز استانی</h1>
+    <p>شبکه کلینیک‌های زنجیره‌ای روانشناسی و مشاوره رز در سراسر کشور</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    {% for province, items in grouped.items() %}
+    <div class="service-group">
+      <div class="section-head right">
+        <h2>📍 استان {{ province }}</h2>
+      </div>
+      <div class="grid grid-3">
+        {% for c in items %}
+        <div class="card center-card reveal">
+          <h3>{{ c['name'] }}</h3>
+          {% if c['city'] %}<span class="chip">{{ c['city'] }}</span>{% endif %}
+          <p>📍 {{ c['address'] }}</p>
+          {% if c['phone'] %}<p>📞 {{ c['phone'] }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    {% if not grouped %}
+    <div class="empty-state">
+      <p>هنوز مرکزی ثبت نشده است.</p>
+    </div>
+    {% endif %}
+
+    <div class="cta-banner reveal">
+      <div>
+        <h3>می‌خواهید در شهر شما مرکز جدیدی افتتاح شود؟</h3>
+        <p>درخواست همکاری خود را ثبت کنید تا درباره راه‌اندازی مرکز در استان شما گفت‌وگو کنیم.</p>
+      </div>
+      <a href="{{ url_for('main.cooperation') }}" class="btn btn-light btn-lg">درخواست همکاری</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

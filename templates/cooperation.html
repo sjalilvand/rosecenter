@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}درخواست همکاری - {{ settings.get('site_name') }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>درخواست همکاری</h1>
+    <p>به بزرگ‌ترین شبکه کنشگران متخصص علوم یاورانه کشور بپیوندید</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container detail-grid">
+    <div class="detail-main">
+      <div class="card form-card">
+        <h2>فرم درخواست همکاری</h2>
+        <p class="muted">اطلاعات خود را تکمیل کنید؛ پس از بررسی، کارشناسان ما با شما تماس خواهند گرفت.</p>
+        <form method="post" class="form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="full_name">نام و نام خانوادگی <span class="req">*</span></label>
+              <input type="text" id="full_name" name="full_name" required>
+            </div>
+            <div class="form-group">
+              <label for="phone">شماره تماس <span class="req">*</span></label>
+              <input type="tel" id="phone" name="phone" required placeholder="09xxxxxxxxx">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email">ایمیل</label>
+              <input type="email" id="email" name="email">
+            </div>
+            <div class="form-group">
+              <label for="education">مدرک تحصیلی</label>
+              <input type="text" id="education" name="education" placeholder="مثلاً کارشناسی ارشد روانشناسی بالینی">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="field">زمینه تخصصی</label>
+            <input type="text" id="field" name="field" placeholder="مثلاً روان‌درمانی کودک، زوج‌درمانی، مشاوره شغلی">
+          </div>
+          <div class="form-group">
+            <label for="message">توضیحات و سوابق</label>
+            <textarea id="message" name="message" rows="5" placeholder="سوابق کاری، حوزه فعالیت دلخواه و توضیحات تکمیلی"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg btn-block">ثبت درخواست همکاری</button>
+        </form>
+      </div>
+    </div>
+    <aside class="detail-side">
+      <div class="side-card">
+        <h4>چه کسانی می‌توانند همکاری کنند؟</h4>
+        <ul class="checklist">
+          <li>روانشناسان و مشاوران دارای مجوز</li>
+          <li>دانشجویان تحصیلات تکمیلی روانشناسی</li>
+          <li>مدرسان و کارگاه‌گردان تخصصی</li>
+          <li>علاقه‌مندان به راه‌اندازی مرکز استانی</li>
+        </ul>
+      </div>
+      <div class="side-card">
+        <h4>فرآیند بررسی</h4>
+        <ol class="steps">
+          <li>ثبت درخواست و دریافت کد پیگیری</li>
+          <li>بررسی اطلاعات توسط واحد پذیرش</li>
+          <li>مصاحبه و ارزیابی تخصصی</li>
+          <li>امضای قرارداد دیجیتال</li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

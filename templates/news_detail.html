@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}{{ item['title'] }} - {{ settings.get('site_name') }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb">
+      <a href="{{ url_for('main.home') }}">خانه</a> /
+      <a href="{{ url_for('main.news') }}">اخبار</a> /
+      <span>{{ item['title'][:30] }}</span>
+    </nav>
+    <h1>{{ item['title'] }}</h1>
+    <p>{{ item['created_at']|jdate(with_time=True) }}</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container detail-grid">
+    <article class="detail-main">
+      {% if item['summary'] %}<p class="lead">{{ item['summary'] }}</p>{% endif %}
+      {% for para in item['content'].split('\n\n') if para.strip() %}
+      <p>{{ para.strip() }}</p>
+      {% endfor %}
+    </article>
+    <aside class="detail-side">
+      {% if latest %}
+      <div class="side-card">
+        <h4>اخبار دیگر</h4>
+        <ul class="side-links">
+          {% for l in latest %}
+          <li><a href="{{ url_for('main.news_detail', slug=l['slug']) }}">📰 {{ l['title'] }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      <div class="side-card">
+        <h4>با ما در ارتباط باشید</h4>
+        <a href="{{ url_for('main.consultation') }}" class="btn btn-primary btn-block">درخواست مشاوره</a>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

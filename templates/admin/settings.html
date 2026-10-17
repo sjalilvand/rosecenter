@@ -1,0 +1,23 @@
+{% extends 'admin/base.html' %}
+{% block title %}تنظیمات{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>⚙️ تنظیمات سایت</h1>
+  <p>اطلاعات تماس و متن‌های عمومی سایت</p>
+</div>
+
+<div class="panel form-panel">
+  <form method="post" class="form">
+    {% for k, label in settings_keys %}
+    <div class="form-group">
+      <label for="s-{{ k }}">{{ label }}</label>
+      <input type="text" id="s-{{ k }}" name="{{ k }}" value="{{ current.get(k, '') }}">
+    </div>
+    {% endfor %}
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-lg">ذخیره تنظیمات</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

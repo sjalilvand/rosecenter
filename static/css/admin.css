@@ -1,0 +1,337 @@
+/* ============================================================
+   استایل پنل مدیریت
+   ============================================================ */
+:root {
+  --primary: #7c3aed;
+  --primary-dark: #5b21b6;
+  --primary-light: #ede9fe;
+  --accent: #e11d48;
+  --ink: #1e1b4b;
+  --ink-soft: #312e5e;
+  --muted: #6b7280;
+  --bg: #f4f2fa;
+  --card: #ffffff;
+  --border: #e5e2f0;
+  --radius: 14px;
+  --shadow: 0 6px 20px rgba(30, 27, 75, .07);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body.admin-body, body.login-body {
+  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.8;
+  font-size: 15px;
+}
+.ltr { direction: ltr; unicode-bidi: embed; }
+.muted { color: var(--muted); }
+.center { text-align: center; }
+.mt-2 { margin-top: 30px; }
+.mb-1 { margin-bottom: 14px; }
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { color: var(--primary-dark); }
+h1, h2, h3, h4 { font-weight: 800; }
+
+/* ---------------- دکمه‌ها ---------------- */
+.btn {
+  display: inline-block;
+  padding: 9px 22px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-lg { padding: 12px 30px; font-size: 1rem; }
+.btn-xs { padding: 4px 12px; font-size: .78rem; border-radius: 8px; }
+.btn-block { display: block; width: 100%; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); color: #fff; }
+.btn-outline { border-color: var(--primary); color: var(--primary); background: transparent; }
+.btn-outline:hover { background: var(--primary-light); }
+.btn-ghost { background: #f1eefb; color: var(--ink-soft); }
+.btn-ghost:hover { background: #e5e0f7; }
+.btn-danger { background: #fee2e2; color: #b91c1c; }
+.btn-danger:hover { background: #fecaca; }
+
+/* ---------------- لاگین ---------------- */
+.login-body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #1e1b4b 0%, #3b2f7d 55%, #6d28d9 120%);
+  padding: 20px;
+}
+.login-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.4);
+  padding: 44px 40px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+.login-logo { width: 64px; height: 64px; margin-bottom: 12px; }
+.login-card h1 { font-size: 1.3rem; margin-bottom: 2px; }
+.login-card .muted { margin-bottom: 22px; font-size: .88rem; }
+.login-card .flash { text-align: right; margin-bottom: 16px; }
+.back-link { display: inline-block; margin-top: 20px; font-size: .85rem; color: var(--muted); }
+
+/* ---------------- سایدبار ---------------- */
+.admin-body { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 250px;
+  background: #1e1b4b;
+  color: #c7c0ea;
+  position: fixed;
+  top: 0; bottom: 0; right: 0;
+  overflow-y: auto;
+  z-index: 100;
+  transition: transform .3s;
+}
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.sidebar-head img { width: 42px; height: 42px; }
+.sidebar-head strong { color: #fff; display: block; font-size: .95rem; }
+.sidebar-head small { font-size: .75rem; }
+.sidebar-nav { padding: 14px 12px; }
+.sidebar-nav a {
+  display: block;
+  padding: 9px 14px;
+  color: #c7c0ea;
+  border-radius: 10px;
+  font-size: .88rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.sidebar-nav a:hover { background: rgba(255,255,255,.08); color: #fff; }
+.sidebar-nav a.active { background: var(--primary); color: #fff; }
+.sidebar-nav a.logout-link { color: #fda4af; }
+.nav-group-title {
+  font-size: .72rem;
+  color: #8378b8;
+  font-weight: 700;
+  padding: 14px 14px 6px;
+  letter-spacing: .5px;
+}
+
+.admin-main {
+  flex: 1;
+  margin-right: 250px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.admin-topbar {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.sidebar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+.admin-user { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: .9rem; }
+.avatar {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, #7c3aed, #e11d48);
+  color: #fff;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800;
+}
+.avatar.sm { width: 32px; height: 32px; font-size: .85rem; }
+
+.admin-content { padding: 28px 24px; flex: 1; }
+
+/* ---------------- پیام‌ها ---------------- */
+.flashes { margin-bottom: 6px; }
+.flash {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 16px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font-size: .88rem;
+  border: 1px solid;
+}
+.flash button { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: inherit; opacity: .6; }
+.flash-success { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+.flash-error { background: #fff1f2; border-color: #fecdd3; color: #9f1239; }
+
+/* ---------------- سربرگ صفحه ---------------- */
+.page-head { margin-bottom: 24px; }
+.page-head.row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.page-head h1 { font-size: 1.35rem; margin-bottom: 2px; }
+.page-head p { color: var(--muted); font-size: .88rem; }
+
+/* ---------------- کارت آمار ---------------- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  transition: transform .2s;
+}
+.stat-card:hover { transform: translateY(-4px); color: var(--ink); }
+.stat-icon {
+  width: 52px; height: 52px;
+  background: var(--primary-light);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+.stat-card strong { font-size: 1.5rem; display: block; line-height: 1.4; }
+.stat-card small { color: var(--muted); font-size: .82rem; }
+
+/* ---------------- پنل‌ها ---------------- */
+.panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.panel-head h2 { font-size: 1.02rem; }
+.panel-head a { font-size: .84rem; font-weight: 700; }
+.form-panel { max-width: 720px; }
+.narrow-panel { max-width: 460px; margin: 0 auto; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.two-col .panel { margin-bottom: 0; }
+
+/* ---------------- جدول ---------------- */
+.table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.table th, .table td {
+  padding: 11px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.table th { background: #f6f4fb; color: var(--ink-soft); font-size: .8rem; white-space: nowrap; }
+.table tbody tr:hover { background: #faf9fe; }
+.table td.actions { white-space: nowrap; }
+.table td.actions form { display: inline; }
+.table .btn-xs { margin-left: 4px; }
+
+/* ---------------- نشان‌ها ---------------- */
+.badge {
+  display: inline-block;
+  padding: 3px 13px;
+  border-radius: 999px;
+  font-size: .76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-ok { background: #dcfce7; color: #16a34a; }
+.badge-warn { background: #fef9c3; color: #a16207; }
+.badge-info { background: #dbeafe; color: #1d4ed8; }
+.badge-bad { background: #fee2e2; color: #b91c1c; }
+.badge-muted { background: #f3f4f6; color: #6b7280; }
+
+/* ---------------- فیلتر وضعیت ---------------- */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.chip {
+  display: inline-block;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--ink-soft);
+  font-size: .82rem;
+  font-weight: 700;
+  padding: 5px 16px;
+  border-radius: 999px;
+}
+.chip:hover { border-color: var(--primary); color: var(--primary); }
+.chip-active { background: var(--primary); border-color: var(--primary); color: #fff !important; }
+
+/* ---------------- فرم‌ها ---------------- */
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block;
+  font-size: .88rem;
+  font-weight: 700;
+  margin-bottom: 7px;
+  color: var(--ink-soft);
+}
+.req { color: var(--accent); }
+.form input, .form select, .form textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: .92rem;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  transition: border-color .2s, box-shadow .2s;
+}
+.form input:focus, .form select:focus, .form textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(124,58,237,.1);
+}
+.form textarea { resize: vertical; }
+.checkbox-group input[type="checkbox"] { width: auto; }
+.switch-label {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.switch-label input { width: 20px; height: 20px; accent-color: var(--primary); }
+.form-actions { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+
+/* ---------------- ریسپانسیو ---------------- */
+@media (max-width: 1024px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .two-col { grid-template-columns: 1fr; gap: 24px; }
+}
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(100%); }
+  .sidebar.open { transform: translateX(0); }
+  .admin-main { margin-right: 0; }
+  .sidebar-toggle { display: block; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .table { display: block; overflow-x: auto; white-space: nowrap; }
+}

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}درخواست مشاوره - {{ settings.get('site_name') }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>درخواست مشاوره</h1>
+    <p>فرصتی برای بررسی نگرانی‌ها و شناخت مسیر زندگی</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container detail-grid">
+    <div class="detail-main">
+      <div class="grid grid-2 mb-2">
+        {% for t in ['مشاوره فردی','مشاوره خانواده و پیش از ازدواج','مشاوره شغلی و تحصیلی','مشاوره کودک و نوجوان'] %}
+        <div class="card mini-card">
+          <div class="card-icon sm">💬</div>
+          <div><h3>{{ t }}</h3></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="card form-card">
+        <h2>فرم درخواست مشاوره</h2>
+        <p class="muted">پس از ثبت درخواست، یک <strong>شماره پیگیری</strong> دریافت می‌کنید و همکاران ما حداکثر تا ۲۴ ساعت کاری با شما تماس خواهند گرفت.</p>
+        <form method="post" class="form">
+          <div class="form-group">
+            <label for="service_type">نوع مشاوره <span class="req">*</span></label>
+            <select id="service_type" name="service_type" required>
+              {% for t in consult_types %}
+              <option value="{{ t }}">{{ t }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="full_name">نام و نام خانوادگی <span class="req">*</span></label>
+              <input type="text" id="full_name" name="full_name" required>
+            </div>
+            <div class="form-group">
+              <label for="phone">شماره تماس <span class="req">*</span></label>
+              <input type="tel" id="phone" name="phone" required placeholder="09xxxxxxxxx">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email">ایمیل</label>
+              <input type="email" id="email" name="email">
+            </div>
+            <div class="form-group">
+              <label for="subject">موضوع</label>
+              <input type="text" id="subject" name="subject" placeholder="مثلاً مدیریت اضطراب">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="description">توضیحات <span class="req">*</span></label>
+            <textarea id="description" name="description" rows="5" required placeholder="به‌طور خلاصه موضوعی که می‌خواهید درباره آن مشاوره بگیرید را شرح دهید"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg btn-block">ثبت درخواست مشاوره</button>
+        </form>
+      </div>
+    </div>
+
+    <aside class="detail-side">
+      <div class="side-card">
+        <h4>مشاوره تلفنی و آنلاین</h4>
+        <p>مشاوره آنلاین و تلفنی به عنوان یک روش انعطاف‌پذیر، دسترسی راحت به حمایت روانی و راهنمایی در تصمیم‌گیری‌های مهم را فراهم می‌کند.</p>
+        <a href="{{ url_for('main.appointment') }}" class="btn btn-outline btn-block">رزرو نوبت آنلاین</a>
+      </div>
+      <div class="side-card">
+        <h4>قبلاً درخواست داده‌اید؟</h4>
+        <p>با ثبت شماره پیگیری، روند درخواست خود را مشاهده کنید.</p>
+        <a href="{{ url_for('main.tracking') }}" class="btn btn-ghost btn-block">پیگیری درخواست</a>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

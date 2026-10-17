@@ -1,0 +1,18 @@
+# پایتون
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# دیتابیس
+*.db
+*.sqlite3
+
+# محیط
+.env
+.DS_Store
+
+# ویرایشگر
+.vscode/
+.idea/

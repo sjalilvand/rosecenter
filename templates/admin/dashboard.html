@@ -1,0 +1,71 @@
+{% extends 'admin/base.html' %}
+{% block title %}داشبورد{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>داشبورد</h1>
+  <p>خلاصه وضعیت مرکز رز در یک نگاه</p>
+</div>
+
+<div class="stat-grid">
+  {% for label, value, icon, link in stats %}
+  <a href="{{ url_for('admin.entity_list', key=link) }}" class="stat-card">
+    <span class="stat-icon">{{ icon }}</span>
+    <div>
+      <strong>{{ value|fa_num }}</strong>
+      <small>{{ label }}</small>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="two-col">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>آخرین درخواست‌های مشاوره</h2>
+      <a href="{{ url_for('admin.entity_list', key='consultations') }}">مشاهده همه ←</a>
+    </div>
+    <table class="table">
+      <thead>
+        <tr><th>کد پیگیری</th><th>نام</th><th>نوع</th><th>وضعیت</th></tr>
+      </thead>
+      <tbody>
+        {% for c in latest_consultations %}
+        <tr>
+          <td class="ltr">{{ c['tracking_code'] }}</td>
+          <td>{{ c['full_name'] }}</td>
+          <td>{{ c['service_type'] }}</td>
+          <td><span class="badge badge-{{ STATUS_CLASS.get(c['status'], 'muted') }}">{{ c['status']|status_label }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted center">موردی ثبت نشده است</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>آخرین نوبت‌ها</h2>
+      <a href="{{ url_for('admin.entity_list', key='appointments') }}">مشاهده همه ←</a>
+    </div>
+    <table class="table">
+      <thead>
+        <tr><th>کد پیگیری</th><th>نام</th><th>تاریخ</th><th>وضعیت</th></tr>
+      </thead>
+      <tbody>
+        {% for a in latest_appointments %}
+        <tr>
+          <td class="ltr">{{ a['tracking_code'] }}</td>
+          <td>{{ a['full_name'] }}</td>
+          <td>{{ a['preferred_date']|jdate }} {{ a['preferred_time']|fa_num }}</td>
+          <td><span class="badge badge-{{ STATUS_CLASS.get(a['status'], 'muted') }}">{{ a['status']|status_label }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted center">موردی ثبت نشده است</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
