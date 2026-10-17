@@ -1,0 +1,42 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel" style="max-width:760px">
+  <div class="panel-title">
+    جزئیات درخواست نوبت
+    <a href="{{ url_for('admin_bookings') }}" class="btn btn-outline btn-sm">بازگشت به فهرست</a>
+  </div>
+
+  <dl class="detail-grid">
+    <div class="detail-item"><dt>کد پیگیری</dt><dd><span class="code-tag">{{ row.tracking_code }}</span></dd></div>
+    <div class="detail-item"><dt>وضعیت فعلی</dt><dd><span class="status-pill st-{{ row.status | replace(' ', '-') }}">{{ row.status }}</span></dd></div>
+    <div class="detail-item"><dt>نام و نام خانوادگی</dt><dd>{{ row.full_name }}</dd></div>
+    <div class="detail-item"><dt>شماره تماس</dt><dd dir="ltr" style="text-align:right">{{ row.phone }}</dd></div>
+    <div class="detail-item"><dt>نوع درمان</dt><dd>{{ row.service_type }}</dd></div>
+    <div class="detail-item"><dt>مرکز مورد نظر</dt><dd>{{ row.center or '—' }}</dd></div>
+    <div class="detail-item"><dt>تاریخ ثبت</dt><dd>{{ row.created_at }}</dd></div>
+    <div class="detail-item"><dt>توضیحات مراجع</dt><dd>{{ row.note or '—' }}</dd></div>
+  </dl>
+
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div class="field">
+        <label>تغییر وضعیت</label>
+        <select name="status">
+          {% for s in REQUEST_STATUSES %}
+          <option value="{{ s }}" {{ 'selected' if row.status == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>یادداشت مدیر (نمایش به کاربر در پیگیری)</label>
+        <input type="text" name="admin_note" value="{{ row.admin_note }}" placeholder="مثلاً: نوبت شما برای روز دوشنبه ساعت ۱۰ ثبت شد">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+      <a href="tel:{{ row.phone }}" class="btn btn-outline">تماس با مراجع</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

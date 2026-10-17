@@ -1,0 +1,39 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>اخبار و اطلاعیه‌ها</span>
+    <a href="{{ url_for('admin_news_new') }}" class="btn btn-primary btn-sm">+ خبر جدید</a>
+  </div>
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>عنوان</th><th>دسته</th><th>وضعیت انتشار</th><th>بازدید</th><th>تاریخ</th><th>عملیات</th></tr></thead>
+      <tbody>
+        {% for n in rows %}
+        <tr>
+          <td><a href="{{ url_for('admin_news_edit', rid=n.id) }}">{{ n.title }}</a></td>
+          <td>{{ n.category }}</td>
+          <td>{{ '✅ منتشر شده' if n.published else '⛔ پیش‌نویس' }}</td>
+          <td>{{ n.views }}</td>
+          <td>{{ n.published_at[:10] }}</td>
+          <td>
+            <div class="actions">
+              <a href="{{ url_for('news_detail', slug=n.slug) }}" target="_blank" class="btn btn-outline btn-sm">مشاهده</a>
+              <a href="{{ url_for('admin_news_edit', rid=n.id) }}" class="btn btn-outline btn-sm">ویرایش</a>
+              <form method="post" action="{{ url_for('admin_news_delete', rid=n.id) }}" data-confirm="این خبر حذف شود؟" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">📰</div>خبری ثبت نشده است. با دکمه «خبر جدید» اولین خبر را ایجاد کنید.</div>
+  {% endif %}
+</div>
+{% endblock %}

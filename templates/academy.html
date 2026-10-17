@@ -1,37 +1,100 @@
-{% extends 'base.html' %}
-{% block title %}آکادمی رز - {{ settings.get('site_name') }}{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
-<section class="page-hero">
+<section class="academy-hero">
   <div class="container">
-    <h1>آکادمی رز</h1>
-    <p>دوره‌های عمومی و کارگاه‌های تخصصی روانشناسی و مشاوره</p>
+    <span class="tag">رز آکادمی</span>
+    <h1>گامی فراتر در ارتقاء حرفه‌ای مشاوران و درمانگران</h1>
+    <p>
+      رز آکادمی با بیش از ۵۰ هزار نفر-ساعت تجربه آموزشی درخشان طی سه سال اخیر، بستری بی‌نظیر برای
+      رشد و بالندگی تخصصی مشاوران و درمانگران در سراسر کشور فراهم آورده است.
+    </p>
+    <div class="academy-actions">
+      <a href="{{ settings.academy_url }}" target="_blank" rel="noopener" class="btn btn-primary">ورود به سامانه آکادمی</a>
+      <a href="{{ url_for('contact') }}" class="btn btn-ghost">پرسش و راهنمایی</a>
+    </div>
   </div>
 </section>
 
 <section class="section">
   <div class="container">
-    <div class="grid grid-3">
-      {% for c in courses %}
-      <a href="{{ url_for('main.course_detail', slug=c['slug']) }}" class="card course-card reveal">
-        <div class="course-badge {{ 'pro' if c['level'] == 'تخصصی' else '' }}">{{ c['level'] }}</div>
-        <div class="card-icon">{{ '🎓' if c['level'] == 'عمومی' else '📚' }}</div>
-        <h3>{{ c['title'] }}</h3>
-        <p>{{ c['summary'][:110] }}{% if c['summary']|length > 110 %}…{% endif %}</p>
-        <div class="course-meta">
-          {% if c['teacher'] %}<span>👤 {{ c['teacher'] }}</span>{% endif %}
-          {% if c['duration'] %}<span>⏱ {{ c['duration'] }}</span>{% endif %}
-          {% if c['price'] %}<span>💰 {{ c['price'] }}</span>{% endif %}
+    <div class="section-head">
+      <span class="tag">ویژگی‌های آموزشی</span>
+      <h2>چرا رز آکادمی؟</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="fic">🎥</div>
+        <h3>تولید استودیویی بی‌نظیر</h3>
+        <p>تمامی آموزش‌ها در محیطی حرفه‌ای و همه ویدئوها با کیفیت 4K و به صورت استودیویی ضبط شده‌اند.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fic">📝</div>
+        <h3>جزوات خط به خط و دقیق</h3>
+        <p>هر دوره آموزشی همراه با جزواتی جامع و خط به خط ارائه می‌شود.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fic">🕐</div>
+        <h3>پشتیبانی ۲۴ ساعته</h3>
+        <p>تیم پشتیبانی به صورت شبانه‌روزی آماده پاسخ‌گویی به سوالات شماست.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fic">🎓</div>
+        <h3>اساتید تراز اول کشوری</h3>
+        <p>همکاری با مجرب‌ترین و متخصص‌ترین اساتید تراز اول کشور.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fic">📜</div>
+        <h3>گواهی معتبر و قابل استعلام</h3>
+        <p>تمامی آموزش‌ها دارای گواهی معتبر قابل استعلام از «راه زندگی رز» هستند.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fic">♾️</div>
+        <h3>دسترسی دائمی</h3>
+        <p>فایل‌های ویدئویی با کیفیت بالا و جزوات به صورت دائمی در پنل کاربری قرار می‌گیرند.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-soft">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">پرسش‌های رایج</span>
+      <h2>سوالات متداول آکادمی</h2>
+    </div>
+    <div class="faq-wrap academy-faq">
+      <details class="faq-item" open>
+        <summary>چطور در دوره‌های آکادمی ثبت‌نام کنم؟<span class="plus">+</span></summary>
+        <div class="faq-body">
+          به وب‌سایت <a href="{{ settings.academy_url }}" target="_blank" rel="noopener">{{ settings.academy_url }}</a> مراجعه کنید،
+          دوره مورد نظر را انتخاب کرده و مراحل ثبت‌نام آنلاین را دنبال کنید. هر دوره پیش‌نیازهای خاص خود را دارد که در صفحه توضیحات آن دوره ذکر شده است.
         </div>
-        <span class="card-link">جزئیات و ثبت‌نام ←</span>
-      </a>
-      {% endfor %}
+      </details>
+      <details class="faq-item">
+        <summary>دسترسی به دوره‌ها چگونه است؟<span class="plus">+</span></summary>
+        <div class="faq-body">
+          پس از ثبت‌نام، دسترسی دائمی به تمامی فایل‌های ویدئویی (با کیفیت 4K) و جزوات از طریق نرم‌افزار Spot Player در پنل کاربری خود خواهید داشت.
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>گواهی‌نامه دوره‌ها چگونه است؟<span class="plus">+</span></summary>
+        <div class="faq-body">
+          پس از اتمام موفقیت‌آمیز هر دوره، گواهی معتبر و قابل استعلام از «راه زندگی (رز)» اعطا می‌شود. برای برخی دوره‌ها امکان صدور گواهی بازآموزی از سازمان نظام مشاوره و روانشناسی جمهوری اسلامی ایران وجود دارد.
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>پرداخت هزینه دوره‌ها چگونه انجام می‌شود؟<span class="plus">+</span></summary>
+        <div class="faq-body">
+          در حال حاضر پرداخت آنلاین فراهم نیست؛ پرداخت از طریق شماره‌های {{ settings.academy_phone1 }} و {{ settings.academy_phone2 }} و استلام مبلغ با استفاده از کلیه کارت‌های بانکی عضو شتاب انجام می‌شود. پرداخت اقساطی فعلاً امکان‌پذیر نیست.
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>پشتیبانی چگونه پاسخ‌گوست؟<span class="plus">+</span></summary>
+        <div class="faq-body">
+          تیم پشتیبانی به صورت شبانه‌روزی از طریق شماره‌های {{ settings.academy_phone1 }} و {{ settings.academy_phone2 }} و بخش «تماس با ما» در وب‌سایت {{ settings.academy_url }} آماده پاسخ‌گویی است.
+        </div>
+      </details>
     </div>
-    {% if not courses %}
-    <div class="empty-state">
-      <p>در حال حاضر دوره‌ای برای ثبت‌نام موجود نیست.</p>
-    </div>
-    {% endif %}
   </div>
 </section>
 {% endblock %}

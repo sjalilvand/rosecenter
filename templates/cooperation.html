@@ -1,73 +1,114 @@
-{% extends 'base.html' %}
-{% block title %}درخواست همکاری - {{ settings.get('site_name') }}{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
 <section class="page-hero">
   <div class="container">
     <h1>درخواست همکاری</h1>
-    <p>به بزرگ‌ترین شبکه کنشگران متخصص علوم یاورانه کشور بپیوندید</p>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>درخواست همکاری</span></nav>
+    <p class="lead">به جمع شبکه بزرگ مشاوران و روانشناسان راه زندگی بپیوندید.</p>
   </div>
 </section>
 
 <section class="section">
-  <div class="container detail-grid">
-    <div class="detail-main">
-      <div class="card form-card">
-        <h2>فرم درخواست همکاری</h2>
-        <p class="muted">اطلاعات خود را تکمیل کنید؛ پس از بررسی، کارشناسان ما با شما تماس خواهند گرفت.</p>
-        <form method="post" class="form">
+  <div class="container split-page">
+    <aside class="side-panel">
+      <h3>مزایای همکاری با ما</h3>
+      <p>پیوستن به مجموعه‌ای که بزرگ‌ترین شبکه کنشگران متخصص علوم یاورانه کشور را مدیریت می‌کند.</p>
+      <ul>
+        <li>پشتیبانی و راهنمایی مستمر تیم تخصصی</li>
+        <li>رشد حرفه‌ای از طریق آموزش و کارگاه‌های تخصصی</li>
+        <li>همکاری و شبکه‌سازی با روانشناسان با تجربه</li>
+        <li>رتبه‌بندی حرفه‌ای و فرصت ارتقا</li>
+        <li>مشارکت در پروژه‌های تأثیرگذار اجتماعی</li>
+        <li>انعطاف‌پذیری در زمان و محل ارائه خدمات</li>
+      </ul>
+      <div class="side-contact">
+        <a href="tel:{{ settings.phone1 }}"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>{{ settings.phone1 }}</a>
+        <a href="mailto:{{ settings.email }}"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>{{ settings.email }}</a>
+      </div>
+    </aside>
+
+    <div>
+      <div class="prose" style="margin-bottom:26px">
+        <h2 style="margin-top:0">تعهدات ما به مشاوران و روانشناسان</h2>
+        <ul>
+          <li>فراهم کردن محیط کاری امن و حرفه‌ای</li>
+          <li>پشتیبانی و راهنمایی مستمر در موارد تخصصی و اداری</li>
+          <li>فرصت‌های رشد حرفه‌ای از طریق کارگاه‌ها و دوره‌های آموزشی</li>
+          <li>شفافیت در حقوق، مزایا و قراردادها</li>
+        </ul>
+        <h2>تعهدات مشاوران و روانشناسان به مجموعه</h2>
+        <ul>
+          <li>رعایت اصول اخلاقی و حرفه‌ای در برخورد با مراجعین</li>
+          <li>انجام وظایف محوله با دقت و تعهد</li>
+          <li>حفظ محرمانگی اطلاعات مراجعین</li>
+          <li>شرکت در آموزش‌ها و ارتقای مهارت‌های تخصصی</li>
+          <li>همکاری در پروژه‌ها و برنامه‌های مجموعه</li>
+        </ul>
+        <p>
+          اگر علاقه‌مند به همکاری به‌عنوان مشاور یا روانشناس هستید، فرم زیر را تکمیل کنید. پس از ثبت،
+          تیم ما رزومه و اطلاعات شما را بررسی می‌کند و در صورت تأیید، به مرحله بعدی معرفی و همکاری هدایت خواهید شد.
+        </p>
+      </div>
+
+      <div class="form-card">
+        <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:18px">فرم ثبت درخواست همکاری</h3>
+        <form method="post" action="{{ url_for('cooperation') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <div class="form-row">
-            <div class="form-group">
-              <label for="full_name">نام و نام خانوادگی <span class="req">*</span></label>
-              <input type="text" id="full_name" name="full_name" required>
+            <div class="field">
+              <label>نام و نام خانوادگی <span class="req">*</span></label>
+              <input type="text" name="full_name" required placeholder="مثلاً: دکتر علی رضایی">
             </div>
-            <div class="form-group">
-              <label for="phone">شماره تماس <span class="req">*</span></label>
-              <input type="tel" id="phone" name="phone" required placeholder="09xxxxxxxxx">
+            <div class="field">
+              <label>شماره تماس <span class="req">*</span></label>
+              <input type="tel" name="phone" required placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" style="text-align:right">
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group">
-              <label for="email">ایمیل</label>
-              <input type="email" id="email" name="email">
+            <div class="field">
+              <label>ایمیل (اختیاری)</label>
+              <input type="email" name="email" placeholder="example@mail.com" dir="ltr" style="text-align:right">
             </div>
-            <div class="form-group">
-              <label for="education">مدرک تحصیلی</label>
-              <input type="text" id="education" name="education" placeholder="مثلاً کارشناسی ارشد روانشناسی بالینی">
+            <div class="field">
+              <label>استان محل سکونت</label>
+              <select name="province">
+                <option value="">انتخاب کنید…</option>
+                {% for p in provinces %}<option value="{{ p.province }}">{{ p.province }}</option>{% endfor %}
+              </select>
             </div>
           </div>
-          <div class="form-group">
-            <label for="field">زمینه تخصصی</label>
-            <input type="text" id="field" name="field" placeholder="مثلاً روان‌درمانی کودک، زوج‌درمانی، مشاوره شغلی">
+          <div class="form-row">
+            <div class="field">
+              <label>رشته / حوزه تخصصی</label>
+              <input type="text" name="field" placeholder="مثلاً: روانشناسی بالینی">
+            </div>
+            <div class="field">
+              <label>مدرک تحصیلی</label>
+              <select name="degree">
+                <option value="">انتخاب کنید…</option>
+                <option>کارشناسی</option>
+                <option>کارشناسی ارشد</option>
+                <option>دکتری</option>
+                <option>سایر</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="message">توضیحات و سوابق</label>
-            <textarea id="message" name="message" rows="5" placeholder="سوابق کاری، حوزه فعالیت دلخواه و توضیحات تکمیلی"></textarea>
+          <div class="field">
+            <label>سابقه همکاری (سال)</label>
+            <input type="text" name="experience" placeholder="مثلاً: ۵ سال">
           </div>
-          <button type="submit" class="btn btn-primary btn-lg btn-block">ثبت درخواست همکاری</button>
+          <div class="field">
+            <label>توضیحات و سوابق تکمیلی</label>
+            <textarea name="message" placeholder="درباره تجربه‌ها، رویکردهای درمانی و حوزه‌های کاری خود بنویسید..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">ثبت درخواست همکاری</button>
+          <p class="hint" style="font-size:.8rem;color:var(--ink-soft);margin-top:12px;text-align:center">
+            پس از ثبت، یک کد پیگیری دریافت می‌کنید که می‌توانید از طریق صفحه
+            <a href="{{ url_for('tracking') }}">پیگیری درخواست</a> وضعیت آن را مشاهده کنید.
+          </p>
         </form>
       </div>
     </div>
-    <aside class="detail-side">
-      <div class="side-card">
-        <h4>چه کسانی می‌توانند همکاری کنند؟</h4>
-        <ul class="checklist">
-          <li>روانشناسان و مشاوران دارای مجوز</li>
-          <li>دانشجویان تحصیلات تکمیلی روانشناسی</li>
-          <li>مدرسان و کارگاه‌گردان تخصصی</li>
-          <li>علاقه‌مندان به راه‌اندازی مرکز استانی</li>
-        </ul>
-      </div>
-      <div class="side-card">
-        <h4>فرآیند بررسی</h4>
-        <ol class="steps">
-          <li>ثبت درخواست و دریافت کد پیگیری</li>
-          <li>بررسی اطلاعات توسط واحد پذیرش</li>
-          <li>مصاحبه و ارزیابی تخصصی</li>
-          <li>امضای قرارداد دیجیتال</li>
-        </ol>
-      </div>
-    </aside>
   </div>
 </section>
 {% endblock %}

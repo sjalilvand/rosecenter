@@ -1,0 +1,39 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>مراکز استانی ({{ rows|length }} مرکز)</span>
+    <a href="{{ url_for('admin_centers_new') }}" class="btn btn-primary btn-sm">+ مرکز جدید</a>
+  </div>
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>استان</th><th>تلفن کلینیک</th><th>مدیر</th><th>مسئول اجرایی</th><th>ساعت کاری</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+      <tbody>
+        {% for c in rows %}
+        <tr>
+          <td><a href="{{ url_for('admin_centers_edit', rid=c.id) }}">{{ c.province }}</a></td>
+          <td>{{ c.clinic_phone or '—' }}</td>
+          <td>{{ c.manager_name or '—' }}</td>
+          <td>{{ c.exec_name or '—' }}</td>
+          <td>{{ c.work_hours or '—' }}</td>
+          <td>{{ '🚧 به‌زودی' if c.is_soon else '✅ فعال' }}</td>
+          <td>
+            <div class="actions">
+              <a href="{{ url_for('admin_centers_edit', rid=c.id) }}" class="btn btn-outline btn-sm">ویرایش</a>
+              <form method="post" action="{{ url_for('admin_centers_delete', rid=c.id) }}" data-confirm="این مرکز حذف شود؟" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">📍</div>مرکزی ثبت نشده است.</div>
+  {% endif %}
+</div>
+{% endblock %}

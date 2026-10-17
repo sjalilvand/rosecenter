@@ -1,0 +1,55 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title"><span>فیلتر و جستجو</span></div>
+  <form class="filter-bar" method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="جستجوی نام، تلفن یا کد پیگیری...">
+    <select name="status">
+      <option value="">همه وضعیت‌ها</option>
+      {% for s in REQUEST_STATUSES %}
+      <option value="{{ s }}" {{ 'selected' if status == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">اعمال</button>
+    {% if q or status %}<a href="{{ url_for('admin_cooperation') }}" class="btn btn-outline btn-sm">پاک کردن</a>{% endif %}
+  </form>
+
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>کد پیگیری</th><th>نام</th><th>تلفن</th><th>استان</th>
+          <th>رشته</th><th>مدرک</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><span class="code-tag">{{ r.tracking_code }}</span></td>
+          <td>{{ r.full_name }}</td>
+          <td dir="ltr" style="text-align:right">{{ r.phone }}</td>
+          <td>{{ r.province or '—' }}</td>
+          <td>{{ r.field or '—' }}</td>
+          <td>{{ r.degree or '—' }}</td>
+          <td><span class="status-pill st-{{ r.status | replace(' ', '-') }}">{{ r.status }}</span></td>
+          <td>{{ r.created_at[:10] }}</td>
+          <td>
+            <div class="actions">
+              <a href="{{ url_for('admin_cooperation_detail', rid=r.id) }}" class="btn btn-outline btn-sm">مشاهده</a>
+              <form method="post" action="{{ url_for('admin_cooperation_delete', rid=r.id) }}" data-confirm="این درخواست حذف شود؟" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">📭</div>درخواستی یافت نشد.</div>
+  {% endif %}
+</div>
+{% endblock %}

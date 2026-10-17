@@ -1,29 +1,46 @@
-{% extends 'base.html' %}
-{% block title %}اخبار و اطلاعیه‌ها - {{ settings.get('site_name') }}{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
 <section class="page-hero">
   <div class="container">
     <h1>اخبار و اطلاعیه‌ها</h1>
-    <p>آخرین رویدادها، اطلاعیه‌ها و خبرهای مرکز رز</p>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>اخبار و اطلاعیه‌ها</span></nav>
   </div>
 </section>
 
 <section class="section">
   <div class="container">
-    <div class="grid grid-3">
-      {% for n in items %}
-      <a href="{{ url_for('main.news_detail', slug=n['slug']) }}" class="card news-card reveal">
-        <div class="news-date">{{ n['created_at']|jdate }}</div>
-        <h3>{{ n['title'] }}</h3>
-        <p>{{ n['summary'][:140] }}{% if n['summary']|length > 140 %}…{% endif %}</p>
-        <span class="card-link">ادامه مطلب ←</span>
-      </a>
+    {% if news %}
+    <div class="news-grid">
+      {% for n in news %}
+      <article class="news-card">
+        <div class="news-thumb">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ n.title }}">
+          <span class="cat">{{ n.category }}</span>
+        </div>
+        <div class="news-body">
+          <h3><a href="{{ url_for('news_detail', slug=n.slug) }}">{{ n.title }}</a></h3>
+          <p>{{ n.summary[:130] }}{% if n.summary|length > 130 %}…{% endif %}</p>
+          <div class="news-meta">
+            <span>{{ n.published_at[:10] }}</span>
+            <a href="{{ url_for('news_detail', slug=n.slug) }}" class="link-more" style="font-size:.82rem">ادامه مطلب</a>
+          </div>
+        </div>
+      </article>
       {% endfor %}
     </div>
-    {% if not items %}
-    <div class="empty-state">
-      <p>هنوز خبری منتشر نشده است.</p>
+
+    {% if pages > 1 %}
+    <nav class="pagination" aria-label="صفحه‌بندی">
+      {% for p in range(1, pages + 1) %}
+        {% if p == page %}<span class="current">{{ p }}</span>
+        {% else %}<a href="{{ url_for('news_list', page=p, q=q) }}">{{ p }}</a>{% endif %}
+      {% endfor %}
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="search-empty">
+      <div class="big">📰</div>
+      <p>در حال حاضر خبری برای نمایش وجود ندارد.</p>
     </div>
     {% endif %}
   </div>

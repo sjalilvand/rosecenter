@@ -1,12 +1,11 @@
-{% extends 'base.html' %}
-{% block title %}صفحه یافت نشد{% endblock %}
+{% extends "base.html" %}
 {% block content %}
-<section class="section">
-  <div class="container narrow center error-box">
-    <div class="error-code">۴۰۴</div>
-    <h1>صفحه مورد نظر یافت نشد</h1>
-    <p class="muted">ممکن است آدرس را اشتباه وارد کرده باشید یا صفحه حذف شده باشد.</p>
-    <a href="{{ url_for('main.home') }}" class="btn btn-primary mt-1">بازگشت به صفحه اصلی</a>
+<section class="err-wrap">
+  <div class="container">
+    <div class="code404">۴۰۴</div>
+    <h1>صفحه مورد نظر یافت نشد!</h1>
+    <p>متأسفانه صفحه‌ای که به دنبال آن هستید وجود ندارد یا جابه‌جا شده است.</p>
+    <a href="{{ url_for('home') }}" class="btn btn-primary">بازگشت به صفحه اصلی</a>
   </div>
 </section>
 {% endblock %}

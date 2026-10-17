@@ -1,0 +1,43 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel" style="max-width:820px">
+  <div class="panel-title">
+    {{ 'ویرایش خبر' if item else 'ایجاد خبر جدید' }}
+    <a href="{{ url_for('admin_news') }}" class="btn btn-outline btn-sm">بازگشت</a>
+  </div>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>عنوان <span class="req">*</span></label>
+      <input type="text" name="title" value="{{ item.title if item else '' }}" required>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>دسته</label>
+        <select name="category">
+          {% for c in ['اخبار', 'اطلاعیه', 'رویداد'] %}
+          <option value="{{ c }}" {{ 'selected' if item and item.category == c }}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>نشانی (slug) — خالی بگذارید تا خودکار ساخته شود</label>
+        <input type="text" name="slug" value="{{ item.slug if item else '' }}" dir="ltr" style="text-align:right">
+      </div>
+    </div>
+    <div class="field">
+      <label>خلاصه</label>
+      <textarea name="summary" style="min-height:80px">{{ item.summary if item else '' }}</textarea>
+    </div>
+    <div class="field">
+      <label>متن کامل خبر</label>
+      <textarea name="content" style="min-height:220px">{{ item.content if item else '' }}</textarea>
+    </div>
+    <div class="checkbox-row" style="margin-bottom:16px">
+      <input type="checkbox" name="published" id="pub" {{ 'checked' if item and item.published }}>
+      <label for="pub" style="margin:0">انتشار (در صورت علامت‌نزدن به‌صورت پیش‌نویس ذخیره می‌شود)</label>
+    </div>
+    <button type="submit" class="btn btn-primary">ذخیره</button>
+  </form>
+</div>
+{% endblock %}

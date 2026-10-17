@@ -1,66 +1,43 @@
-{% extends 'base.html' %}
-{% block title %}پیشنهاد و انتقاد - {{ settings.get('site_name') }}{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
 <section class="page-hero">
   <div class="container">
     <h1>پیشنهاد و انتقاد</h1>
-    <p>نظر شما ما را در بهبود خدمات یاری می‌کند</p>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>پیشنهاد و انتقاد</span></nav>
+    <p class="lead">نظر شما برای ما ارزشمند است؛ با ثبت پیشنهاد یا انتقاد خود به بهبود کیفیت خدمات کمک کنید.</p>
   </div>
 </section>
 
 <section class="section">
-  <div class="container detail-grid">
-    <div class="detail-main">
-      <div class="card form-card">
-        <h2>ثبت پیام</h2>
-        <p class="muted">پیام شما توسط واحد نظارت بررسی خواهد شد و در صورت نیاز با شما تماس می‌گیریم.</p>
-        <form method="post" class="form">
-          <div class="form-group">
-            <label for="kind">نوع پیام <span class="req">*</span></label>
-            <select id="kind" name="kind" required>
-              {% for k in feedback_kinds %}
-              <option value="{{ k }}">{{ k }}</option>
-              {% endfor %}
-            </select>
+  <div class="container" style="max-width:720px">
+    <div class="form-card">
+      <form method="post" action="{{ url_for('feedback') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="form-row">
+          <div class="field">
+            <label>نام (اختیاری)</label>
+            <input type="text" name="name" placeholder="نام شما">
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="name">نام (اختیاری)</label>
-              <input type="text" id="name" name="name">
-            </div>
-            <div class="form-group">
-              <label for="phone">شماره تماس</label>
-              <input type="tel" id="phone" name="phone">
-            </div>
+          <div class="field">
+            <label>راه تماس (اختیاری)</label>
+            <input type="text" name="contact" placeholder="شماره تماس یا ایمیل" dir="ltr" style="text-align:right">
           </div>
-          <div class="form-group">
-            <label for="email">ایمیل</label>
-            <input type="email" id="email" name="email">
+        </div>
+        <div class="field">
+          <label>نوع پیام <span class="req">*</span></label>
+          <div class="radio-grid" style="grid-template-columns:repeat(3,1fr)">
+            <label class="radio-pill"><input type="radio" name="kind" value="پیشنهاد" checked><span>پیشنهاد</span></label>
+            <label class="radio-pill"><input type="radio" name="kind" value="انتقاد"><span>انتقاد</span></label>
+            <label class="radio-pill"><input type="radio" name="kind" value="گزارش تخلف"><span>گزارش تخلف</span></label>
           </div>
-          <div class="form-group">
-            <label for="subject">موضوع</label>
-            <input type="text" id="subject" name="subject">
-          </div>
-          <div class="form-group">
-            <label for="message">متن پیام <span class="req">*</span></label>
-            <textarea id="message" name="message" rows="5" required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary btn-lg btn-block">ثبت پیام</button>
-        </form>
-      </div>
+        </div>
+        <div class="field">
+          <label>متن پیام <span class="req">*</span></label>
+          <textarea name="message" required placeholder="متن پیشنهاد یا انتقاد خود را بنویسید..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">ثبت پیام</button>
+      </form>
     </div>
-    <aside class="detail-side">
-      <div class="side-card">
-        <h4>نظارت بر خدمات</h4>
-        <p>رضایت مراجعین از طریق نظرسنجی‌ها و ارزیابی‌های دوره‌ای پیگیری می‌شود. در صورت بروز تخلف یا عدم رعایت اصول اخلاقی توسط مشاور، موضوع بررسی و اقدامات اصلاحی مطابق قوانین شرکت اعمال می‌گردد.</p>
-      </div>
-      <div class="side-card">
-        <h4>سوال دارید؟</h4>
-        <p>پاسخ بسیاری از سوالات در بخش سوالات متداول موجود است.</p>
-        <a href="{{ url_for('main.faq') }}" class="btn btn-ghost btn-block">سوالات متداول</a>
-      </div>
-    </aside>
   </div>
 </section>
 {% endblock %}

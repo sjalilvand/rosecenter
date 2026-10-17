@@ -1,37 +1,38 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ورود به پنل مدیریت - مرکز رز</title>
-  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ورود به پنل مدیریت | مرکز رز</title>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
-<body class="login-body">
+<body>
+<div class="login-page">
   <div class="login-card">
-    <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="لوگو" class="login-logo">
-    <h1>پنل مدیریت</h1>
-    <p class="muted">مرکز خدمات روانشناسی و مشاوره رز</p>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-      <div class="flash flash-{{ category }}"><span>{{ '✅' if category == 'success' else '⚠️' }} {{ message }}</span></div>
-      {% endfor %}
-    {% endwith %}
-
-    <form method="post" class="form">
-      <div class="form-group">
-        <label for="username">نام کاربری</label>
-        <input type="text" id="username" name="username" required autofocus>
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="لوگو">
+    <h1>ورود به پنل مدیریت</h1>
+    <p class="sub">مرکز خدمات روانشناسی و مشاوره رز</p>
+    {% if get_flashed_messages() %}
+    <div class="login-error">نام کاربری یا گذرواژه نادرست است.</div>
+    {% endif %}
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="u">نام کاربری</label>
+        <input type="text" id="u" name="username" required autofocus autocomplete="username">
       </div>
-      <div class="form-group">
-        <label for="password">رمز عبور</label>
-        <input type="password" id="password" name="password" required>
+      <div class="field">
+        <label for="p">گذرواژه</label>
+        <input type="password" id="p" name="password" required autocomplete="current-password">
       </div>
-      <button type="submit" class="btn btn-primary btn-block">ورود</button>
+      <button type="submit" class="btn btn-primary">ورود</button>
     </form>
-    <a href="{{ url_for('main.home') }}" class="back-link">← بازگشت به سایت</a>
+    <div class="login-hint">
+      نام کاربری پیش‌فرض: <strong>admin</strong> — گذرواژه پیش‌فرض: <strong>rose@1403</strong><br>
+      پس از ورود، از بخش تنظیمات گذرواژه را تغییر دهید.
+    </div>
   </div>
+</div>
 </body>
 </html>

@@ -1,88 +1,77 @@
-{% extends 'base.html' %}
-{% block title %}تماس با ما - {{ settings.get('site_name') }}{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
 <section class="page-hero">
   <div class="container">
     <h1>تماس با ما</h1>
-    <p>ما اینجا هستیم تا پاسخگوی شما باشیم</p>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>تماس با ما</span></nav>
+    <p class="lead">ما اینجا هستیم تا پاسخ‌گوی شما باشیم؛ از هر راهی که راحت‌تر هستید با ما در ارتباط باشید.</p>
   </div>
 </section>
 
 <section class="section">
-  <div class="container detail-grid">
-    <div class="detail-main">
-      <div class="grid grid-2">
-        <div class="card contact-card">
-          <div class="card-icon sm">📍</div>
-          <h3>آدرس</h3>
-          <p>{{ settings.get('address', 'خیابان پاسداران، بالاتر از میدان نوبنیاد، بین کوهستان ششم و هفتم، جنب بانک کشاورزی، پلاک 620') }}</p>
-        </div>
-        <div class="card contact-card">
-          <div class="card-icon sm">📞</div>
-          <h3>تلفن‌های تماس</h3>
-          <p>{{ settings.get('phone1', '۰۲۱-۹۱۶۹۱۵۰۶') }}<br>{{ settings.get('phone2', '۰۲۱-۲۶۲۴۶۲۸۲') }}</p>
-        </div>
-        <div class="card contact-card">
-          <div class="card-icon sm">✉️</div>
-          <h3>ایمیل</h3>
-          <p>{{ settings.get('email', 'rosepsychology2@gmail.com') }}</p>
-        </div>
-        <div class="card contact-card">
-          <div class="card-icon sm">🕘</div>
-          <h3>ساعات کاری</h3>
-          <p>{{ settings.get('working_hours', 'شنبه تا پنجشنبه، ۹ تا ۲۰') }}</p>
+  <div class="container split-page">
+    <aside>
+      <div class="side-panel" style="margin-bottom:20px">
+        <h3>ارتباط با ستاد</h3>
+        <div class="side-contact">
+          <a href="mailto:rosepsychology2@gmail.com"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>rosepsychology2@gmail.com</a>
+          <a href="tel:02191691506"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>۰۲۱-۹۱۶۹۱۵۰۶</a>
+          <a href="tel:02126246416"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>۰۲۱-۲۶۲۴۶۴۱۶</a>
+          <div style="display:flex;gap:10px;align-items:flex-start;color:#fff;font-size:.9rem"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#fff;flex:0 0 18px;margin-top:4px"><path d="M12 2a7 7 0 00-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"/></svg><span>خیابان پاسداران، بالاتر از میدان نوبنیاد، بین کوهستان ششم و هفتم، جنب بانک کشاورزی، پلاک 620</span></div>
         </div>
       </div>
-
-      <div class="card form-card mt-2">
-        <h2>فرم تماس</h2>
-        <p class="muted">پیام خود را بنویسید؛ در اولین فرصت پاسخ خواهیم داد.</p>
-        <form method="post" class="form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="name">نام و نام خانوادگی <span class="req">*</span></label>
-              <input type="text" id="name" name="name" required>
-            </div>
-            <div class="form-group">
-              <label for="phone">شماره تماس</label>
-              <input type="tel" id="phone" name="phone">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="email">ایمیل</label>
-              <input type="email" id="email" name="email">
-            </div>
-            <div class="form-group">
-              <label for="subject">موضوع</label>
-              <input type="text" id="subject" name="subject">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="message">متن پیام <span class="req">*</span></label>
-            <textarea id="message" name="message" rows="5" required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary btn-lg">ارسال پیام</button>
-        </form>
-      </div>
-    </div>
-
-    <aside class="detail-side">
-      <div class="side-card">
-        <h4>دسترسی سریع</h4>
-        <a href="{{ url_for('main.appointment') }}" class="btn btn-primary btn-block">رزرو نوبت آنلاین</a>
-        <a href="{{ url_for('main.tracking') }}" class="btn btn-outline btn-block">پیگیری درخواست</a>
-        <a href="{{ url_for('main.feedback') }}" class="btn btn-ghost btn-block">پیشنهاد و انتقاد</a>
-      </div>
-      <div class="side-card map-card">
-        <h4>موقعیت مرکز اصلی</h4>
-        <div class="map-placeholder">
-          <span>🗺</span>
-          <p>تهران، پاسداران، نوبنیاد</p>
+      <div class="side-panel" style="background:linear-gradient(150deg,#8e1147,#c2185b)">
+        <h3>ارتباط با شعبه تهران</h3>
+        <div class="side-contact">
+          <a href="mailto:info@rosecenter.ir"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>info@rosecenter.ir</a>
+          <a href="tel:02166142013"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>۰۲۱-۶۶۱۴۲۰۱۳</a>
+          <div style="display:flex;gap:10px;align-items:flex-start;color:#fff;font-size:.9rem"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#fff;flex:0 0 18px;margin-top:4px"><path d="M12 2a7 7 0 00-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"/></svg><span>تهران، منطقه ۱۷، میدان بهاران، خیابان سجاد جنوبی، کوچه علی درودیان، نبش کوچه خدایار حسنی، پلاک ۷۸، واحد ۵</span></div>
         </div>
       </div>
     </aside>
+
+    <div>
+      <div class="prose" style="margin-bottom:24px">
+        <h2 style="margin-top:0">فرم ارسال پیام</h2>
+        <p>سوال، درخواست یا پیشنهاد خود را برای ما بنویسید؛ کارشناسان ما در اسرع وقت پاسخ خواهند داد.</p>
+      </div>
+      <div class="form-card">
+        <form method="post" action="{{ url_for('contact') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <div class="form-row">
+            <div class="field">
+              <label>نام و نام خانوادگی <span class="req">*</span></label>
+              <input type="text" name="name" required placeholder="نام شما">
+            </div>
+            <div class="field">
+              <label>شماره تماس</label>
+              <input type="tel" name="phone" placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" style="text-align:right">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>ایمیل</label>
+              <input type="email" name="email" placeholder="example@mail.com" dir="ltr" style="text-align:right">
+            </div>
+            <div class="field">
+              <label>موضوع</label>
+              <select name="subject">
+                <option value="درخواست اطلاعات">درخواست اطلاعات</option>
+                <option value="پشتیبانی خدمات">پشتیبانی خدمات</option>
+                <option value="همکاری سازمانی">همکاری سازمانی</option>
+                <option value="شکایت">شکایت</option>
+                <option value="سایر">سایر</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>متن پیام <span class="req">*</span></label>
+            <textarea name="message" required placeholder="پیام خود را بنویسید..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">ارسال پیام</button>
+        </form>
+      </div>
+    </div>
   </div>
 </section>
 {% endblock %}

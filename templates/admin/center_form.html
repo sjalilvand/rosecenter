@@ -1,0 +1,73 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel" style="max-width:860px">
+  <div class="panel-title">
+    {{ 'ویرایش مرکز استانی' if item else 'ایجاد مرکز استانی جدید' }}
+    <a href="{{ url_for('admin_centers') }}" class="btn btn-outline btn-sm">بازگشت</a>
+  </div>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div class="field">
+        <label>استان <span class="req">*</span></label>
+        <input type="text" name="province" value="{{ item.province if item else '' }}" required>
+      </div>
+      <div class="field">
+        <label>تلفن کلینیک</label>
+        <input type="text" name="clinic_phone" value="{{ item.clinic_phone if item else '' }}" dir="ltr" style="text-align:right">
+      </div>
+    </div>
+    <div class="field">
+      <label>آدرس کلینیک مرکزی</label>
+      <textarea name="address" style="min-height:80px">{{ item.address if item else '' }}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>کدپستی</label>
+        <input type="text" name="postal_code" value="{{ item.postal_code if item else '' }}" dir="ltr" style="text-align:right">
+      </div>
+      <div class="field">
+        <label>ساعت کاری</label>
+        <input type="text" name="work_hours" value="{{ item.work_hours if item else '' }}" placeholder="مثلاً: ۸ تا ۱۵">
+      </div>
+    </div>
+    <div class="form-grid-3">
+      <div class="field">
+        <label>نام مدیر کلینیک</label>
+        <input type="text" name="manager_name" value="{{ item.manager_name if item else '' }}">
+      </div>
+      <div class="field">
+        <label>تلفن مدیر</label>
+        <input type="text" name="manager_phone" value="{{ item.manager_phone if item else '' }}" dir="ltr" style="text-align:right">
+      </div>
+      <div></div>
+      <div class="field">
+        <label>نام مسئول اجرایی</label>
+        <input type="text" name="exec_name" value="{{ item.exec_name if item else '' }}">
+      </div>
+      <div class="field">
+        <label>تلفن مسئول اجرایی</label>
+        <input type="text" name="exec_phone" value="{{ item.exec_phone if item else '' }}" dir="ltr" style="text-align:right">
+      </div>
+      <div></div>
+    </div>
+    <div class="field">
+      <label>لینک لوکیشن (اختیاری)</label>
+      <input type="url" name="map_url" value="{{ item.map_url if item else '' }}" dir="ltr" style="text-align:right">
+    </div>
+    <div class="form-row">
+      <div class="checkbox-row">
+        <input type="checkbox" name="is_soon" id="soon" {{ 'checked' if item and item.is_soon }}>
+        <label for="soon" style="margin:0">به‌زودی فعال می‌شود</label>
+      </div>
+      <div class="field" style="margin:0">
+        <label>ترتیب نمایش</label>
+        <input type="number" name="sort_order" value="{{ item.sort_order if item else 0 }}">
+      </div>
+    </div>
+    <div style="margin-top:18px">
+      <button type="submit" class="btn btn-primary">ذخیره</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

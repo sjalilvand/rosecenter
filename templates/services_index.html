@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>خدمات ما</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>خدمات</span></nav>
+    <p class="lead">طیف کامل خدمات روان‌درمانی، مشاوره، آموزش و همکاری‌های سازمانی کلینیک‌های رز.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="services-grid" style="grid-template-columns:repeat(2,1fr)">
+      {% for s in services %}
+      <div class="service-card" style="text-align:right">
+        <div class="service-icon" style="margin-right:0">
+          {% if s.icon %}<img src="{{ url_for('static', filename='img/' + s.icon) }}" alt="{{ s.title }}" onerror="this.style.display='none'">{% endif %}
+        </div>
+        <h3>{{ s.title }}</h3>
+        <p>{{ s.summary }}</p>
+        <a href="/{{ s.slug }}/" class="btn btn-outline btn-sm">اطلاعات بیشتر</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

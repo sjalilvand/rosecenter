@@ -1,70 +1,66 @@
-{% extends 'base.html' %}
-{% block title %}جستجو{% if q %} «{{ q }}»{% endif %} - {{ settings.get('site_name') }}{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>جستجو</h1>
-    <p>{% if q %}نتایج جستجو برای «{{ q }}»{% else %}در خدمات، اخبار و دوره‌ها جستجو کنید{% endif %}</p>
+    <h1>نتایج جستجو</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>جستجو</span></nav>
+    {% if q %}<p class="lead">نتایج جستجو برای عبارت «{{ q }}»</p>{% endif %}
   </div>
 </section>
 
 <section class="section">
-  <div class="container narrow">
-    <form method="get" class="search-form">
-      <input type="text" name="q" value="{{ q }}" placeholder="عبارت مورد نظر را بنویسید…">
+  <div class="container" style="max-width:860px">
+    {% if not q %}
+    <form action="{{ url_for('search') }}" method="get" class="center-search">
+      <input type="text" name="q" placeholder="چه چیزی جستجو کنید؟" autofocus>
       <button type="submit" class="btn btn-primary">جستجو</button>
     </form>
+    {% endif %}
 
-    {% if q %}
-    {% set total = services|length + news|length + courses|length %}
-    {% if total == 0 %}
-    <div class="empty-state">
-      <p>نتیجه‌ای برای «{{ q }}» یافت نشد.</p>
-      <p class="muted">می‌توانید عبارت دیگری را امتحان کنید یا از <a href="{{ url_for('main.services') }}">صفحه خدمات</a> استفاده کنید.</p>
+    {% set total = results.services|length + results.news|length + results.faqs|length + results.centers|length %}
+
+    {% if q and total == 0 %}
+    <div class="search-empty">
+      <div class="big">🔎</div>
+      <h2 style="font-weight:800;margin-bottom:6px">نتیجه‌ای یافت نشد</h2>
+      <p>عبارت دیگری را امتحان کنید یا از منوی بالا به بخش‌های سایت مراجعه کنید.</p>
     </div>
-    {% else %}
-    <p class="muted center">{{ total|fa_num }} نتیجه یافت شد</p>
-
-    {% if services %}
-    <h2 class="search-cat">خدمات ({{ services|length|fa_num }})</h2>
-    {% for s in services %}
-    <a href="{{ url_for('main.service_detail', slug=s['slug']) }}" class="card mini-card mb-1">
-      <div class="card-icon sm">{{ s['icon'] or '🌿' }}</div>
-      <div>
-        <h3>{{ s['title'] }}</h3>
-        <p>{{ s['summary'][:120] }}{% if s['summary']|length > 120 %}…{% endif %}</p>
-      </div>
-    </a>
-    {% endfor %}
     {% endif %}
 
-    {% if courses %}
-    <h2 class="search-cat">دوره‌ها ({{ courses|length|fa_num }})</h2>
-    {% for c in courses %}
-    <a href="{{ url_for('main.course_detail', slug=c['slug']) }}" class="card mini-card mb-1">
-      <div class="card-icon sm">🎓</div>
-      <div>
-        <h3>{{ c['title'] }}</h3>
-        <p>{{ c['summary'][:120] }}{% if c['summary']|length > 120 %}…{% endif %}</p>
-      </div>
-    </a>
-    {% endfor %}
+    {% if results.services %}
+    <div class="search-section">
+      <h2>خدمات ({{ results.services|length }})</h2>
+      {% for s in results.services %}
+      <div class="search-item"><b><a href="/{{ s.slug }}/">{{ s.title }}</a></b><p>{{ s.summary[:180] }}…</p></div>
+      {% endfor %}
+    </div>
     {% endif %}
 
-    {% if news %}
-    <h2 class="search-cat">اخبار ({{ news|length|fa_num }})</h2>
-    {% for n in news %}
-    <a href="{{ url_for('main.news_detail', slug=n['slug']) }}" class="card mini-card mb-1">
-      <div class="card-icon sm">📰</div>
-      <div>
-        <h3>{{ n['title'] }}</h3>
-        <p>{{ n['summary'][:120] }}{% if n['summary']|length > 120 %}…{% endif %}</p>
-      </div>
-    </a>
-    {% endfor %}
+    {% if results.news %}
+    <div class="search-section">
+      <h2>اخبار و اطلاعیه‌ها ({{ results.news|length }})</h2>
+      {% for n in results.news %}
+      <div class="search-item"><b><a href="{{ url_for('news_detail', slug=n.slug) }}">{{ n.title }}</a></b><p>{{ n.summary[:180] }}…</p></div>
+      {% endfor %}
+    </div>
     {% endif %}
+
+    {% if results.faqs %}
+    <div class="search-section">
+      <h2>سوالات متداول ({{ results.faqs|length }})</h2>
+      {% for f in results.faqs %}
+      <div class="search-item"><b>{{ f.question }}</b><p>{{ f.answer[:180] }}…</p></div>
+      {% endfor %}
+    </div>
     {% endif %}
+
+    {% if results.centers %}
+    <div class="search-section">
+      <h2>مراکز استانی ({{ results.centers|length }})</h2>
+      {% for c in results.centers %}
+      <div class="search-item"><b>استان {{ c.province }}</b><p>{{ c.address }}{% if c.clinic_phone %} — تلفن: {{ c.clinic_phone }}{% endif %}</p></div>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
 </section>

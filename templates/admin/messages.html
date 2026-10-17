@@ -1,0 +1,33 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title"><span>پیام‌های دریافتی از فرم تماس با ما</span></div>
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th></th><th>نام</th><th>تلفن</th><th>ایمیل</th><th>موضوع</th><th>پیام</th><th>تاریخ</th><th>عملیات</th></tr></thead>
+      <tbody>
+        {% for m in rows %}
+        <tr>
+          <td><span class="read-dot {{ 'done' if m.is_read }}"></span></td>
+          <td><a href="{{ url_for('admin_message_detail', rid=m.id) }}">{{ m.name }}</a></td>
+          <td dir="ltr" style="text-align:right">{{ m.phone or '—' }}</td>
+          <td dir="ltr" style="text-align:right">{{ m.email or '—' }}</td>
+          <td>{{ m.subject or '—' }}</td>
+          <td>{{ m.message[:60] }}{% if m.message|length > 60 %}…{% endif %}</td>
+          <td>{{ m.created_at[:10] }}</td>
+          <td>
+            <div class="actions">
+              <a href="{{ url_for('admin_message_detail', rid=m.id) }}" class="btn btn-outline btn-sm">مشاهده</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">📭</div>پیامی دریافت نشده است.</div>
+  {% endif %}
+</div>
+{% endblock %}

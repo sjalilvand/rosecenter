@@ -1,23 +1,106 @@
-{% extends 'admin/base.html' %}
-{% block title %}تنظیمات{% endblock %}
-
+{% extends "admin/base_admin.html" %}
 {% block content %}
-<div class="page-head">
-  <h1>⚙️ تنظیمات سایت</h1>
-  <p>اطلاعات تماس و متن‌های عمومی سایت</p>
-</div>
+<div class="panel-grid">
+  <div class="panel">
+    <div class="panel-title"><span>تنظیمات سایت</span></div>
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <div class="field">
+          <label>نام سایت</label>
+          <input type="text" name="site_name" value="{{ s.get('site_name','') }}">
+        </div>
+        <div class="field">
+          <label>شعار سایت</label>
+          <input type="text" name="site_tagline" value="{{ s.get('site_tagline','') }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>تلفن ۱</label>
+          <input type="text" name="phone1" value="{{ s.get('phone1','') }}">
+        </div>
+        <div class="field">
+          <label>تلفن ۲</label>
+          <input type="text" name="phone2" value="{{ s.get('phone2','') }}">
+        </div>
+      </div>
+      <div class="field">
+        <label>ایمیل</label>
+        <input type="email" name="email" value="{{ s.get('email','') }}" dir="ltr" style="text-align:right">
+      </div>
+      <div class="field">
+        <label>آدرس ستاد</label>
+        <textarea name="address" style="min-height:70px">{{ s.get('address','') }}</textarea>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>اینستاگرام</label>
+          <input type="url" name="instagram" value="{{ s.get('instagram','') }}" dir="ltr" style="text-align:right">
+        </div>
+        <div class="field">
+          <label>تلگرام</label>
+          <input type="url" name="telegram" value="{{ s.get('telegram','') }}" dir="ltr" style="text-align:right">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>واتساپ</label>
+          <input type="url" name="whatsapp" value="{{ s.get('whatsapp','') }}" dir="ltr" style="text-align:right">
+        </div>
+        <div class="field">
+          <label>لینکدین</label>
+          <input type="url" name="linkedin" value="{{ s.get('linkedin','') }}" dir="ltr" style="text-align:right">
+        </div>
+      </div>
+      <div class="field">
+        <label>لینک سامانه آکادمی رز</label>
+        <input type="url" name="academy_url" value="{{ s.get('academy_url','') }}" dir="ltr" style="text-align:right">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>تلفن پشتیبانی آکادمی ۱</label>
+          <input type="text" name="academy_phone1" value="{{ s.get('academy_phone1','') }}" dir="ltr" style="text-align:right">
+        </div>
+        <div class="field">
+          <label>تلفن پشتیبانی آکادمی ۲</label>
+          <input type="text" name="academy_phone2" value="{{ s.get('academy_phone2','') }}" dir="ltr" style="text-align:right">
+        </div>
+      </div>
+      <div class="field">
+        <label>متن فوتر</label>
+        <textarea name="footer_text" style="min-height:70px">{{ s.get('footer_text','') }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">ذخیره تنظیمات</button>
+    </form>
+  </div>
 
-<div class="panel form-panel">
-  <form method="post" class="form">
-    {% for k, label in settings_keys %}
-    <div class="form-group">
-      <label for="s-{{ k }}">{{ label }}</label>
-      <input type="text" id="s-{{ k }}" name="{{ k }}" value="{{ current.get(k, '') }}">
-    </div>
-    {% endfor %}
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary btn-lg">ذخیره تنظیمات</button>
-    </div>
-  </form>
+  <div class="panel" style="align-self:start">
+    <div class="panel-title"><span>تغییر گذرواژه مدیر</span></div>
+    <form method="post" action="{{ url_for('admin_password') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="field">
+        <label>گذرواژه فعلی <span class="req">*</span></label>
+        <input type="password" name="old_password" required autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label>گذرواژه جدید (حداقل ۶ کاراکتر) <span class="req">*</span></label>
+        <input type="password" name="new_password" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label>تکرار گذرواژه جدید <span class="req">*</span></label>
+        <input type="password" name="new_password2" required minlength="6" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn btn-primary">تغییر گذرواژه</button>
+    </form>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
+    <div class="panel-title"><span>اطلاعات سیستم</span></div>
+    <dl class="detail-grid" style="grid-template-columns:1fr">
+      <div class="detail-item"><dt>نسخه برنامه</dt><dd>کلینیک رز — Flask 1.0</dd></div>
+      <div class="detail-item"><dt>دیتابیس</dt><dd>SQLite</dd></div>
+      <div class="detail-item"><dt>آدرس پنل</dt><dd dir="ltr" style="text-align:right">/admin/</dd></div>
+    </dl>
+  </div>
 </div>
 {% endblock %}

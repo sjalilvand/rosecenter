@@ -1,71 +1,83 @@
-{% extends 'admin/base.html' %}
-{% block title %}داشبورد{% endblock %}
-
+{% extends "admin/base_admin.html" %}
 {% block content %}
-<div class="page-head">
-  <h1>داشبورد</h1>
-  <p>خلاصه وضعیت مرکز رز در یک نگاه</p>
-</div>
-
 <div class="stat-grid">
-  {% for label, value, icon, link in stats %}
-  <a href="{{ url_for('admin.entity_list', key=link) }}" class="stat-card">
-    <span class="stat-icon">{{ icon }}</span>
-    <div>
-      <strong>{{ value|fa_num }}</strong>
-      <small>{{ label }}</small>
-    </div>
-  </a>
-  {% endfor %}
+  <div class="stat-card">
+    <span class="s-ic">📅</span>
+    <div><b>{{ stats.bookings }}{% if stats.bookings_new %}<span class="badge-new">{{ stats.bookings_new }} جدید</span>{% endif %}</b><span>درخواست نوبت مشاوره</span></div>
+  </div>
+  <div class="stat-card">
+    <span class="s-ic">🤝</span>
+    <div><b>{{ stats.cooperation }}{% if stats.cooperation_new %}<span class="badge-new">{{ stats.cooperation_new }} جدید</span>{% endif %}</b><span>درخواست همکاری</span></div>
+  </div>
+  <div class="stat-card">
+    <span class="s-ic">✉️</span>
+    <div><b>{{ stats.messages }}{% if stats.messages_unread %}<span class="badge-new">{{ stats.messages_unread }} خوانده‌نشده</span>{% endif %}</b><span>پیام تماس با ما</span></div>
+  </div>
+  <div class="stat-card">
+    <span class="s-ic">💬</span>
+    <div><b>{{ stats.feedbacks }}{% if stats.feedbacks_unread %}<span class="badge-new">{{ stats.feedbacks_unread }} خوانده‌نشده</span>{% endif %}</b><span>پیشنهاد و انتقاد</span></div>
+  </div>
 </div>
 
-<div class="two-col">
+<div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stat-card"><span class="s-ic">📰</span><div><b>{{ stats.news }}</b><span>خبر منتشرشده</span></div></div>
+  <div class="stat-card"><span class="s-ic">📍</span><div><b>{{ stats.centers }}</b><span>مرکز استانی</span></div></div>
+  <div class="stat-card"><span class="s-ic">❓</span><div><b>{{ stats.faqs }}</b><span>سوال متداول</span></div></div>
+  <div class="stat-card"><span class="s-ic">⭐</span><div><b>{{ stats.testimonials }}</b><span>نظر مراجعین</span></div></div>
+</div>
+
+<div class="panel-grid">
   <div class="panel">
-    <div class="panel-head">
-      <h2>آخرین درخواست‌های مشاوره</h2>
-      <a href="{{ url_for('admin.entity_list', key='consultations') }}">مشاهده همه ←</a>
+    <div class="panel-title">
+      آخرین درخواست‌های نوبت
+      <a href="{{ url_for('admin_bookings') }}" class="btn btn-outline btn-sm">مشاهده همه</a>
     </div>
-    <table class="table">
-      <thead>
-        <tr><th>کد پیگیری</th><th>نام</th><th>نوع</th><th>وضعیت</th></tr>
-      </thead>
-      <tbody>
-        {% for c in latest_consultations %}
-        <tr>
-          <td class="ltr">{{ c['tracking_code'] }}</td>
-          <td>{{ c['full_name'] }}</td>
-          <td>{{ c['service_type'] }}</td>
-          <td><span class="badge badge-{{ STATUS_CLASS.get(c['status'], 'muted') }}">{{ c['status']|status_label }}</span></td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4" class="muted center">موردی ثبت نشده است</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% if latest_bookings %}
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>کد</th><th>نام</th><th>نوع درمان</th><th>وضعیت</th><th>تاریخ</th></tr></thead>
+        <tbody>
+          {% for b in latest_bookings %}
+          <tr>
+            <td><span class="code-tag">{{ b.tracking_code }}</span></td>
+            <td><a href="{{ url_for('admin_booking_detail', rid=b.id) }}">{{ b.full_name }}</a></td>
+            <td>{{ b.service_type }}</td>
+            <td><span class="status-pill st-{{ b.status | replace(' ', '-') }}">{{ b.status }}</span></td>
+            <td>{{ b.created_at[:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="big">📭</div>هنوز درخواستی ثبت نشده است.</div>
+    {% endif %}
   </div>
 
   <div class="panel">
-    <div class="panel-head">
-      <h2>آخرین نوبت‌ها</h2>
-      <a href="{{ url_for('admin.entity_list', key='appointments') }}">مشاهده همه ←</a>
+    <div class="panel-title">
+      آخرین پیام‌های تماس
+      <a href="{{ url_for('admin_messages') }}" class="btn btn-outline btn-sm">مشاهده همه</a>
     </div>
-    <table class="table">
-      <thead>
-        <tr><th>کد پیگیری</th><th>نام</th><th>تاریخ</th><th>وضعیت</th></tr>
-      </thead>
-      <tbody>
-        {% for a in latest_appointments %}
-        <tr>
-          <td class="ltr">{{ a['tracking_code'] }}</td>
-          <td>{{ a['full_name'] }}</td>
-          <td>{{ a['preferred_date']|jdate }} {{ a['preferred_time']|fa_num }}</td>
-          <td><span class="badge badge-{{ STATUS_CLASS.get(a['status'], 'muted') }}">{{ a['status']|status_label }}</span></td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4" class="muted center">موردی ثبت نشده است</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% if latest_messages %}
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th></th><th>نام</th><th>موضوع</th><th>تاریخ</th></tr></thead>
+        <tbody>
+          {% for m in latest_messages %}
+          <tr>
+            <td><span class="read-dot {{ 'done' if m.is_read }}"></span></td>
+            <td><a href="{{ url_for('admin_message_detail', rid=m.id) }}">{{ m.name }}</a></td>
+            <td>{{ m.subject or '—' }}</td>
+            <td>{{ m.created_at[:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="big">📭</div>هنوز پیامی دریافت نشده است.</div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

@@ -1,0 +1,51 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel" style="max-width:760px">
+  <div class="panel-title">
+    جزئیات درخواست همکاری
+    <a href="{{ url_for('admin_cooperation') }}" class="btn btn-outline btn-sm">بازگشت به فهرست</a>
+  </div>
+
+  <dl class="detail-grid">
+    <div class="detail-item"><dt>کد پیگیری</dt><dd><span class="code-tag">{{ row.tracking_code }}</span></dd></div>
+    <div class="detail-item"><dt>وضعیت فعلی</dt><dd><span class="status-pill st-{{ row.status | replace(' ', '-') }}">{{ row.status }}</span></dd></div>
+    <div class="detail-item"><dt>نام و نام خانوادگی</dt><dd>{{ row.full_name }}</dd></div>
+    <div class="detail-item"><dt>شماره تماس</dt><dd dir="ltr" style="text-align:right">{{ row.phone }}</dd></div>
+    <div class="detail-item"><dt>ایمیل</dt><dd>{{ row.email or '—' }}</dd></div>
+    <div class="detail-item"><dt>استان</dt><dd>{{ row.province or '—' }}</dd></div>
+    <div class="detail-item"><dt>رشته / حوزه تخصصی</dt><dd>{{ row.field or '—' }}</dd></div>
+    <div class="detail-item"><dt>مدرک تحصیلی</dt><dd>{{ row.degree or '—' }}</dd></div>
+    <div class="detail-item"><dt>سابقه</dt><dd>{{ row.experience or '—' }}</dd></div>
+    <div class="detail-item"><dt>تاریخ ثبت</dt><dd>{{ row.created_at }}</dd></div>
+  </dl>
+
+  {% if row.message %}
+  <div class="panel" style="background:#faf7f9;padding:16px;margin-bottom:18px">
+    <b style="font-size:.88rem">توضیحات متقاضی:</b>
+    <p style="font-size:.92rem;margin-top:6px">{{ row.message }}</p>
+  </div>
+  {% endif %}
+
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div class="field">
+        <label>تغییر وضعیت</label>
+        <select name="status">
+          {% for s in REQUEST_STATUSES %}
+          <option value="{{ s }}" {{ 'selected' if row.status == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>یادداشت مدیر</label>
+        <input type="text" name="admin_note" value="{{ row.admin_note }}">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+      <a href="mailto:{{ row.email }}" class="btn btn-outline">ارسال ایمیل</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

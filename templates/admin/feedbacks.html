@@ -1,0 +1,39 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title"><span>پیشنهادها و انتقادها</span></div>
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th></th><th>نام</th><th>راه تماس</th><th>نوع</th><th>متن</th><th>تاریخ</th><th>عملیات</th></tr></thead>
+      <tbody>
+        {% for f in rows %}
+        <tr>
+          <td><span class="read-dot {{ 'done' if f.is_read }}"></span></td>
+          <td>{{ f.name or '—' }}</td>
+          <td dir="ltr" style="text-align:right">{{ f.contact or '—' }}</td>
+          <td><span class="code-tag">{{ f.kind }}</span></td>
+          <td>{{ f.message[:70] }}{% if f.message|length > 70 %}…{% endif %}</td>
+          <td>{{ f.created_at[:10] }}</td>
+          <td>
+            <div class="actions">
+              <form method="post" action="{{ url_for('admin_feedback_toggle', rid=f.id) }}" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline btn-sm">{{ 'خوانده‌نشده کن' if f.is_read else 'خوانده شد' }}</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_feedback_delete', rid=f.id) }}" data-confirm="این مورد حذف شود؟" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">📭</div>موردی ثبت نشده است.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel" style="max-width:820px">
+  <div class="panel-title"><span>مدیریت خدمات (نمایش و ترتیب در منو و صفحه اصلی)</span></div>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    {% for s in rows %}
+    <div class="inline-form">
+      <div class="row" style="grid-template-columns:1fr 120px 140px">
+        <div>
+          <b>{{ s.title }}</b>
+          <div style="font-size:.78rem;color:var(--ink-soft);direction:ltr;text-align:right">/{{ s.slug }}/</div>
+        </div>
+        <div class="field" style="margin:0">
+          <input type="number" name="order_{{ s.id }}" value="{{ s.menu_order }}" min="0">
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" name="visible_{{ s.id }}" id="vis{{ s.id }}" {{ 'checked' if s.is_visible }}>
+          <label for="vis{{ s.id }}" style="margin:0">نمایش داده شود</label>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+  </form>
+</div>
+{% endblock %}

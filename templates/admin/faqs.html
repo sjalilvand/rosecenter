@@ -1,0 +1,50 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title"><span>افزودن سوال جدید</span></div>
+  <form method="post" action="{{ url_for('admin_faqs_new') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div class="field" style="margin-bottom:10px">
+        <label>دسته</label>
+        <input type="text" name="category" placeholder="مثلاً: روان‌درمانی" list="faqCats">
+        <datalist id="faqCats">
+          {% for c in categories %}<option value="{{ c }}"></option>{% endfor %}
+        </datalist>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>سوال <span class="req">*</span></label>
+        <input type="text" name="question" required>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>پاسخ <span class="req">*</span></label>
+      <textarea name="answer" required style="min-height:80px"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">افزودن</button>
+  </form>
+</div>
+
+<div class="panel">
+  <div class="panel-title"><span>سوالات موجود ({{ rows|length }})</span></div>
+  {% for f in rows %}
+  <form class="inline-form" method="post" action="{{ url_for('admin_faqs_edit', rid=f.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="row">
+      <input type="text" name="category" value="{{ f.category }}" placeholder="دسته">
+      <input type="text" name="question" value="{{ f.question }}">
+      <div class="btn-col">
+        <button type="submit" class="btn btn-primary btn-sm">ذخیره</button>
+      </div>
+    </div>
+    <textarea name="answer" style="min-height:70px">{{ f.answer }}</textarea>
+  </form>
+  <form method="post" action="{{ url_for('admin_faqs_delete', rid=f.id) }}" style="margin:-6px 0 14px" data-confirm="این سوال حذف شود؟">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-danger btn-sm">حذف سوال</button>
+  </form>
+  {% else %}
+  <div class="empty-state"><div class="big">❓</div>سوالی ثبت نشده است.</div>
+  {% endfor %}
+</div>
+{% endblock %}

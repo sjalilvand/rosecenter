@@ -1,0 +1,28 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel" style="max-width:760px">
+  <div class="panel-title">
+    پیام از {{ row.name }}
+    <a href="{{ url_for('admin_messages') }}" class="btn btn-outline btn-sm">بازگشت به فهرست</a>
+  </div>
+  <dl class="detail-grid">
+    <div class="detail-item"><dt>نام</dt><dd>{{ row.name }}</dd></div>
+    <div class="detail-item"><dt>تلفن</dt><dd dir="ltr" style="text-align:right">{{ row.phone or '—' }}</dd></div>
+    <div class="detail-item"><dt>ایمیل</dt><dd dir="ltr" style="text-align:right">{{ row.email or '—' }}</dd></div>
+    <div class="detail-item"><dt>موضوع</dt><dd>{{ row.subject or '—' }}</dd></div>
+    <div class="detail-item"><dt>تاریخ ارسال</dt><dd>{{ row.created_at }}</dd></div>
+  </dl>
+  <div class="panel" style="background:#faf7f9;padding:18px;margin-bottom:18px">
+    <b style="font-size:.88rem">متن پیام:</b>
+    <p style="font-size:.95rem;margin-top:8px;white-space:pre-wrap">{{ row.message }}</p>
+  </div>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div style="display:flex;gap:10px">
+      {% if row.phone %}<a href="tel:{{ row.phone }}" class="btn btn-outline">تماس</a>{% endif %}
+      {% if row.email %}<a href="mailto:{{ row.email }}" class="btn btn-outline">ایمیل</a>{% endif %}
+      <button type="submit" class="btn btn-danger" data-confirm>حذف پیام</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

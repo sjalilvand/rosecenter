@@ -2,17 +2,25 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
-.venv/
 venv/
+.venv/
+env/
 
-# دیتابیس
+# دیتابیس محلی
 *.db
 *.sqlite3
 
-# محیط
+# فایل‌های محیطی
 .env
-.DS_Store
+.env.*
 
-# ویرایشگر
+# فایل‌های سیستم
+.DS_Store
+Thumbs.db
+
+# ویرایشگرها
 .vscode/
 .idea/
+
+# لاگ‌ها
+*.log

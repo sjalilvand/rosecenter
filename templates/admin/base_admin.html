@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ page_title }} | پنل مدیریت رز</title>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+
+<div class="admin-layout">
+  <!-- منوی کنار -->
+  <aside class="admin-side" id="adminSide">
+    <div class="admin-brand">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="لوگو">
+      <div><strong>پنل مدیریت</strong><small>مرکز رز</small></div>
+    </div>
+    <nav class="admin-menu">
+      <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.path == '/admin/' }}">
+        <span class="a-ic">🏠</span> داشبورد
+      </a>
+      <a href="{{ url_for('admin_bookings') }}" class="{{ 'active' if 'bookings' in request.path }}">
+        <span class="a-ic">📅</span> درخواست‌های نوبت
+      </a>
+      <a href="{{ url_for('admin_cooperation') }}" class="{{ 'active' if 'cooperation' in request.path }}">
+        <span class="a-ic">🤝</span> درخواست‌های همکاری
+      </a>
+      <a href="{{ url_for('admin_messages') }}" class="{{ 'active' if 'messages' in request.path }}">
+        <span class="a-ic">✉️</span> پیام‌های تماس
+      </a>
+      <a href="{{ url_for('admin_feedbacks') }}" class="{{ 'active' if 'feedbacks' in request.path }}">
+        <span class="a-ic">💬</span> پیشنهاد و انتقاد
+      </a>
+      <a href="{{ url_for('admin_news') }}" class="{{ 'active' if 'news' in request.path }}">
+        <span class="a-ic">📰</span> اخبار
+      </a>
+      <a href="{{ url_for('admin_centers') }}" class="{{ 'active' if 'centers' in request.path }}">
+        <span class="a-ic">📍</span> مراکز استانی
+      </a>
+      <a href="{{ url_for('admin_faqs') }}" class="{{ 'active' if 'faqs' in request.path }}">
+        <span class="a-ic">❓</span> سوالات متداول
+      </a>
+      <a href="{{ url_for('admin_testimonials') }}" class="{{ 'active' if 'testimonials' in request.path }}">
+        <span class="a-ic">⭐</span> نظرات مراجعین
+      </a>
+      <a href="{{ url_for('admin_services') }}" class="{{ 'active' if 'services' in request.path }}">
+        <span class="a-ic">🧩</span> خدمات
+      </a>
+      <a href="{{ url_for('admin_settings') }}" class="{{ 'active' if 'settings' in request.path or 'password' in request.path }}">
+        <span class="a-ic">⚙️</span> تنظیمات
+      </a>
+    </nav>
+    <div class="admin-side-footer">
+      <a href="{{ url_for('home') }}" target="_blank">مشاهده سایت ↗</a>
+      <a href="{{ url_for('admin_logout') }}" class="logout-link">خروج</a>
+    </div>
+  </aside>
+  <div class="admin-overlay" id="adminOverlay"></div>
+
+  <!-- محتوای اصلی -->
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <button class="a-burger" id="adminBurger" aria-label="منو">☰</button>
+      <h1>{{ page_title }}</h1>
+      <div class="admin-user">
+        <span>{{ session.get('admin_name', 'مدیر') }}</span>
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="admin-flashes">
+        {% for cat, msg in messages %}
+        <div class="aflash aflash-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="admin-content">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

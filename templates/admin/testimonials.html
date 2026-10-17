@@ -1,0 +1,47 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title"><span>افزودن نظر جدید</span></div>
+  <form method="post" action="{{ url_for('admin_testimonials_new') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div class="field" style="margin-bottom:10px">
+        <label>نام فرد <span class="req">*</span></label>
+        <input type="text" name="name" required>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>دسته (مثلاً: رضایت از مشاوره فردی)</label>
+        <input type="text" name="category">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>متن نظر <span class="req">*</span></label>
+      <textarea name="text" required style="min-height:80px"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">افزودن</button>
+  </form>
+</div>
+
+<div class="panel">
+  <div class="panel-title"><span>نظرات موجود ({{ rows|length }})</span></div>
+  {% for t in rows %}
+  <form class="inline-form" method="post" action="{{ url_for('admin_testimonials_edit', rid=t.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="row">
+      <input type="text" name="name" value="{{ t.name }}">
+      <input type="text" name="category" value="{{ t.category }}">
+      <div class="btn-col">
+        <button type="submit" class="btn btn-primary btn-sm">ذخیره</button>
+      </div>
+    </div>
+    <textarea name="text" style="min-height:70px">{{ t.text }}</textarea>
+  </form>
+  <form method="post" action="{{ url_for('admin_testimonials_delete', rid=t.id) }}" style="margin:-6px 0 14px" data-confirm="این نظر حذف شود؟">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-danger btn-sm">حذف نظر</button>
+  </form>
+  {% else %}
+  <div class="empty-state"><div class="big">⭐</div>نظری ثبت نشده است.</div>
+  {% endfor %}
+</div>
+{% endblock %}
