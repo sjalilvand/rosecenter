@@ -1,0 +1,58 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+
+{% if new_key %}
+<div class="a-card" style="border:2px solid #1d8a5f;background:#f0faf5">
+  <h3 style="font-weight:800;color:#1d8a5f;margin-bottom:8px">✅ کلید API برای «{{ new_key_name }}» ساخته شد</h3>
+  <p style="margin-bottom:10px;font-size:.9rem">⚠️ این کلید فقط همین یک بار نمایش داده می‌شود؛ آن را در جای امن ذخیره کنید:</p>
+  <div class="api-key-box" dir="ltr"><code>{{ new_key }}</code></div>
+</div>
+{% endif %}
+
+<div class="a-toolbar">
+  <p class="a-hint" style="margin:0">با کلید API، سامانه‌های خارجی می‌توانند درخواست مشاوره ثبت و وضعیت آن‌ها را استعلام کنند. <a href="{{ url_for('admin_api_docs') }}">مشاهده مستندات API</a></p>
+  <form method="post" action="{{ url_for('admin_api_key_new') }}" class="a-search">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="text" name="name" placeholder="نام سامانه/سازمان (مثلاً: سامانه بیمه)" required>
+    <input type="text" name="note" placeholder="توضیح (اختیاری)">
+    <button type="submit" class="btn btn-primary">+ ساخت کلید</button>
+  </form>
+</div>
+
+<div class="a-card">
+  <table class="a-table">
+    <thead>
+      <tr><th>#</th><th>نام سامانه</th><th>کلید</th><th>وضعیت</th>
+          <th>تعداد درخواست</th><th>آخرین استفاده</th><th>ساخت</th><th>عملیات</th></tr>
+    </thead>
+    <tbody>
+      {% for k in rows %}
+      <tr>
+        <td>{{ k['id'] }}</td>
+        <td><strong>{{ k['name'] }}</strong>{% if k['note'] %}<br><small style="color:var(--ink-soft)">{{ k['note'] }}</small>{% endif %}</td>
+        <td dir="ltr"><code class="api-key-cell">{{ k['key'][:10] }}••••••••••••</code></td>
+        <td>
+          {% if k['is_active'] %}<span class="tag tag-green">فعال</span>
+          {% else %}<span class="tag tag-red">غیرفعال</span>{% endif %}
+        </td>
+        <td>{{ k['request_count'] }}</td>
+        <td>{{ k['last_used_at'] or '—' }}</td>
+        <td>{{ k['created_at'][:10] }}</td>
+        <td class="a-actions">
+          <form method="post" action="{{ url_for('admin_api_key_toggle', rid=k['id']) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm">{{ 'غیرفعال' if k['is_active'] else 'فعال' }}</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_api_key_delete', rid=k['id']) }}" data-confirm="این کلید حذف شود؟ سامانه متصل دیگر دسترسی نخواهد داشت.">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-danger">حذف</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:var(--ink-soft)">هنوز کلیدی ساخته نشده است.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

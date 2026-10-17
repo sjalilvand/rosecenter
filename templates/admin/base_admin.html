@@ -20,7 +20,7 @@
       <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.path == '/admin/' }}">
         <span class="a-ic">🏠</span> داشبورد
       </a>
-      <a href="{{ url_for('admin_bookings') }}" class="{{ 'active' if 'bookings' in request.path }}">
+      <a href="{{ url_for('admin_bookings') }}" class="{{ 'active' if 'bookings' in request.path and 'course' not in request.path }}">
         <span class="a-ic">📅</span> درخواست‌های نوبت
       </a>
       <a href="{{ url_for('admin_hr_calls') }}" class="{{ 'active' if 'hr-calls' in request.path }}">
@@ -31,6 +31,21 @@
       </a>
       <a href="{{ url_for('admin_course_regs') }}" class="{{ 'active' if 'course-regs' in request.path }}">
         <span class="a-ic">🎓</span> ثبت‌نام‌های دوره
+      </a>
+      <a href="{{ url_for('admin_users') }}" class="{{ 'active' if 'admin/users' in request.path }}">
+        <span class="a-ic">👥</span> مدیریت کاربران
+      </a>
+      <a href="{{ url_for('admin_sessions') }}" class="{{ 'active' if 'sessions' in request.path }}">
+        <span class="a-ic">🟢</span> افراد لاگین‌شده
+      </a>
+      <a href="{{ url_for('admin_blocks') }}" class="{{ 'active' if 'blocks' in request.path }}">
+        <span class="a-ic">🧱</span> بلوک‌های صفحه اصلی
+      </a>
+      <a href="{{ url_for('admin_api_keys') }}" class="{{ 'active' if 'api-keys' in request.path }}">
+        <span class="a-ic">🔑</span> کلیدهای API
+      </a>
+      <a href="{{ url_for('admin_api_docs') }}" class="{{ 'active' if 'api-docs' in request.path }}">
+        <span class="a-ic">🧩</span> مستندات API
       </a>
       <a href="{{ url_for('admin_messages') }}" class="{{ 'active' if 'messages' in request.path }}">
         <span class="a-ic">✉️</span> پیام‌های تماس

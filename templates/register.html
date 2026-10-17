@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>ثبت‌نام در سایت</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>ثبت‌نام</span></nav>
+    <p class="lead">با ساخت حساب کاربری می‌توانید درخواست‌های خود را مدیریت و در دوره‌ها ثبت‌نام کنید.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container" style="max-width:560px">
+    <div class="form-card auth-card">
+      <div class="auth-head">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="لوگوی مرکز رز" class="auth-logo">
+        <h2>ساخت حساب کاربری</h2>
+        <p>اطلاعات زیر را تکمیل کنید؛ ثبت‌نام کمتر از یک دقیقه طول می‌کشد.</p>
+      </div>
+      <form method="post" action="{{ url_for('register') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="rg_name">نام و نام خانوادگی <span class="req">*</span></label>
+          <input type="text" id="rg_name" name="full_name" required value="{{ request.args.get('full_name', '') }}" placeholder="مثلاً: سارا محمدی">
+        </div>
+        <div class="field">
+          <label for="rg_email">ایمیل <span class="req">*</span></label>
+          <input type="email" id="rg_email" name="email" required value="{{ request.args.get('email', '') }}" placeholder="you@example.com" dir="ltr" style="text-align:right">
+        </div>
+        <div class="field">
+          <label for="rg_phone">شماره همراه (اختیاری)</label>
+          <input type="tel" id="rg_phone" name="phone" placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" style="text-align:right" maxlength="11">
+          <p class="hint">در صورت درج شماره، درخواست‌های ثبت‌شده با این شماره هم در پنل شما نمایش داده می‌شود.</p>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="rg_pass">گذرواژه <span class="req">*</span></label>
+            <input type="password" id="rg_pass" name="password" required placeholder="حداقل ۶ کاراکتر">
+          </div>
+          <div class="field">
+            <label for="rg_pass2">تکرار گذرواژه <span class="req">*</span></label>
+            <input type="password" id="rg_pass2" name="password2" required placeholder="تکرار گذرواژه">
+          </div>
+        </div>
+        <div class="field">
+          <label for="rg_captcha">کد امنیتی <span class="req">*</span></label>
+          <div class="captcha-row">
+            <img src="/captcha.png" alt="کپچا" width="170" height="54" title="برای دریافت عبارت جدید کلیک کنید"
+                 onclick="this.src='/captcha.png?r='+Date.now()" style="cursor:pointer;border-radius:10px">
+            <input type="text" id="rg_captcha" name="captcha" required placeholder="حاصل را وارد کنید" maxlength="2" inputmode="numeric" style="text-align:center">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">ایجاد حساب کاربری</button>
+      </form>
+      <div class="auth-foot">
+        <p>قبلاً ثبت‌نام کرده‌اید؟ <a href="{{ url_for('login') }}">وارد شوید</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

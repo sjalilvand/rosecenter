@@ -256,6 +256,39 @@ def seed():
              course["start_date"], course["schedule"], course["level"], 1, course["sort_order"]),
         )
 
+    # ---------- کاربر نمونه سایت ----------
+    c.execute(
+        "INSERT OR IGNORE INTO users (full_name, email, phone, password_hash, is_active) VALUES (?,?,?,?,1)",
+        ("سارا محمدی", "user@example.com", "09121234567", generate_password_hash("user1234")),
+    )
+
+    # ---------- بلوک‌های صفحه اصلی ----------
+    c.execute("SELECT COUNT(*) FROM home_blocks")
+    if c.fetchone()[0] == 0:
+        blocks = [
+            ("form",    "درخواست مشاوره", "ثبت سریع درخواست نوبت روان‌درمانی", "📝", "/consultation/", None, 1),
+            ("form",    "فراخوان همکاری", "ثبت اطلاعات راه‌اندازی مرکز مشاوره", "🤝", "/cooperation/", None, 2),
+            ("form",    "پیگیری درخواست", "استعلام وضعیت با کد پیگیری", "🔎", "/tracking/", None, 3),
+            ("article", "پویش باید برخاست", "گزارش پویش حمایت روانشناختی", "📰", "", 1, 4),
+            ("course",  "دوره‌های آکادمی رز", "کارگاه‌های تخصصی روانشناسی", "🎓", "", 1, 5),
+            ("custom",  "تبدیل تاریخ شمسی", "ابزار تبدیل تاریخ شمسی و میلادی", "📅", "/jalali/", None, 6),
+        ]
+        for kind, title, subtitle, icon, link, ref_id, order in blocks:
+            c.execute(
+                """INSERT OR IGNORE INTO home_blocks
+                (kind, title, subtitle, icon, link, ref_id, sort_order, is_visible)
+                VALUES (?,?,?,?,?,?,?,1)""",
+                (kind, title, subtitle, icon, link, ref_id, order),
+            )
+
+    # ---------- کلید API نمونه ----------
+    c.execute("SELECT COUNT(*) FROM api_keys")
+    if c.fetchone()[0] == 0:
+        c.execute(
+            "INSERT OR IGNORE INTO api_keys (name, key, note) VALUES (?,?,?)",
+            ("سامانه نمونه", "rc_demo0000000000000000000000000000", "کلید نمونه — برای آزمایش API جایگزین کنید"),
+        )
+
     db.commit()
     db.close()
     print("✓ داده‌های اولیه با موفقیت درج شد.")

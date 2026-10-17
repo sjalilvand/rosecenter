@@ -1,0 +1,77 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="a-stat-row">
+  <div class="a-stat">
+    <span class="a-stat-num">🟢 {{ online_count }}</span>
+    <span class="a-stat-label">آنلاین در ۵ دقیقه اخیر</span>
+  </div>
+  <div class="a-stat">
+    <span class="a-stat-num">{{ active|length }}</span>
+    <span class="a-stat-label">سشن فعال (لاگین‌شده)</span>
+  </div>
+  <div class="a-stat">
+    <span class="a-stat-num">{{ history|length }}</span>
+    <span class="a-stat-label">آخرین سشن‌های خاتمه‌یافته</span>
+  </div>
+</div>
+
+<div class="a-card">
+  <h3 style="font-weight:800;margin-bottom:14px">سشن‌های فعال</h3>
+  <div class="table-responsive">
+  <table class="a-table">
+    <thead>
+      <tr><th>#</th><th>نوع</th><th>کاربر</th><th>IP</th><th>مرورگر</th>
+          <th>زمان ورود</th><th>آخرین حضور</th><th>حالت</th><th>عملیات</th></tr>
+    </thead>
+    <tbody>
+      {% for s in active %}
+      {% set is_online = (s['last_seen_at'] >= online_cutoff) %}
+      <tr>
+        <td>{{ s['id'] }}</td>
+        <td>{% if s['kind'] == 'admin' %}<span class="tag tag-purple">مدیر</span>{% else %}<span class="tag tag-blue">کاربر</span>{% endif %}</td>
+        <td><strong>{{ s['person'] or '—' }}</strong></td>
+        <td dir="ltr">{{ s['ip'] or '—' }}</td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="ltr" title="{{ s['user_agent'] }}">{{ s['user_agent'][:60] }}</td>
+        <td>{{ s['login_at'] }}</td>
+        <td>{{ s['last_seen_at'] }}</td>
+        <td>{% if is_online %}<span class="tag tag-green">🟢 آنلاین</span>{% else %}<span class="tag">غیرفعال</span>{% endif %}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_session_logout', rid=s['id']) }}" data-confirm="این سشن بسته شود و کاربر از سامانه خارج شود؟">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-danger">خروج اجباری</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" style="text-align:center;color:var(--ink-soft)">هیچ سشن فعالی وجود ندارد.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="a-card">
+  <h3 style="font-weight:800;margin-bottom:14px">تاریخچه سشن‌های خاتمه‌یافته (۱۰۰ مورد اخیر)</h3>
+  <div class="table-responsive">
+  <table class="a-table">
+    <thead>
+      <tr><th>#</th><th>نوع</th><th>کاربر</th><th>IP</th><th>زمان ورود</th><th>زمان خروج</th></tr>
+    </thead>
+    <tbody>
+      {% for s in history %}
+      <tr>
+        <td>{{ s['id'] }}</td>
+        <td>{{ 'مدیر' if s['kind'] == 'admin' else 'کاربر' }}</td>
+        <td>{{ s['person'] or '—' }}</td>
+        <td dir="ltr">{{ s['ip'] or '—' }}</td>
+        <td>{{ s['login_at'] }}</td>
+        <td>{{ s['logout_at'] or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:var(--ink-soft)">تاریخچه‌ای موجود نیست.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

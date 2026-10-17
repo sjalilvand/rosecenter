@@ -1,0 +1,71 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="a-card">
+  <h2 style="font-weight:800;margin-bottom:8px">🧩 مستندات REST API — نسخه v1</h2>
+  <p style="color:var(--ink-soft);font-size:.92rem;margin-bottom:16px">
+    این API به سامانه‌های خارجی (بیمه‌ها، سازمان‌ها، وب‌سایت‌های همکار و...) اجازه می‌دهد برای کاربران خود
+    <strong>درخواست مشاوره ثبت</strong> کنند و <strong>وضعیت درخواست</strong> را استعلام کنند.
+    کلیدها را از صفحه <a href="{{ url_for('admin_api_keys') }}">کلیدهای API</a> بسازید.
+  </p>
+
+  <h3 class="api-h3">۱) احراز هویت</h3>
+  <p style="font-size:.9rem;margin-bottom:8px">در تمام درخواست‌ها یکی از دو هدر زیر را ارسال کنید:</p>
+  <pre class="api-code" dir="ltr">X-API-Key: rc_xxxxxxxxxxxxxxxxxxxxxxxx
+Authorization: Bearer rc_xxxxxxxxxxxxxxxxxxxxxxxx</pre>
+
+  <h3 class="api-h3">۲) بررسی سلامت اتصال</h3>
+  <pre class="api-code" dir="ltr">GET /api/v1/ping
+→ { "ok": true, "service": "rosecenter-api", "version": "v1", "system": "نام سامانه شما" }</pre>
+
+  <h3 class="api-h3">۳) ثبت درخواست مشاوره</h3>
+  <pre class="api-code" dir="ltr">POST /api/v1/consultations
+Content-Type: application/json
+X-API-Key: rc_xxxx...
+
+{
+  "full_name": "سارا محمدی",        (الزامی)
+  "phone": "09123456789",          (الزامی — 10 تا 11 رقم)
+  "service_type": "زوج‌درمانی",     (الزامی — از فهرست مقادیر مجاز)
+  "center": "تهران",               (اختیاری)
+  "note": "توضیحات کاربر"          (اختیاری)
+}
+
+→ 201 { "ok": true, "tracking_code": "RC-XXXXXXXX", "status": "در انتظار بررسی" }</pre>
+  <p style="font-size:.9rem;margin:8px 0">
+    مقادیر مجاز <code dir="ltr">service_type</code>:
+    {% for t in THERAPY_TYPES %}<span class="tag tag-blue">{{ t }}</span> {% endfor %}
+  </p>
+
+  <h3 class="api-h3">۴) فهرست درخواست‌ها</h3>
+  <pre class="api-code" dir="ltr">GET /api/v1/consultations?limit=20&offset=0&status=در انتظار بررسی
+→ { "ok": true, "total": 42, "limit": 20, "offset": 0, "items": [ ... ] }</pre>
+
+  <h3 class="api-h3">۵) استعلام وضعیت با کد پیگیری</h3>
+  <pre class="api-code" dir="ltr">GET /api/v1/consultations/RC-XXXXXXXX
+→ { "ok": true, "item": { "tracking_code": "RC-XXXXXXXX", "status": "در حال بررسی", ... } }</pre>
+
+  <h3 class="api-h3">۶) متادیتا (نوع‌های درمان و مراکز فعال)</h3>
+  <pre class="api-code" dir="ltr">GET /api/v1/meta/services
+→ { "ok": true, "service_types": [...], "statuses": [...], "centers": [...] }</pre>
+
+  <h3 class="api-h3">۷) کدهای خطا</h3>
+  <div class="table-responsive">
+  <table class="a-table">
+    <thead><tr><th>کد HTTP</th><th>error.code</th><th>توضیح</th></tr></thead>
+    <tbody>
+      <tr><td>401</td><td dir="ltr">missing_api_key</td><td>هدر کلید ارسال نشده است</td></tr>
+      <tr><td>401</td><td dir="ltr">invalid_api_key</td><td>کلید نامعتبر است</td></tr>
+      <tr><td>403</td><td dir="ltr">inactive_api_key</td><td>کلید غیرفعال شده است</td></tr>
+      <tr><td>400</td><td dir="ltr">missing_full_name / invalid_phone / missing_service_type / invalid_service_type</td><td>خطای اعتبارسنجی داده</td></tr>
+      <tr><td>404</td><td dir="ltr">not_found</td><td>کد پیگیری یافت نشد</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 class="api-h3">نمونه cURL</h3>
+  <pre class="api-code" dir="ltr">curl -X POST "{{ request.host_url }}api/v1/consultations" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: rc_xxxxxxxxxxxxxxxxxxxxxxxx" \
+  -d '{"full_name":"علی رضایی","phone":"09123456789","service_type":"درمان فردی","center":"تهران"}'</pre>
+</div>
+{% endblock %}

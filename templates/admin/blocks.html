@@ -1,0 +1,56 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="a-toolbar">
+  <p class="a-hint" style="margin:0">از این بخش می‌توانید هر آیتم، فرم، مقاله یا دوره آموزشی را به صفحه اصلی اضافه کنید؛ ترتیب نمایش را با دکمه‌های ▲▼ تغییر دهید.</p>
+  <a href="{{ url_for('admin_block_new') }}" class="btn btn-primary">+ بلوک جدید</a>
+</div>
+
+<div class="a-card">
+  <table class="a-table">
+    <thead>
+      <tr><th>#</th><th>نوع</th><th>عنوان</th><th>زیرعنوان</th><th>آیکون</th>
+          <th>لینک</th><th>ترتیب</th><th>وضعیت</th><th>عملیات</th></tr>
+    </thead>
+    <tbody>
+      {% for b in rows %}
+      <tr>
+        <td>{{ b['id'] }}</td>
+        <td><span class="tag tag-blue">{{ kinds.get(b['kind'], b['kind']) }}</span></td>
+        <td><strong>{{ b['title'] }}</strong></td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b['subtitle'] or '—' }}</td>
+        <td style="font-size:1.2rem">{{ b['icon'] }}</td>
+        <td dir="ltr" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b['link'] or (b['ref_id'] and ('مرجع #' ~ b['ref_id'])) or '—' }}</td>
+        <td>{{ b['sort_order'] }}</td>
+        <td>
+          {% if b['is_visible'] %}<span class="tag tag-green">نمایش</span>
+          {% else %}<span class="tag tag-red">مخفی</span>{% endif %}
+        </td>
+        <td class="a-actions">
+          <form method="post" action="{{ url_for('admin_block_move', rid=b['id']) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="dir" value="up">
+            <button type="submit" class="btn btn-sm" title="انتقال به بالا">▲</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_block_move', rid=b['id']) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="dir" value="down">
+            <button type="submit" class="btn btn-sm" title="انتقال به پایین">▼</button>
+          </form>
+          <a href="{{ url_for('admin_block_edit', rid=b['id']) }}" class="btn btn-sm">ویرایش</a>
+          <form method="post" action="{{ url_for('admin_block_toggle', rid=b['id']) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm">{{ 'مخفی' if b['is_visible'] else 'نمایش' }}</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_block_delete', rid=b['id']) }}" data-confirm="این بلوک حذف شود؟">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-danger">حذف</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" style="text-align:center;color:var(--ink-soft)">هنوز بلوکی اضافه نشده است.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

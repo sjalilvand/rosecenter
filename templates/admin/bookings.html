@@ -22,7 +22,7 @@
       <thead>
         <tr>
           <th>کد پیگیری</th><th>نام</th><th>تلفن</th><th>نوع درمان</th>
-          <th>مرکز</th><th>وضعیت</th><th>تاریخ ثبت</th><th>عملیات</th>
+          <th>مرکز</th><th>منبع</th><th>وضعیت</th><th>تاریخ ثبت</th><th>عملیات</th>
         </tr>
       </thead>
       <tbody>
@@ -33,6 +33,7 @@
           <td dir="ltr" style="text-align:right">{{ b.phone }}</td>
           <td>{{ b.service_type }}</td>
           <td>{{ b.center or '—' }}</td>
+          <td>{% if b.source == 'API' %}<span class="tag tag-blue">🔌 API</span>{% else %}<span class="tag">🌐 وب‌سایت</span>{% endif %}</td>
           <td><span class="status-pill st-{{ b.status | replace(' ', '-') }}">{{ b.status }}</span></td>
           <td>{{ b.created_at[:10] }}</td>
           <td>

@@ -1,0 +1,102 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="a-card" style="max-width:680px">
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    <div class="a-field">
+      <label>نوع بلوک *</label>
+      <select name="kind" id="kindSelect" required>
+        {% for k, label in kinds.items() %}
+        <option value="{{ k }}" {{ 'selected' if row and row['kind'] == k }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <p class="a-hint">مقاله/دوره به‌صورت خودکار به صفحه مقاله یا دوره لینک می‌شوند؛ برای «فرم» یک لینک از فهرست انتخاب کنید.</p>
+    </div>
+
+    <div class="a-field" id="refArticle" style="display:none">
+      <label>مقاله مورد نظر</label>
+      <select name="ref_id_article">
+        <option value="">— انتخاب مقاله —</option>
+        {% for n in news_opts %}
+        <option value="{{ n['id'] }}" {{ 'selected' if row and row['ref_id'] == n['id'] }}>{{ n['title'] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="a-field" id="refCourse" style="display:none">
+      <label>دوره آموزشی مورد نظر</label>
+      <select name="ref_id_course">
+        <option value="">— انتخاب دوره —</option>
+        {% for c in course_opts %}
+        <option value="{{ c['id'] }}" {{ 'selected' if row and row['ref_id'] == c['id'] }}>{{ c['title'] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="a-field" id="formLink" style="display:none">
+      <label>فرم / لینک دسترسی سریع</label>
+      <select name="quick_link">
+        <option value="">— انتخاب فرم —</option>
+        {% for url, label, ic in QUICK_FORMS %}
+        <option value="{{ url }}" {{ 'selected' if row and row['link'] == url }}>{{ ic }} {{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="a-field">
+      <label>عنوان *</label>
+      <input type="text" name="title" value="{{ row['title'] if row else '' }}" required>
+      <p class="a-hint">برای مقاله/دوره اگر خالی بگذارید، عنوان منبع استفاده می‌شود.</p>
+    </div>
+
+    <div class="a-field">
+      <label>زیرعنوان / توضیح کوتاه</label>
+      <textarea name="subtitle" rows="2">{{ row['subtitle'] if row else '' }}</textarea>
+    </div>
+
+    <div class="a-field">
+      <label>آیکون (اموجی)</label>
+      <input type="text" name="icon" value="{{ row['icon'] if row else '✨' }}" maxlength="4" style="width:90px;text-align:center;font-size:1.3rem">
+    </div>
+
+    <div class="a-field" id="customLink" style="display:none">
+      <label>لینک سفارشی (برای آیتم سفارشی/خدمت)</label>
+      <input type="text" name="link_custom" value="{{ row['link'] if row and not row['link'].startswith('/') else '' }}" dir="ltr" placeholder="https://... یا /path/">
+    </div>
+
+    <div class="a-field">
+      <label>ترتیب نمایش</label>
+      <input type="number" name="sort_order" value="{{ row['sort_order'] if row else 0 }}">
+    </div>
+
+    <div class="a-field">
+      <label class="a-check">
+        <input type="checkbox" name="is_visible" {% if not row or row['is_visible'] %}checked{% endif %}>
+        نمایش در صفحه اصلی
+      </label>
+    </div>
+
+    <div class="a-actions-bar">
+      <button type="submit" class="btn btn-primary">ذخیره</button>
+      <a href="{{ url_for('admin_blocks') }}" class="btn">بازگشت</a>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  var kind = document.getElementById('kindSelect');
+  if (!kind) return;
+  function sync() {
+    var v = kind.value;
+    document.getElementById('refArticle').style.display = v === 'article' ? '' : 'none';
+    document.getElementById('refCourse').style.display = v === 'course' ? '' : 'none';
+    document.getElementById('formLink').style.display = v === 'form' ? '' : 'none';
+    document.getElementById('customLink').style.display = (v === 'custom' || v === 'service') ? '' : 'none';
+  }
+  kind.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endblock %}

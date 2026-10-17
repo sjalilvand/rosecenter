@@ -791,3 +791,42 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .footer-grid { grid-template-columns: 1fr; gap: 28px; }
   .footer-bottom-inner { justify-content: center; text-align: center; }
 }
+
+/* ---------- احراز هویت کاربران (ورود / ثبت‌نام / پنل) ---------- */
+.auth-card { max-width: 100%; }
+.auth-head { text-align: center; margin-bottom: 24px; }
+.auth-head .auth-logo { width: 64px; height: 64px; margin: 0 auto 12px; object-fit: contain; }
+.auth-head h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 4px; }
+.auth-head p { color: var(--ink-soft); font-size: .9rem; }
+.auth-foot { text-align: center; margin-top: 18px; font-size: .9rem; color: var(--ink-soft); }
+.auth-foot a { font-weight: 700; }
+.auth-admin { margin-top: 6px; font-size: .82rem; }
+.btn-user { padding: 8px 18px; }
+.captcha-row { display: flex; align-items: center; gap: 12px; }
+.captcha-row img { border: 1px solid var(--line); }
+.captcha-row input { flex: 1; }
+.table-responsive { overflow-x: auto; }
+
+/* ---------- بلوک‌های داینامیک صفحه اصلی ---------- */
+.blocks-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.block-card {
+  display: flex; align-items: center; gap: 16px; background: #fff;
+  border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px;
+  transition: all .25s; color: var(--ink); position: relative;
+}
+.block-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-rose); border-color: var(--rose-light); color: var(--ink); }
+.block-icon {
+  width: 56px; height: 56px; flex: 0 0 56px; border-radius: 16px; background: var(--rose-light);
+  display: flex; align-items: center; justify-content: center; font-size: 1.7rem;
+}
+.block-body { flex: 1; min-width: 0; }
+.block-kind { font-size: .72rem; font-weight: 700; color: var(--rose); background: var(--rose-softer); border-radius: 999px; padding: 2px 10px; }
+.block-body h3 { font-size: 1rem; font-weight: 800; margin: 6px 0 4px; }
+.block-body p { font-size: .84rem; color: var(--ink-soft); line-height: 1.7; }
+.block-arrow { color: var(--rose); font-weight: 800; font-size: 1.2rem; transition: transform .25s; }
+.block-card:hover .block-arrow { transform: translateX(-5px); }
+.block-form .block-icon { background: #e8f1fd; }
+.block-article .block-icon { background: #fff6e5; }
+.block-course .block-icon { background: #e8f7ef; }
+@media (max-width: 900px) { .blocks-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .blocks-grid { grid-template-columns: 1fr; } }

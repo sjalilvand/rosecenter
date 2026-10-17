@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>پنل کاربری</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>پنل کاربری</span></nav>
+    <p class="lead">سلام {{ u['full_name'] }} عزیز؛ درخواست‌ها و ثبت‌نام‌های خود را اینجا مدیریت کنید.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container panel-grid">
+
+    <!-- پروفایل -->
+    <aside class="form-card panel-profile">
+      <div class="panel-avatar">{{ u['full_name'][:1] }}</div>
+      <h3>{{ u['full_name'] }}</h3>
+      <p class="panel-email" dir="ltr">{{ u['email'] }}</p>
+      <p class="panel-meta">
+        تاریخ عضویت: {{ u['created_at']|jdate }}
+      </p>
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+      <h4 style="font-weight:800;margin-bottom:12px">ویرایش پروفایل</h4>
+      <form method="post" action="{{ url_for('panel_profile') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="pf_name">نام و نام خانوادگی</label>
+          <input type="text" id="pf_name" name="full_name" value="{{ u['full_name'] }}" required>
+        </div>
+        <div class="field">
+          <label for="pf_phone">شماره همراه</label>
+          <input type="tel" id="pf_phone" name="phone" value="{{ u['phone'] }}" placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" style="text-align:right" maxlength="11">
+        </div>
+        <div class="field">
+          <label for="pf_pass">گذرواژه جدید (اختیاری)</label>
+          <input type="password" id="pf_pass" name="new_password" placeholder="برای تغییر خالی بگذارید">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">ذخیره تغییرات</button>
+      </form>
+      <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-block" style="margin-top:10px;color:var(--red);border-color:var(--red)">خروج از حساب</a>
+    </aside>
+
+    <!-- درخواست‌ها -->
+    <div class="panel-main">
+      <div class="form-card" style="margin-bottom:22px">
+        <h3 style="font-weight:800;margin-bottom:6px">📅 درخواست‌های مشاوره</h3>
+        <p style="color:var(--ink-soft);font-size:.88rem;margin-bottom:16px">درخواست‌های ثبت‌شده شما (از سایت یا سامانه‌های متصل).</p>
+        {% if bookings %}
+        <div class="table-responsive">
+          <table class="panel-table">
+            <thead><tr><th>کد پیگیری</th><th>نوع درمان</th><th>وضعیت</th><th>تاریخ ثبت</th></tr></thead>
+            <tbody>
+              {% for b in bookings %}
+              <tr>
+                <td><code dir="ltr">{{ b['tracking_code'] }}</code></td>
+                <td>{{ b['service_type'] }}</td>
+                <td><span class="status-chip">{{ b['status'] }}</span></td>
+                <td>{{ b['created_at'][:10] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p style="margin-top:12px"><a href="{{ url_for('consultation') }}" class="btn btn-primary" style="padding:9px 20px">ثبت درخواست جدید</a></p>
+        {% else %}
+        <div class="panel-empty">
+          <p>هنوز درخواستی ثبت نکرده‌اید.</p>
+          <a href="{{ url_for('consultation') }}" class="btn btn-primary" style="padding:9px 20px">درخواست مشاوره</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-card">
+        <h3 style="font-weight:800;margin-bottom:6px">🎓 ثبت‌نام‌های دوره‌ها</h3>
+        <p style="color:var(--ink-soft);font-size:.88rem;margin-bottom:16px">دوره‌هایی که در آن‌ها ثبت‌نام کرده‌اید.</p>
+        {% if regs %}
+        <div class="table-responsive">
+          <table class="panel-table">
+            <thead><tr><th>کد پیگیری</th><th>دوره</th><th>وضعیت</th><th>تاریخ ثبت</th></tr></thead>
+            <tbody>
+              {% for r in regs %}
+              <tr>
+                <td><code dir="ltr">{{ r['tracking_code'] }}</code></td>
+                <td><a href="{{ url_for('course_detail', slug=r['course_slug']) }}">{{ r['course_title'] }}</a></td>
+                <td><span class="status-chip">{{ r['status'] }}</span></td>
+                <td>{{ r['created_at'][:10] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="panel-empty">
+          <p>هنوز در دوره‌ای ثبت‌نام نکرده‌اید.</p>
+          <a href="{{ url_for('academy') }}" class="btn btn-primary" style="padding:9px 20px">مشاهده دوره‌های آکادمی رز</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="quick-links" style="margin-top:22px">
+        <a href="{{ url_for('tracking') }}" class="quick-link">🔎 پیگیری درخواست با کد</a>
+        <a href="{{ url_for('feedback') }}" class="quick-link">💬 ثبت پیشنهاد یا انتقاد</a>
+        <a href="{{ url_for('jalali_converter') }}" class="quick-link">📅 تبدیل تاریخ شمسی</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block head %}
+<style>
+  .panel-grid { display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start; }
+  .panel-avatar {
+    width:72px; height:72px; border-radius:50%; background:var(--rose-light); color:var(--rose);
+    display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; margin-bottom:12px;
+  }
+  .panel-profile h3 { font-weight:800; }
+  .panel-email { color:var(--ink-soft); font-size:.88rem; }
+  .panel-meta { color:var(--ink-soft); font-size:.8rem; margin-top:4px; }
+  .panel-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  .panel-table th { text-align:right; padding:10px 8px; background:var(--bg-soft); border-bottom:2px solid var(--line); font-weight:700; }
+  .panel-table td { padding:11px 8px; border-bottom:1px solid var(--line); }
+  .panel-table code { background:var(--rose-softer); color:var(--rose-dark); padding:2px 8px; border-radius:6px; font-size:.82rem; }
+  .status-chip { background:var(--rose-light); color:var(--rose-dark); border-radius:999px; padding:3px 12px; font-size:.78rem; font-weight:700; white-space:nowrap; }
+  .panel-empty { text-align:center; padding:26px 10px; color:var(--ink-soft); }
+  .panel-empty p { margin-bottom:14px; }
+  .quick-links { display:flex; gap:12px; flex-wrap:wrap; }
+  .quick-link { background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 18px; font-size:.88rem; font-weight:600; transition:all .2s; }
+  .quick-link:hover { border-color:var(--rose); color:var(--rose); transform:translateY(-2px); }
+  @media (max-width: 900px) { .panel-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

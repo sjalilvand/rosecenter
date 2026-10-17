@@ -60,6 +60,11 @@
 
     <div class="header-actions">
       <button class="icon-btn" id="searchToggle" aria-label="جستجو"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 101-1l.3.3v.8l4.3 4.3-1.4 1.4L15.5 14zm-5 0a4.5 4.5 0 110-9 4.5 4.5 0 010 9z"/></svg></button>
+      {% if cur_user %}
+      <a href="{{ url_for('panel') }}" class="btn btn-outline btn-user">👤 {{ cur_user['full_name'].split()[0] }}</a>
+      {% else %}
+      <a href="{{ url_for('login') }}" class="btn btn-outline btn-user">ورود</a>
+      {% endif %}
       <a href="{{ url_for('consultation') }}" class="btn btn-primary btn-cta">درخواست مشاوره</a>
       <button class="icon-btn burger" id="navToggle" aria-label="منو"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg></button>
     </div>
@@ -90,6 +95,13 @@
     <li><a href="{{ url_for('contact') }}">تماس با ما</a></li>
     <li><a href="{{ url_for('feedback') }}">پیشنهاد و انتقاد</a></li>
     <li><a href="{{ url_for('tracking') }}">پیگیری درخواست</a></li>
+    {% if cur_user %}
+    <li><a href="{{ url_for('panel') }}">👤 پنل کاربری ({{ cur_user['full_name'] }})</a></li>
+    <li><a href="{{ url_for('logout') }}">خروج از حساب</a></li>
+    {% else %}
+    <li><a href="{{ url_for('login') }}">ورود به حساب کاربری</a></li>
+    <li><a href="{{ url_for('register') }}">ثبت‌نام در سایت</a></li>
+    {% endif %}
   </ul>
   <a href="{{ url_for('consultation') }}" class="btn btn-primary btn-block">درخواست مشاوره</a>
 </div>

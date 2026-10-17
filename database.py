@@ -222,6 +222,67 @@ def init_db(app):
         )
     """)
 
+    # ---------- کاربران سایت (مشتریان/مراجعین) ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name     TEXT NOT NULL,
+            email         TEXT UNIQUE NOT NULL,
+            phone         TEXT NOT NULL DEFAULT '',
+            password_hash TEXT NOT NULL,
+            is_active     INTEGER NOT NULL DEFAULT 1,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            last_login_at TEXT NOT NULL DEFAULT ''
+        )
+    """)
+
+    # ---------- سشن‌های لاگین‌شده (نمایش افراد آنلاین) ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS user_sessions (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            sid          TEXT UNIQUE NOT NULL,
+            kind         TEXT NOT NULL DEFAULT 'user',
+            user_id      INTEGER,
+            display_name TEXT NOT NULL DEFAULT '',
+            ip           TEXT NOT NULL DEFAULT '',
+            user_agent   TEXT NOT NULL DEFAULT '',
+            login_at     TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            last_seen_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            logout_at    TEXT NOT NULL DEFAULT '',
+            is_active    INTEGER NOT NULL DEFAULT 1
+        )
+    """)
+
+    # ---------- بلوک‌های دینامیک صفحه اصلی ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS home_blocks (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            kind       TEXT NOT NULL DEFAULT 'custom',
+            title      TEXT NOT NULL,
+            subtitle   TEXT NOT NULL DEFAULT '',
+            icon       TEXT NOT NULL DEFAULT '✨',
+            link       TEXT NOT NULL DEFAULT '',
+            ref_id     INTEGER,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            is_visible INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
+    # ---------- کلیدهای API سامانه‌های خارجی ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS api_keys (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            name          TEXT NOT NULL,
+            key           TEXT UNIQUE NOT NULL,
+            is_active     INTEGER NOT NULL DEFAULT 1,
+            note          TEXT NOT NULL DEFAULT '',
+            request_count INTEGER NOT NULL DEFAULT 0,
+            last_used_at  TEXT NOT NULL DEFAULT '',
+            created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
     # ---------- فراخوان همکاری (فرم کامل مراکز مشاوره) ----------
     c.execute("""
         CREATE TABLE IF NOT EXISTS hr_calls (
@@ -262,6 +323,19 @@ def init_db(app):
             created_at        TEXT NOT NULL DEFAULT (datetime('now','localtime'))
         )
     """)
+
+    # ---------- مایگریشن‌های سبک (ستون‌های اضافه‌شده در نسخه‌های بعد) ----------
+    def _add_column(table, col_sql):
+        cols = {r[1] for r in c.execute(f"PRAGMA table_info({table})")}
+        name = col_sql.split()[0]
+        if name not in cols:
+            c.execute(f"ALTER TABLE {table} ADD COLUMN {col_sql}")
+
+    _add_column("bookings", "source TEXT NOT NULL DEFAULT 'وب‌سایت'")
+    _add_column("bookings", "user_id INTEGER")
+    _add_column("bookings", "api_key_id INTEGER")
+    _add_column("course_registrations", "user_id INTEGER")
+    _add_column("hr_calls", "user_id INTEGER")
 
     db.commit()
     db.close()

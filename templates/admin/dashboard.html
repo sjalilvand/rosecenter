@@ -27,9 +27,43 @@
   <div class="stat-card"><span class="s-ic">📰</span><div><b>{{ stats.news }}</b><span>خبر منتشرشده</span></div></div>
   <div class="stat-card"><span class="s-ic">📍</span><div><b>{{ stats.centers }}</b><span>مرکز استانی</span></div></div>
   <div class="stat-card"><span class="s-ic">📚</span><div><b>{{ stats.courses }}</b><span>دوره آموزشی</span></div></div>
-  <div class="stat-card"><span class="s-ic">❓</span><div><b>{{ stats.faqs }}</b><span>سوال متداول</span></div></div>
+  <div class="stat-card"><span class="s-ic">👥</span><div><b>{{ stats.users }}</b><span>کاربر ثبت‌نام‌شده</span></div></div>
   <div class="stat-card"><span class="s-ic">⭐</span><div><b>{{ stats.testimonials }}</b><span>نظر مراجعین</span></div></div>
 </div>
+
+<div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+  <div class="stat-card" style="border-right:3px solid #1d8a5f">
+    <span class="s-ic">🟢</span>
+    <div><b>{{ stats.online }}</b><span>آنلاین در ۵ دقیقه اخیر</span>
+    <a href="{{ url_for('admin_sessions') }}" style="font-size:.75rem">مشاهده افراد لاگین‌شده</a></div>
+  </div>
+  <div class="stat-card" style="border-right:3px solid var(--rose)">
+    <span class="s-ic">🔑</span>
+    <div><b>{{ stats.api_keys }}</b><span>کلید API فعال</span>
+    <a href="{{ url_for('admin_api_keys') }}" style="font-size:.75rem">مدیریت کلیدها</a></div>
+  </div>
+  <div class="stat-card" style="border-right:3px solid #2f4fc0">
+    <span class="s-ic">🔌</span>
+    <div><b>{{ stats.api_requests }}</b><span>فراخوانی API از سامانه‌های خارجی</span>
+    <a href="{{ url_for('admin_api_docs') }}" style="font-size:.75rem">مستندات API</a></div>
+  </div>
+</div>
+
+{% if online_now %}
+<div class="panel" style="margin-bottom:24px">
+  <div class="panel-title">
+    کاربران آنلاین هم‌اکنون
+    <a href="{{ url_for('admin_sessions') }}" class="btn btn-outline btn-sm">همه سشن‌ها</a>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    {% for s in online_now %}
+    <span style="background:#f2faf6;border:1px solid #bfe8d2;border-radius:999px;padding:6px 16px;font-size:.84rem;font-weight:700;color:#14663f">
+      🟢 {{ s.display_name }} <small style="color:var(--ink-soft)">({{ 'مدیر' if s.kind == 'admin' else 'کاربر' }})</small>
+    </span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 <div class="panel-grid">
   <div class="panel">

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>ورود به حساب کاربری</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>ورود</span></nav>
+    <p class="lead">برای دسترسی به پنل کاربری، پیگیری درخواست‌ها و ثبت‌نام سریع در دوره‌ها وارد شوید.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container" style="max-width:520px">
+    <div class="form-card auth-card">
+      <div class="auth-head">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="لوگوی مرکز رز" class="auth-logo">
+        <h2>خوش آمدید 👋</h2>
+        <p>ایمیل و گذرواژه حساب خود را وارد کنید.</p>
+      </div>
+      <form method="post" action="{{ url_for('login') }}{% if request.args.get('next') %}?next={{ request.args.get('next')|urlencode }}{% endif %}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="lg_email">ایمیل <span class="req">*</span></label>
+          <input type="email" id="lg_email" name="email" required placeholder="you@example.com" dir="ltr" style="text-align:right" autofocus>
+        </div>
+        <div class="field">
+          <label for="lg_pass">گذرواژه <span class="req">*</span></label>
+          <input type="password" id="lg_pass" name="password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">ورود به حساب</button>
+      </form>
+      <div class="auth-foot">
+        <p>حساب کاربری ندارید؟ <a href="{{ url_for('register') }}">ثبت‌نام کنید</a></p>
+        <p class="auth-admin">کارمند مرکز هستید؟ <a href="{{ url_for('admin_login') }}">ورود به پنل مدیریت</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

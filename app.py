@@ -7,6 +7,8 @@ import os
 import secrets
 import string
 import math
+import re
+import datetime
 from functools import wraps
 
 from flask import (
@@ -22,6 +24,13 @@ from config import THERAPY_TYPES, REQUEST_STATUSES
 app = Flask(__name__)
 app.config.from_object("config")
 
+# مدت زنده‌ماندن سشن لاگین (۳۰ روز) و رفرش هر درخواست
+from datetime import timedelta
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+
+# فاصله‌ای که کاربر «آنلاین» در نظر گرفته می‌شود (ثانیه)
+ONLINE_WINDOW = 300
+
 UPLOAD_FOLDER = os.path.join(app.config.get("BASE_DIR", os.path.dirname(os.path.abspath(__file__))), "uploads")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -33,7 +42,25 @@ def _ensure_db():
     database.get_db()
 
 
+def _touch_session():
+    """ردیابی سشن‌ها: بروزرسانی آخرین حضور + ابطال سشن‌های خروج‌کرده توسط ادمین"""
+    sid = session.get("sid")
+    if not sid:
+        return
+    row = database.query(
+        "SELECT is_active FROM user_sessions WHERE sid=?", (sid,), one=True)
+    if not row or not row["is_active"]:
+        # ادمین این سشن را از پنل بسته است
+        session.clear()
+        return
+    if (session.get("uid") or session.get("admin_id")):
+        database.execute(
+            "UPDATE user_sessions SET last_seen_at=datetime('now','localtime') WHERE sid=? AND is_active=1",
+            (sid,))
+
+
 app.before_request(_ensure_db)
+app.before_request(_touch_session)
 app.teardown_appcontext(database.close_db)
 
 PER_PAGE = 9  # تعداد اخبار در هر صفحه
@@ -60,9 +87,83 @@ app.jinja_env.globals["csrf_token"] = csrf_token
 app.jinja_env.globals["THERAPY_TYPES"] = THERAPY_TYPES
 
 
+def _jdatetime_filter(value, with_time=False):
+    """فیلتر Jinja: تبدیل تاریخ میلادی رشته‌ای به شمسی خوانا"""
+    if not value:
+        return ""
+    s = str(value)
+    try:
+        d = datetime.datetime.strptime(s[:19], "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        try:
+            d = datetime.datetime.strptime(s[:10], "%Y-%m-%d")
+        except ValueError:
+            return s
+    jy, jm, jd = jdate.gregorian_to_jalali(d.year, d.month, d.day)
+    txt = jdate.format_jalali(jy, jm, jd)
+    if with_time and " " in s:
+        txt += " — " + s[11:16]
+    return txt
+
+
+app.jinja_env.filters["jdate"] = _jdatetime_filter
+
+
 def valid_csrf():
     tok = request.form.get("_csrf", "")
     return tok and tok == session.get("_csrf")
+
+
+# ------------------------------------------------------------------
+# مدیریت سشن لاگین (ثبت / اتمام / ردیابی)
+# ------------------------------------------------------------------
+def _client_ip():
+    fwd = request.headers.get("X-Forwarded-For", "")
+    return (fwd.split(",")[0].strip() if fwd else request.remote_addr) or ""
+
+
+def register_session(kind, display_name, user_id=None):
+    """ثبت سشن جدید پس از لاگین (کاربر عادی یا ادمین)"""
+    sid = secrets.token_hex(16)
+    session["sid"] = sid
+    session.permanent = True
+    ua = request.headers.get("User-Agent", "")[:300]
+    database.execute(
+        """INSERT INTO user_sessions (sid, kind, user_id, display_name, ip, user_agent)
+           VALUES (?,?,?,?,?,?)""",
+        (sid, kind, user_id, display_name, _client_ip(), ua))
+    return sid
+
+
+def end_session():
+    """پایان سشن جاری و ثبت زمان خروج"""
+    sid = session.pop("sid", None)
+    if sid:
+        database.execute(
+            """UPDATE user_sessions SET is_active=0, logout_at=datetime('now','localtime')
+               WHERE sid=? AND is_active=1""", (sid,))
+
+
+def current_user():
+    """اطلاعات کاربر لاگین‌شده فعلی (یا None)"""
+    if "uid" not in session or "cur_user" not in g:
+        if "uid" not in session:
+            return None
+        g.cur_user = database.query(
+            "SELECT * FROM users WHERE id=? AND is_active=1", (session["uid"],), one=True)
+        if not g.cur_user:
+            session.clear()
+            return None
+    return g.cur_user
+
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get("uid"):
+            return redirect(url_for("login", next=request.path))
+        return f(*args, **kwargs)
+    return wrapper
 
 
 # ------------------------------------------------------------------
@@ -132,11 +233,13 @@ def get_visible_services():
 
 @app.context_processor
 def inject_globals():
+    u = current_user()
     return {
         "settings": get_settings(),
         "nav_services": get_visible_services(),
         "REQUEST_STATUSES": REQUEST_STATUSES,
         "today_jalali_fa": jdate.today_jalali_fa(),
+        "cur_user": u,
     }
 
 
@@ -171,8 +274,58 @@ def home():
     testimonials = database.query("SELECT * FROM testimonials ORDER BY sort_order")
     faqs = database.query("SELECT * FROM faqs ORDER BY sort_order")
     centers = database.query("SELECT id, province FROM centers WHERE is_soon=0 ORDER BY sort_order")
+    # بلوک‌های دینامیک صفحه اصلی (مدیریت از پنل ادمین)
+    blocks = _load_home_blocks()
     return render_template("home.html", services=services, testimonials=testimonials,
-                           faqs=faqs, centers=centers, page_title="خانه")
+                           faqs=faqs, centers=centers, blocks=blocks, page_title="خانه")
+
+
+HOME_BLOCK_KINDS = {
+    "custom":  "آیتم سفارشی",
+    "form":    "فرم / دسترسی سریع",
+    "article": "مقاله / خبر",
+    "course":  "دوره آموزشی",
+    "service": "خدمت",
+}
+
+
+def _load_home_blocks():
+    """بارگذاری بلوک‌های فعال صفحه اصلی و اتصال به مقاله/دوره مرتبط"""
+    rows = database.query("SELECT * FROM home_blocks WHERE is_visible=1 ORDER BY sort_order, id")
+    out = []
+    for r in rows:
+        b = dict(r)
+        b["kind_label"] = HOME_BLOCK_KINDS.get(r["kind"], r["kind"])
+        if r["kind"] == "article" and r["ref_id"]:
+            art = database.query(
+                "SELECT slug, title, summary FROM news WHERE id=? AND published=1", (r["ref_id"],), one=True)
+            if art:
+                b["link"] = url_for("news_detail", slug=art["slug"])
+                b["title"] = b["title"] or art["title"]
+                b["subtitle"] = b["subtitle"] or art["summary"]
+        elif r["kind"] == "course" and r["ref_id"]:
+            c = database.query(
+                "SELECT slug, title, summary, teacher, price FROM courses WHERE id=? AND is_open=1",
+                (r["ref_id"],), one=True)
+            if c:
+                b["link"] = url_for("course_detail", slug=c["slug"])
+                b["title"] = b["title"] or c["title"]
+                b["subtitle"] = b["subtitle"] or c["summary"]
+        elif r["kind"] == "form":
+            b.setdefault("link", "")
+        out.append(b)
+    return out
+
+
+# فرم‌های قابل انتخاب برای بلوک «فرم / دسترسی سریع»
+QUICK_FORMS = [
+    ("/consultation/", "درخواست مشاوره", "📝"),
+    ("/cooperation/", "فراخوان همکاری", "🤝"),
+    ("/tracking/", "پیگیری درخواست", "🔎"),
+    ("/feedback/", "پیشنهاد و انتقاد", "💬"),
+    ("/contact/", "تماس با ما", "✉️"),
+    ("/jalali/", "تبدیل تاریخ شمسی", "📅"),
+]
 
 
 @app.route("/psychotherapy/")
@@ -309,8 +462,8 @@ def cooperation():
              ownership_status, property_file,
              province, county, center_phone, postal_code, full_address,
              individual_rooms, group_rooms, child_rooms, counselors_count,
-             waiting_area, design_acceptance, accessibility, mobile, national_card_file)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+             waiting_area, design_acceptance, accessibility, mobile, national_card_file, user_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (code, first, last, ncode, jdate.en_digits(f.get("birthDate", "")).strip(),
              f.get("gender", "").strip(), f.get("militaryStatus", "").strip(), saved["militaryFile"],
              f.get("educationLevel", "").strip(), saved["educationFile"],
@@ -323,7 +476,8 @@ def cooperation():
              f.get("fullAddress", "").strip(),
              _num("individualRooms"), _num("groupRooms"), _num("childRooms"), _num("counselorsCount"),
              f.get("waitingArea", "").strip(), f.get("designAcceptance", "").strip(),
-             f.get("accessibility", "").strip(), mobile, saved["nationalCardFile"]),
+             f.get("accessibility", "").strip(), mobile, saved["nationalCardFile"],
+             session.get("uid")),
         )
         return jsonify({"result": "success", "message": "اطلاعات شما با موفقیت ثبت شد ✅",
                         "tracking_code": code})
@@ -383,12 +537,12 @@ def course_register(course_id):
             database.execute(
                 """INSERT INTO course_registrations
                 (tracking_code, course_id, first_name, last_name, national_code, mobile,
-                 phone, email, education, city, note)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                 phone, email, education, city, note, user_id)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (code, course_id, first, last, ncode, mobile,
                  jdate.en_digits(f.get("phone", "")).strip(), f.get("email", "").strip(),
                  f.get("education", "").strip(), f.get("city", "").strip(),
-                 f.get("note", "").strip()),
+                 f.get("note", "").strip(), session.get("uid")),
             )
             session["last_code"] = code
             return render_template("course_register.html", course=course, success_code=code,
@@ -532,9 +686,10 @@ def consultation():
             return redirect(url_for("consultation"))
         code = gen_tracking_code("RC")
         database.execute(
-            """INSERT INTO bookings (tracking_code, full_name, phone, service_type, center, note)
-            VALUES (?,?,?,?,?,?)""",
-            (code, name, phone, service_type, f.get("center", "").strip(), f.get("note", "").strip()),
+            """INSERT INTO bookings (tracking_code, full_name, phone, service_type, center, note, source, user_id)
+            VALUES (?,?,?,?,?,?, 'وب‌سایت', ?)""",
+            (code, name, phone, service_type, f.get("center", "").strip(), f.get("note", "").strip(),
+             session.get("uid")),
         )
         flash(f"درخواست نوبت شما با موفقیت ثبت شد. کد پیگیری شما: {code}", "success")
         session["last_code"] = code
@@ -627,6 +782,131 @@ def search():
 
 
 # ==================================================================
+# احراز هویت کاربران سایت
+# ==================================================================
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+@app.route("/login/", methods=["GET", "POST"])
+def login():
+    if current_user():
+        return redirect(url_for("panel"))
+    if request.method == "POST":
+        if not valid_csrf():
+            abort(400)
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        u = database.query("SELECT * FROM users WHERE email=?", (email,), one=True)
+        if u and u["is_active"] and check_password_hash(u["password_hash"], password):
+            session.clear()
+            session["uid"] = u["id"]
+            session["user_name"] = u["full_name"]
+            register_session("user", u["full_name"], u["id"])
+            database.execute("UPDATE users SET last_login_at=datetime('now','localtime') WHERE id=?",
+                             (u["id"],))
+            flash(f"خوش آمدید {u['full_name']} عزیز.", "success")
+            nxt = request.args.get("next") or url_for("panel")
+            if not nxt.startswith("/"):
+                nxt = url_for("panel")
+            return redirect(nxt)
+        msg = "حساب کاربری شما غیرفعال است." if (u and not u["is_active"]) else "ایمیل یا گذرواژه نادرست است."
+        flash(msg, "error")
+    return render_template("login.html", page_title="ورود به حساب کاربری")
+
+
+@app.route("/register/", methods=["GET", "POST"])
+def register():
+    if current_user():
+        return redirect(url_for("panel"))
+    if request.method == "POST":
+        if not valid_csrf():
+            abort(400)
+        f = request.form
+        name = f.get("full_name", "").strip()
+        email = f.get("email", "").strip().lower()
+        phone = jdate.en_digits(f.get("phone", "")).strip()
+        p1, p2 = f.get("password", ""), f.get("password2", "")
+        ok = True
+        if not name:
+            flash("نام و نام خانوادگی الزامی است.", "error"); ok = False
+        if not EMAIL_RE.match(email):
+            flash("ایمیل وارد شده معتبر نیست.", "error"); ok = False
+        elif database.query("SELECT id FROM users WHERE email=?", (email,), one=True):
+            flash("این ایمیل قبلاً ثبت شده است.", "error"); ok = False
+        if phone and not (phone.startswith("09") and len(phone) == 11 and phone.isdigit()):
+            flash("شماره همراه باید ۱۱ رقم و با ۰۹ شروع شود.", "error"); ok = False
+        if len(p1) < 6:
+            flash("گذرواژه باید حداقل ۶ کاراکتر باشد.", "error"); ok = False
+        elif p1 != p2:
+            flash("تکرار گذرواژه مطابقت ندارد.", "error"); ok = False
+        if not check_captcha():
+            flash("پاسخ کپچا نادرست است.", "error"); ok = False
+        if ok:
+            uid = database.execute(
+                "INSERT INTO users (full_name, email, phone, password_hash) VALUES (?,?,?,?)",
+                (name, email, phone, generate_password_hash(p1)))
+            session.clear()
+            session["uid"] = uid
+            session["user_name"] = name
+            register_session("user", name, uid)
+            flash("حساب کاربری شما با موفقیت ایجاد شد. خوش آمدید!", "success")
+            return redirect(url_for("panel"))
+        return redirect(url_for("register", **{k: v for k, v in [("email", email), ("full_name", name)] }))
+    generate_captcha()
+    return render_template("register.html", page_title="ثبت‌نام در سایت")
+
+
+@app.route("/logout/")
+def logout():
+    end_session()
+    session.clear()
+    flash("از حساب خود خارج شدید.", "success")
+    return redirect(url_for("home"))
+
+
+@app.route("/panel/")
+@login_required
+def panel():
+    u = current_user()
+    my_bookings = database.query(
+        "SELECT * FROM bookings WHERE user_id=? OR phone=? ORDER BY id DESC LIMIT 20",
+        (u["id"], u["phone"]))
+    my_regs = database.query(
+        """SELECT r.*, c.title AS course_title, c.slug AS course_slug
+           FROM course_registrations r JOIN courses c ON c.id=r.course_id
+           WHERE r.user_id=? OR r.mobile=? ORDER BY r.id DESC LIMIT 20""",
+        (u["id"], u["phone"]))
+    return render_template("panel.html", u=u, bookings=my_bookings, regs=my_regs,
+                           page_title="پنل کاربری")
+
+
+@app.route("/panel/profile", methods=["POST"])
+@login_required
+def panel_profile():
+    u = current_user()
+    name = request.form.get("full_name", "").strip()
+    phone = jdate.en_digits(request.form.get("phone", "")).strip()
+    if not name:
+        flash("نام الزامی است.", "error")
+        return redirect(url_for("panel"))
+    if phone and not (phone.startswith("09") and len(phone) == 11 and phone.isdigit()):
+        flash("شماره همراه معتبر نیست.", "error")
+        return redirect(url_for("panel"))
+    new_pw = request.form.get("new_password", "")
+    if new_pw:
+        if len(new_pw) < 6:
+            flash("گذرواژه جدید باید حداقل ۶ کاراکتر باشد.", "error")
+            return redirect(url_for("panel"))
+        database.execute("UPDATE users SET full_name=?, phone=?, password_hash=? WHERE id=?",
+                         (name, phone, generate_password_hash(new_pw), u["id"]))
+    else:
+        database.execute("UPDATE users SET full_name=?, phone=? WHERE id=?", (name, phone, u["id"]))
+    session["user_name"] = name
+    flash("پروفایل به‌روزرسانی شد.", "success")
+    return redirect(url_for("panel"))
+
+
+# ==================================================================
 # پنل مدیریت
 # ==================================================================
 @app.route("/admin/login", methods=["GET", "POST"])
@@ -637,9 +917,10 @@ def admin_login():
         u = database.query(
             "SELECT * FROM admin_users WHERE username=?", (request.form.get("username", ""),), one=True)
         if u and check_password_hash(u["password_hash"], request.form.get("password", "")):
+            session.clear()
             session["admin_id"] = u["id"]
             session["admin_name"] = u["full_name"]
-            session.permanent = True
+            register_session("admin", u["full_name"], None)
             return redirect(request.args.get("next") or url_for("admin_dashboard"))
         flash("نام کاربری یا گذرواژه نادرست است.", "error")
     return render_template("admin/login.html", page_title="ورود مدیریت")
@@ -647,6 +928,7 @@ def admin_login():
 
 @app.route("/admin/logout")
 def admin_logout():
+    end_session()
     session.clear()
     return redirect(url_for("admin_login"))
 
@@ -672,6 +954,12 @@ def admin_dashboard():
         "centers": database.query("SELECT COUNT(*) n FROM centers", one=True)["n"],
         "faqs": database.query("SELECT COUNT(*) n FROM faqs", one=True)["n"],
         "testimonials": database.query("SELECT COUNT(*) n FROM testimonials", one=True)["n"],
+        "users": database.query("SELECT COUNT(*) n FROM users", one=True)["n"],
+        "api_keys": database.query("SELECT COUNT(*) n FROM api_keys WHERE is_active=1", one=True)["n"],
+        "api_requests": database.query("SELECT COALESCE(SUM(request_count),0) n FROM api_keys", one=True)["n"],
+        "online": database.query(
+            "SELECT COUNT(*) n FROM user_sessions WHERE is_active=1 AND last_seen_at >= datetime('now','localtime','-5 minutes')",
+            one=True)["n"],
     }
     latest_bookings = database.query("SELECT * FROM bookings ORDER BY id DESC LIMIT 6")
     latest_messages = database.query("SELECT * FROM contact_messages ORDER BY id DESC LIMIT 6")
@@ -679,9 +967,13 @@ def admin_dashboard():
     latest_regs = database.query(
         """SELECT r.*, c.title AS course_title FROM course_registrations r
            JOIN courses c ON c.id = r.course_id ORDER BY r.id DESC LIMIT 6""")
+    online_now = database.query(
+        """SELECT kind, display_name, last_seen_at FROM user_sessions
+           WHERE is_active=1 AND last_seen_at >= datetime('now','localtime','-5 minutes')
+           ORDER BY last_seen_at DESC LIMIT 8""")
     return render_template("admin/dashboard.html", stats=stats,
                            latest_bookings=latest_bookings, latest_messages=latest_messages,
-                           latest_hr=latest_hr, latest_regs=latest_regs,
+                           latest_hr=latest_hr, latest_regs=latest_regs, online_now=online_now,
                            page_title="داشبورد مدیریت")
 
 
@@ -1268,6 +1560,352 @@ def admin_services():
     return render_template("admin/services.html", rows=rows, page_title="مدیریت خدمات")
 
 
+# ---------- مدیریت کاربران سایت ----------
+@app.route("/admin/users")
+@admin_required
+def admin_users():
+    q = request.args.get("q", "").strip()
+    where, args = "WHERE 1=1", []
+    if q:
+        where += " AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)"
+        args += [f"%{q}%"] * 3
+    rows = database.query(
+        f"""SELECT u.*,
+              (SELECT COUNT(*) FROM user_sessions s WHERE s.user_id=u.id AND s.is_active=1) AS online_sessions,
+              (SELECT COUNT(*) FROM bookings b WHERE b.user_id=u.id) AS bookings_count
+            FROM users u {where} ORDER BY u.id DESC""", args)
+    return render_template("admin/users.html", rows=rows, q=q, page_title="مدیریت کاربران")
+
+
+@app.route("/admin/users/new", methods=["GET", "POST"])
+@admin_required
+@admin_csrf
+def admin_user_new():
+    if request.method == "POST":
+        f = request.form
+        name = f.get("full_name", "").strip()
+        email = f.get("email", "").strip().lower()
+        pw = f.get("password", "")
+        if not name or not EMAIL_RE.match(email):
+            flash("نام و ایمیل معتبر الزامی است.", "error")
+            return redirect(request.url)
+        if database.query("SELECT id FROM users WHERE email=?", (email,), one=True):
+            flash("این ایمیل قبلاً ثبت شده است.", "error")
+            return redirect(request.url)
+        if len(pw) < 6:
+            flash("گذرواژه باید حداقل ۶ کاراکتر باشد.", "error")
+            return redirect(request.url)
+        database.execute(
+            """INSERT INTO users (full_name, email, phone, password_hash, is_active)
+               VALUES (?,?,?,?,?)""",
+            (name, email, jdate.en_digits(f.get("phone", "")).strip(),
+             generate_password_hash(pw), 1 if f.get("is_active") else 0))
+        flash("کاربر جدید ایجاد شد.", "success")
+        return redirect(url_for("admin_users"))
+    return render_template("admin/user_form.html", row=None, page_title="کاربر جدید")
+
+
+@app.route("/admin/users/<int:rid>", methods=["GET", "POST"])
+@admin_required
+@admin_csrf
+def admin_user_edit(rid):
+    row = database.query("SELECT * FROM users WHERE id=?", (rid,), one=True)
+    if not row:
+        abort(404)
+    if request.method == "POST":
+        f = request.form
+        name = f.get("full_name", "").strip()
+        email = f.get("email", "").strip().lower()
+        if not name or not EMAIL_RE.match(email):
+            flash("نام و ایمیل معتبر الزامی است.", "error")
+            return redirect(request.url)
+        dup = database.query("SELECT id FROM users WHERE email=? AND id!=?", (email, rid), one=True)
+        if dup:
+            flash("این ایمیل برای کاربر دیگری ثبت شده است.", "error")
+            return redirect(request.url)
+        pw = f.get("password", "")
+        if pw:
+            if len(pw) < 6:
+                flash("گذرواژه باید حداقل ۶ کاراکتر باشد.", "error")
+                return redirect(request.url)
+            database.execute(
+                """UPDATE users SET full_name=?, email=?, phone=?, password_hash=?, is_active=?
+                   WHERE id=?""",
+                (name, email, jdate.en_digits(f.get("phone", "")).strip(),
+                 generate_password_hash(pw), 1 if f.get("is_active") else 0, rid))
+        else:
+            database.execute(
+                "UPDATE users SET full_name=?, email=?, phone=?, is_active=? WHERE id=?",
+                (name, email, jdate.en_digits(f.get("phone", "")).strip(),
+                 1 if f.get("is_active") else 0, rid))
+        if not f.get("is_active"):
+            # غیرفعال‌سازی: بستن همه سشن‌های فعال این کاربر
+            database.execute(
+                "UPDATE user_sessions SET is_active=0, logout_at=datetime('now','localtime') WHERE user_id=? AND is_active=1",
+                (rid,))
+        flash("اطلاعات کاربر به‌روزرسانی شد.", "success")
+        return redirect(url_for("admin_users"))
+    return render_template("admin/user_form.html", row=row, page_title="ویرایش کاربر")
+
+
+@app.route("/admin/users/<int:rid>/toggle", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_user_toggle(rid):
+    row = database.query("SELECT * FROM users WHERE id=?", (rid,), one=True)
+    if row:
+        new_state = 0 if row["is_active"] else 1
+        database.execute("UPDATE users SET is_active=? WHERE id=?", (new_state, rid))
+        if not new_state:
+            database.execute(
+                """UPDATE user_sessions SET is_active=0, logout_at=datetime('now','localtime')
+                   WHERE user_id=? AND is_active=1""", (rid,))
+        flash("وضعیت کاربر تغییر کرد.", "success")
+    return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/users/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_user_delete(rid):
+    database.execute(
+        """UPDATE user_sessions SET is_active=0, logout_at=datetime('now','localtime')
+           WHERE user_id=? AND is_active=1""", (rid,))
+    database.execute("DELETE FROM users WHERE id=?", (rid,))
+    flash("کاربر حذف شد.", "success")
+    return redirect(url_for("admin_users"))
+
+
+# ---------- نمایش افراد لاگین‌شده ----------
+@app.route("/admin/sessions")
+@admin_required
+def admin_sessions():
+    # سشن‌های بی‌فعالیت قدیمی (بیش از ۷ روز) را می‌بندیم
+    database.execute(
+        """UPDATE user_sessions SET is_active=0, logout_at=datetime('now','localtime')
+           WHERE is_active=1 AND last_seen_at < datetime('now','localtime','-7 days')""")
+    active = database.query(
+        """SELECT s.*, CASE WHEN s.user_id IS NOT NULL THEN
+             (SELECT full_name FROM users u WHERE u.id=s.user_id)
+             ELSE s.display_name END AS person
+           FROM user_sessions s WHERE s.is_active=1
+           ORDER BY s.last_seen_at DESC LIMIT 300""")
+    history = database.query(
+        """SELECT s.*, CASE WHEN s.user_id IS NOT NULL THEN
+             (SELECT full_name FROM users u WHERE u.id=s.user_id)
+             ELSE s.display_name END AS person
+           FROM user_sessions s WHERE s.is_active=0
+           ORDER BY s.logout_at DESC, s.last_seen_at DESC LIMIT 100""")
+    online_count = 0
+    now = datetime.datetime.now()
+    for r in active:
+        try:
+            seen = datetime.datetime.strptime(r["last_seen_at"], "%Y-%m-%d %H:%M:%S")
+            if (now - seen).total_seconds() <= ONLINE_WINDOW:
+                online_count += 1
+        except ValueError:
+            pass
+    online_cutoff = (now - datetime.timedelta(seconds=ONLINE_WINDOW)).strftime("%Y-%m-%d %H:%M:%S")
+    return render_template("admin/sessions.html", active=active, history=history,
+                           online_count=online_count, online_cutoff=online_cutoff,
+                           page_title="افراد لاگین‌شده")
+
+
+@app.route("/admin/sessions/<int:rid>/logout", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_session_logout(rid):
+    row = database.query("SELECT sid FROM user_sessions WHERE id=?", (rid,), one=True)
+    if row:
+        database.execute(
+            """UPDATE user_sessions SET is_active=0, logout_at=datetime('now','localtime')
+               WHERE sid=? AND is_active=1""", (row["sid"],))
+    flash("سشن کاربر بسته شد و کاربر از سامانه خارج گردید.", "success")
+    return redirect(url_for("admin_sessions"))
+
+
+# ---------- بلوک‌های صفحه اصلی ----------
+@app.route("/admin/blocks")
+@admin_required
+def admin_blocks():
+    rows = database.query("SELECT * FROM home_blocks ORDER BY sort_order, id")
+    kinds = HOME_BLOCK_KINDS
+    return render_template("admin/blocks.html", rows=rows, kinds=kinds,
+                           QUICK_FORMS=QUICK_FORMS, page_title="بلوک‌های صفحه اصلی")
+
+
+def _news_options():
+    return database.query(
+        "SELECT id, title FROM news ORDER BY id DESC LIMIT 100")
+
+
+def _course_options():
+    return database.query("SELECT id, title FROM courses ORDER BY sort_order, id DESC")
+
+
+def _block_fields(f):
+    """استخراج مقادیر ref_id و link بر اساس نوع بلوک از فرم ادمین"""
+    kind = f.get("kind", "custom")
+    ref_raw = ""
+    link = ""
+    if kind == "article":
+        ref_raw = f.get("ref_id_article", "").strip()
+    elif kind == "course":
+        ref_raw = f.get("ref_id_course", "").strip()
+    elif kind == "form":
+        link = f.get("quick_link", "").strip()
+    else:
+        link = f.get("link_custom", "").strip()
+    ref_id = int(ref_raw) if ref_raw.isdigit() else None
+    return kind, link, ref_id
+
+
+@app.route("/admin/blocks/new", methods=["GET", "POST"])
+@admin_required
+@admin_csrf
+def admin_block_new():
+    if request.method == "POST":
+        f = request.form
+        title = f.get("title", "").strip()
+        if not title:
+            flash("عنوان بلوک الزامی است.", "error")
+            return redirect(request.url)
+        kind, link, ref_id = _block_fields(f)
+        mx = database.query("SELECT MAX(sort_order) m FROM home_blocks", one=True)["m"] or 0
+        database.execute(
+            """INSERT INTO home_blocks (kind, title, subtitle, icon, link, ref_id, sort_order, is_visible)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (kind, title, f.get("subtitle", "").strip(),
+             f.get("icon", "✨").strip() or "✨", link, ref_id, mx + 1,
+             1 if f.get("is_visible") else 0))
+        flash("بلوک جدید اضافه شد و در صفحه اصلی نمایش داده می‌شود.", "success")
+        return redirect(url_for("admin_blocks"))
+    return render_template("admin/block_form.html", row=None, kinds=HOME_BLOCK_KINDS,
+                           QUICK_FORMS=QUICK_FORMS, news_opts=_news_options(),
+                           course_opts=_course_options(), page_title="بلوک جدید")
+
+
+@app.route("/admin/blocks/<int:rid>", methods=["GET", "POST"])
+@admin_required
+@admin_csrf
+def admin_block_edit(rid):
+    row = database.query("SELECT * FROM home_blocks WHERE id=?", (rid,), one=True)
+    if not row:
+        abort(404)
+    if request.method == "POST":
+        f = request.form
+        title = f.get("title", "").strip()
+        if not title:
+            flash("عنوان بلوک الزامی است.", "error")
+            return redirect(request.url)
+        kind, link, ref_id = _block_fields(f)
+        database.execute(
+            """UPDATE home_blocks SET kind=?, title=?, subtitle=?, icon=?, link=?, ref_id=?,
+               sort_order=?, is_visible=? WHERE id=?""",
+            (kind, title, f.get("subtitle", "").strip(),
+             f.get("icon", "✨").strip() or "✨", link, ref_id,
+             f.get("sort_order", 0, type=int), 1 if f.get("is_visible") else 0, rid))
+        flash("بلوک به‌روزرسانی شد.", "success")
+        return redirect(url_for("admin_blocks"))
+    return render_template("admin/block_form.html", row=row, kinds=HOME_BLOCK_KINDS,
+                           QUICK_FORMS=QUICK_FORMS, news_opts=_news_options(),
+                           course_opts=_course_options(), page_title="ویرایش بلوک")
+
+
+@app.route("/admin/blocks/<int:rid>/toggle", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_block_toggle(rid):
+    database.execute("UPDATE home_blocks SET is_visible = 1 - is_visible WHERE id=?", (rid,))
+    return redirect(url_for("admin_blocks"))
+
+
+@app.route("/admin/blocks/<int:rid>/move", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_block_move(rid):
+    direction = request.form.get("dir", "up")
+    row = database.query("SELECT * FROM home_blocks WHERE id=?", (rid,), one=True)
+    if row:
+        if direction == "up":
+            other = database.query(
+                "SELECT * FROM home_blocks WHERE sort_order<=? AND id!=? ORDER BY sort_order DESC, id DESC LIMIT 1",
+                (row["sort_order"], rid), one=True)
+        else:
+            other = database.query(
+                "SELECT * FROM home_blocks WHERE sort_order>=? AND id!=? ORDER BY sort_order, id LIMIT 1",
+                (row["sort_order"], rid), one=True)
+        if other:
+            database.execute("UPDATE home_blocks SET sort_order=? WHERE id=?",
+                             (row["sort_order"], other["id"]))
+            database.execute("UPDATE home_blocks SET sort_order=? WHERE id=?",
+                             (other["sort_order"], rid))
+    return redirect(url_for("admin_blocks"))
+
+
+@app.route("/admin/blocks/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_block_delete(rid):
+    database.execute("DELETE FROM home_blocks WHERE id=?", (rid,))
+    flash("بلوک حذف شد.", "success")
+    return redirect(url_for("admin_blocks"))
+
+
+# ---------- کلیدهای API سامانه‌های خارجی ----------
+def _gen_api_key():
+    return "rc_" + secrets.token_hex(24)
+
+
+@app.route("/admin/api-keys")
+@admin_required
+def admin_api_keys():
+    rows = database.query("SELECT * FROM api_keys ORDER BY id DESC")
+    return render_template("admin/api_keys.html", rows=rows, page_title="کلیدهای API")
+
+
+@app.route("/admin/api-keys/new", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_api_key_new():
+    name = request.form.get("name", "").strip()
+    if not name:
+        flash("نام سامانه/سازمان الزامی است.", "error")
+        return redirect(url_for("admin_api_keys"))
+    key = _gen_api_key()
+    database.execute(
+        "INSERT INTO api_keys (name, key, note) VALUES (?,?,?)",
+        (name, key, request.form.get("note", "").strip()))
+    flash(f"کلید API جدید ساخته شد. کلید فقط همین یک بار نمایش داده می‌شود:", "success")
+    return render_template("admin/api_keys.html", rows=database.query("SELECT * FROM api_keys ORDER BY id DESC"),
+                           new_key=key, new_key_name=name, page_title="کلیدهای API")
+
+
+@app.route("/admin/api-keys/<int:rid>/toggle", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_api_key_toggle(rid):
+    database.execute("UPDATE api_keys SET is_active = 1 - is_active WHERE id=?", (rid,))
+    flash("وضعیت کلید تغییر کرد.", "success")
+    return redirect(url_for("admin_api_keys"))
+
+
+@app.route("/admin/api-keys/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_api_key_delete(rid):
+    database.execute("DELETE FROM api_keys WHERE id=?", (rid,))
+    flash("کلید حذف شد.", "success")
+    return redirect(url_for("admin_api_keys"))
+
+
+@app.route("/admin/api-docs")
+@admin_required
+def admin_api_docs():
+    rows = database.query("SELECT * FROM api_keys WHERE is_active=1 ORDER BY id DESC")
+    return render_template("admin/api_docs.html", keys=rows, page_title="مستندات API")
+
+
 # ---------- تنظیمات ----------
 @app.route("/admin/settings", methods=["GET", "POST"])
 @admin_required
@@ -1304,10 +1942,166 @@ def admin_password():
 
 
 # ==================================================================
+# REST API v1 برای سامانه‌های خارجی (درخواست‌کنندگان مشاوره)
+# احراز هویت: هدر X-API-Key یا Authorization: Bearer <key>
+# ==================================================================
+def _json_error(status, code, message):
+    return jsonify({"ok": False, "error": {"code": code, "message": message}}), status
+
+
+def _authenticate_api_key():
+    """اعتبارسنجی کلید API — در صورت موفقیت ردیف کلید برمی‌گردد"""
+    key = request.headers.get("X-API-Key", "").strip()
+    if not key:
+        auth = request.headers.get("Authorization", "")
+        if auth.lower().startswith("bearer "):
+            key = auth[7:].strip()
+    if not key:
+        return None, _json_error(401, "missing_api_key",
+                                 "کلید API ارسال نشده است. آن را در هدر X-API-Key قرار دهید.")
+    row = database.query("SELECT * FROM api_keys WHERE key=?", (key,), one=True)
+    if not row:
+        return None, _json_error(401, "invalid_api_key", "کلید API نامعتبر است.")
+    if not row["is_active"]:
+        return None, _json_error(403, "inactive_api_key", "این کلید API غیرفعال شده است.")
+    database.execute(
+        """UPDATE api_keys SET request_count=request_count+1,
+           last_used_at=datetime('now','localtime') WHERE id=?""", (row["id"],))
+    return row, None
+
+
+@app.route("/api/v1/ping")
+def api_v1_ping():
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    return jsonify({
+        "ok": True,
+        "service": "rosecenter-api",
+        "version": "v1",
+        "system": key["name"],
+        "now": jdate.today_jalali_fa(),
+    })
+
+
+@app.route("/api/v1/consultations", methods=["POST"])
+def api_v1_create_consultation():
+    """ثبت درخواست مشاوره از سامانه خارجی"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    if not payload:
+        return _json_error(400, "empty_body",
+                           "بدنه درخواست خالی است. داده‌ها را به‌صورت JSON ارسال کنید.")
+
+    def _field(*names):
+        for n in names:
+            v = payload.get(n)
+            if v is not None and str(v).strip():
+                return str(v).strip()
+        return ""
+
+    full_name = _field("full_name", "name", "fullName")
+    phone = jdate.en_digits(_field("phone", "mobile", "tel"))
+    service_type = _field("service_type", "serviceType", "service")
+
+    if not full_name:
+        return _json_error(400, "missing_full_name", "فیلد full_name الزامی است.")
+    if not phone or not phone.isdigit() or not (10 <= len(phone) <= 11):
+        return _json_error(400, "invalid_phone", "شماره تماس معتبر نیست (مثال: 09123456789).")
+    if not service_type:
+        return _json_error(400, "missing_service_type",
+                           f"فیلد service_type الزامی است. مقادیر مجاز: {THERAPY_TYPES}")
+    if service_type not in THERAPY_TYPES:
+        return _json_error(400, "invalid_service_type",
+                           f"service_type نامعتبر است. مقادیر مجاز: {THERAPY_TYPES}")
+
+    code = gen_tracking_code("RC")
+    booking_id = database.execute(
+        """INSERT INTO bookings (tracking_code, full_name, phone, service_type, center, note,
+                                 source, user_id, api_key_id)
+           VALUES (?,?,?,?,?,?, 'API', NULL, ?)""",
+        (code, full_name, phone, service_type,
+         _field("center"), _field("note"), key["id"]))
+    return jsonify({
+        "ok": True,
+        "message": "درخواست مشاوره با موفقیت ثبت شد.",
+        "booking_id": booking_id,
+        "tracking_code": code,
+        "status": "در انتظار بررسی",
+    }), 201
+
+
+@app.route("/api/v1/consultations")
+def api_v1_list_consultations():
+    """فهرست درخواست‌های مشاوره (اختیاری: status، limit، offset)"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    status = request.args.get("status", "").strip()
+    limit = min(max(request.args.get("limit", 20, type=int), 1), 100)
+    offset = max(request.args.get("offset", 0, type=int), 0)
+    where, args = "WHERE 1=1", []
+    if status:
+        where += " AND status=?"
+        args.append(status)
+    total = database.query(
+        f"SELECT COUNT(*) n FROM bookings {where}", args, one=True)["n"]
+    rows = database.query(
+        f"""SELECT tracking_code, full_name, phone, service_type, center, note, status,
+                   source, created_at
+            FROM bookings {where} ORDER BY id DESC LIMIT ? OFFSET ?""",
+        (*args, limit, offset))
+    return jsonify({
+        "ok": True,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": [dict(r) for r in rows],
+    })
+
+
+@app.route("/api/v1/consultations/<tracking_code>")
+def api_v1_get_consultation(tracking_code):
+    """استعلام وضعیت یک درخواست با کد پیگیری"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    row = database.query(
+        """SELECT tracking_code, full_name, phone, service_type, center, note, status,
+                  admin_note, source, created_at
+           FROM bookings WHERE tracking_code=?""",
+        (tracking_code.strip().upper(),), one=True)
+    if not row:
+        return _json_error(404, "not_found", "درخواستی با این کد پیگیری یافت نشد.")
+    return jsonify({"ok": True, "item": dict(row)})
+
+
+@app.route("/api/v1/meta/services")
+def api_v1_meta_services():
+    """فهرست نوع‌های درمان مجاز + مراکز فعال (برای سامانه‌های خارجی)"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    centers = database.query(
+        "SELECT province FROM centers WHERE is_soon=0 ORDER BY sort_order")
+    return jsonify({
+        "ok": True,
+        "service_types": THERAPY_TYPES,
+        "statuses": REQUEST_STATUSES,
+        "centers": [r["province"] for r in centers],
+    })
+
+
+# ==================================================================
 # خطاها و API
 # ==================================================================
 @app.errorhandler(404)
 def not_found(e):
+    if request.path.startswith("/api/"):
+        return jsonify({"ok": False, "error": {"code": "not_found", "message": "مسیر یافت نشد."}}), 404
     return render_template("404.html", page_title="صفحه یافت نشد"), 404
 
 

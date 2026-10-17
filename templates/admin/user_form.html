@@ -1,0 +1,35 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="a-card" style="max-width:640px">
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="a-field">
+      <label>نام و نام خانوادگی *</label>
+      <input type="text" name="full_name" value="{{ row['full_name'] if row else '' }}" required>
+    </div>
+    <div class="a-field">
+      <label>ایمیل *</label>
+      <input type="email" name="email" value="{{ row['email'] if row else '' }}" dir="ltr" required>
+    </div>
+    <div class="a-field">
+      <label>شماره همراه</label>
+      <input type="tel" name="phone" value="{{ row['phone'] if row else '' }}" dir="ltr" maxlength="11" placeholder="09123456789">
+    </div>
+    <div class="a-field">
+      <label>گذرواژه {% if row %}(برای تغییر پر کنید){% else %}*{% endif %}</label>
+      <input type="password" name="password" {% if not row %}required{% endif %} placeholder="{{ 'خالی = بدون تغییر' if row else 'حداقل ۶ کاراکتر' }}">
+    </div>
+    <div class="a-field">
+      <label class="a-check">
+        <input type="checkbox" name="is_active" {% if not row or row['is_active'] %}checked{% endif %}>
+        حساب کاربری فعال باشد
+      </label>
+      {% if row %}<p class="a-hint">با غیرفعال‌کردن، همه سشن‌های فعال کاربر بسته می‌شود.</p>{% endif %}
+    </div>
+    <div class="a-actions-bar">
+      <button type="submit" class="btn btn-primary">ذخیره</button>
+      <a href="{{ url_for('admin_users') }}" class="btn">بازگشت</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

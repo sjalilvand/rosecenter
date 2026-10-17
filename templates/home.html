@@ -74,6 +74,32 @@
   </div>
 </section>
 
+<!-- بلوک‌های داینامیک صفحه اصلی (مدیریت از پنل ادمین) -->
+{% if blocks %}
+<section class="section section-soft">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">برگزیده‌ها</span>
+      <h2>دسترسی سریع و برگزیده‌ها</h2>
+      <p>آخرین مقاله‌ها، دوره‌های آموزشی و فرم‌های پرکاربرد مرکز رز.</p>
+    </div>
+    <div class="blocks-grid">
+      {% for b in blocks %}
+      <a href="{{ b.link or '#' }}" class="block-card block-{{ b.kind }}">
+        <div class="block-icon">{{ b.icon }}</div>
+        <div class="block-body">
+          <span class="block-kind">{{ b.kind_label }}</span>
+          <h3>{{ b.title }}</h3>
+          {% if b.subtitle %}<p>{{ b.subtitle[:120] }}{% if b.subtitle|length > 120 %}…{% endif %}</p>{% endif %}
+        </div>
+        <span class="block-arrow">←</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <!-- درباره مرکز -->
 <section class="section section-soft">
   <div class="container about-split">

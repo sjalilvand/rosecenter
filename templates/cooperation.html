@@ -1,670 +1,522 @@
-{# فراخوان همکاری — نسخه فلسک مطابق فرم Google Apps Script (۴ مرحله + کپچا + آپلود فایل) #}
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>فراخوان همکاری | {{ settings.site_name }}</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+{# فراخوان همکاری — تم رزِ سایت (بازطراحی مطابق هویت بصری rosecenter) — ۴ مرحله + کپچا + آپلود فایل #}
+{% extends "base.html" %}
+{% block head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<style>
+  /* ═══ تم رز — منطبق بر متغیرهای اصلی سایت ═══ */
+  .coop-wrap { max-width: 860px; margin-inline: auto; }
+  .coop-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 24px;
+    padding: 34px 30px; box-shadow: var(--shadow-rose); position: relative; overflow: hidden;
+  }
+  .coop-card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 6px;
+    background: linear-gradient(to left, var(--rose), var(--rose-dark));
+  }
+  .coop-head { text-align: center; margin-bottom: 26px; }
+  .coop-head .coop-badge {
+    width: 76px; height: 76px; margin: 0 auto 14px; border-radius: 22px;
+    background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.9rem;
+    box-shadow: var(--shadow-rose);
+  }
+  .coop-head h1 {
+    font-size: 1.6rem; font-weight: 800;
+    background: linear-gradient(to left, var(--rose), var(--rose-dark));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .coop-head p { color: var(--ink-soft); font-size: .92rem; margin-top: 6px; }
+
+  /* مراحل */
+  .coop-steps { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 6px; }
+  .coop-step { display: flex; align-items: center; gap: 8px; }
+  .step-dot {
+    width: 34px; height: 34px; border-radius: 50%; background: #e9e2e6; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .85rem;
+    transition: all .3s; flex: 0 0 34px;
+  }
+  .step-dot.active { background: var(--rose); transform: scale(1.15); box-shadow: 0 0 0 5px var(--rose-light); }
+  .step-dot.completed { background: var(--green); }
+  .step-label { font-size: .8rem; color: var(--ink-soft); font-weight: 600; display: none; }
+  .step-dot.active + .step-label, .step-dot.completed + .step-label { display: inline; }
+  .coop-progress { height: 8px; border-radius: 999px; background: #efe6ea; overflow: hidden; margin-bottom: 6px; }
+  .coop-progress-bar {
+    height: 100%; border-radius: 999px; width: 25%; transition: width .5s ease;
+    background: linear-gradient(to left, var(--rose), var(--rose-dark));
+  }
+  .coop-stepnum { text-align: center; font-size: .78rem; color: var(--ink-soft); margin-bottom: 22px; }
+
+  /* فیلدها */
+  .step-content { display: none; }
+  .step-content.active { display: block; animation: coopFade .45s ease; }
+  @keyframes coopFade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .coop-group { margin-bottom: 18px; }
+  .coop-label { display: block; font-weight: 700; font-size: .9rem; margin-bottom: 8px; color: var(--ink); }
+  .coop-label i { color: var(--rose); margin-left: 6px; }
+  .coop-label .req { color: var(--red); }
+  .coop-input {
+    width: 100%; border: 2px solid var(--line); border-radius: 14px; padding: 12px 16px;
+    background: var(--bg-soft); transition: all .25s; outline: none; font-size: .95rem;
+  }
+  .coop-input:focus {
+    border-color: var(--rose); background: #fff;
+    box-shadow: 0 0 0 4px var(--rose-light); transform: translateY(-1px);
+  }
+  .coop-input.error { border-color: var(--red) !important; box-shadow: 0 0 0 4px rgba(214,59,59,.12) !important; }
+  .coop-input.success { border-color: var(--green) !important; box-shadow: 0 0 0 4px rgba(29,138,95,.12) !important; }
+  .coop-input[readonly] { cursor: pointer; }
+  .coop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .coop-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .coop-hint { font-size: .76rem; color: var(--ink-soft); margin-top: 6px; }
+  .error-text { color: var(--red); font-size: .78rem; margin-top: 5px; display: none; }
+  .error-text.show { display: block; }
+  .nc-wrap { position: relative; }
+  .nc-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-soft); }
+  .nc-icon.ok { color: var(--green); }
+  .nc-icon.bad { color: var(--red); }
+  .nc-icon.wait { color: var(--gold); }
+
+  /* انتخاب‌های قرصی (radio pills) */
+  .pill-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pill { flex: 1; min-width: 110px; position: relative; cursor: pointer; }
+  .pill input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .pill span {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    border: 2px solid var(--line); border-radius: 14px; padding: 11px 8px; min-height: 50px;
+    font-size: .88rem; font-weight: 700; color: var(--ink-soft); background: var(--bg-soft); transition: all .2s;
+  }
+  .pill input:checked + span {
+    border-color: var(--rose); background: var(--rose-softer); color: var(--rose-dark);
+    box-shadow: 0 0 0 3px var(--rose-light);
+  }
+
+  /* آپلود فایل */
+  .file-drop {
+    border: 2px dashed #dcc9d2; border-radius: 14px; padding: 18px 12px; text-align: center;
+    cursor: pointer; transition: all .25s; background: var(--bg-soft);
+  }
+  .file-drop:hover, .file-drop.dragover { border-color: var(--rose); background: var(--rose-softer); }
+  .file-drop.error { border-color: var(--red); background: #fdf2f2; }
+  .file-drop.success { border-color: var(--green); background: #f2faf6; }
+  .file-drop i { font-size: 1.6rem; color: #b9a3ad; display: block; margin-bottom: 6px; }
+  .file-drop.success i { color: var(--green); }
+  .file-drop p { font-size: .78rem; color: var(--ink-soft); margin: 0; }
+  .file-info {
+    display: none; margin-top: 8px; padding: 9px 12px; border-radius: 10px;
+    background: var(--bg-soft); border: 1px solid var(--line);
+    align-items: center; gap: 10px; font-size: .8rem;
+  }
+  .file-info.show { display: flex; }
+  .file-info .fi-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+  .file-info .fi-size { color: var(--ink-soft); font-size: .72rem; }
+  .file-info button { color: var(--red); background: none; border: none; font-size: 1rem; }
+
+  /* بخش‌های شرطی */
+  .coop-section {
+    border: 2px solid var(--rose-light); background: var(--rose-softer);
+    border-radius: 16px; padding: 18px; margin-bottom: 18px; display: none;
+  }
+  .coop-section.show { display: block; animation: coopFade .4s ease; }
+
+  /* خلاصه */
+  .coop-summary {
+    border: 2px solid var(--rose-light); background: linear-gradient(135deg, var(--rose-softer), #fff);
+    border-radius: 16px; padding: 18px;
+  }
+  .coop-summary h4 { font-weight: 800; color: var(--rose-dark); margin-bottom: 12px; }
+  #summary p { font-size: .84rem; color: var(--ink-soft); margin-bottom: 4px; }
+  #summary strong { color: var(--ink); }
+  .sum-file {
+    display: inline-block; background: #e8f7ef; color: #14663f; font-size: .74rem;
+    border-radius: 999px; padding: 3px 10px; margin: 2px 0 2px 4px; font-weight: 700;
+  }
+
+  /* کپچا و قوانین */
+  .captcha-box { border: 2px solid var(--line); border-radius: 16px; padding: 16px; background: var(--bg-soft); }
+  .captcha-box img { border-radius: 10px; cursor: pointer; border: 1px solid var(--line); }
+  .terms-box { display: flex; gap: 10px; align-items: flex-start; border: 2px solid var(--line); border-radius: 16px; padding: 16px; background: var(--bg-soft); }
+  .terms-box input { width: 20px; height: 20px; margin-top: 4px; accent-color: var(--rose); }
+  .terms-box span { font-size: .88rem; }
+
+  /* دکمه‌ها */
+  .coop-actions { display: flex; gap: 12px; margin-top: 26px; }
+  .coop-btn {
+    flex: 1; padding: 13px; border-radius: 14px; border: none; font-weight: 800; font-size: .95rem;
+    background: linear-gradient(135deg, var(--rose), var(--rose-dark)); color: #fff;
+    transition: all .3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .coop-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-rose); }
+  .coop-btn:disabled { opacity: .6; cursor: not-allowed; }
+  .coop-btn-prev { flex: 0 0 auto; background: #fff; color: var(--ink-soft); border: 2px solid var(--line); }
+  .coop-btn-prev:hover { border-color: var(--rose); color: var(--rose); box-shadow: none; }
+  .spinner { display: none; width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  .spinner.show { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* توست و موفقیت */
+  .coop-toast {
+    display: none; margin-top: 18px; padding: 14px; border-radius: 14px; text-align: center; font-weight: 700; font-size: .9rem;
+  }
+  .coop-toast.show { display: block; animation: coopFade .4s ease; }
+  .coop-toast.ok { background: #e8f7ef; color: #14663f; border: 2px solid #bfe8d2; }
+  .coop-toast.err { background: #fdecec; color: #9c2626; border: 2px solid #f5caca; }
+  .coop-success { display: none; margin-top: 20px; padding: 28px; border-radius: 18px; text-align: center; background: #f2faf6; border: 2px solid #bfe8d2; }
+  .coop-success.show { display: block; animation: coopFade .4s ease; }
+  .coop-success i { font-size: 2.6rem; color: var(--green); margin-bottom: 12px; }
+  .coop-success .code-big { font-size: 1.7rem; font-weight: 900; color: #14663f; letter-spacing: 2px; margin: 10px 0; }
+  .fa-spin-fa { display: inline-block; }
+
+  @media (max-width: 640px) {
+    .coop-card { padding: 24px 16px; border-radius: 18px; }
+    .coop-grid { grid-template-columns: 1fr; }
+    .coop-grid-4 { grid-template-columns: 1fr 1fr; }
+    .step-label { display: none !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>فراخوان همکاری</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>فراخوان همکاری</span></nav>
+    <p class="lead">درخواست همکاری راه‌اندازی مرکز مشاوره — فرم اطلاعات مراکز (نسخه ۵٫۰)</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container coop-wrap">
+    <div class="coop-card">
+      <div class="coop-head">
+        <div class="coop-badge"><i class="fa-solid fa-briefcase"></i></div>
+        <h1>فراخوان همکاری مرکز رز</h1>
+        <p>لطفاً اطلاعات زیر را با دقت تکمیل کنید — فیلدهای ستاره‌دار الزامی هستند</p>
+      </div>
+
+      <div class="coop-steps">
+        <div class="coop-step"><span class="step-dot active" data-step="1">۱</span><span class="step-label">مشخصات فردی</span></div>
+        <div class="coop-step"><span class="step-dot" data-step="2">۲</span><span class="step-label">مدارک</span></div>
+        <div class="coop-step"><span class="step-dot" data-step="3">۳</span><span class="step-label">مرکز</span></div>
+        <div class="coop-step"><span class="step-dot" data-step="4">۴</span><span class="step-label">تأیید نهایی</span></div>
+      </div>
+      <div class="coop-progress"><div class="coop-progress-bar" id="progressBar"></div></div>
+      <p class="coop-stepnum">مرحله <span id="currentStepNum">۱</span> از ۴</p>
+
+      <form id="mainForm" action="/cooperation/" method="post" enctype="multipart/form-data" novalidate>
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <!-- ═══ مرحله ۱: مشخصات فردی ═══ -->
+        <div class="step-content active" data-step="1">
+          <div class="coop-grid">
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-user"></i> نام <span class="req">*</span></label>
+              <input type="text" name="firstName" id="firstName" placeholder="مثلاً: علی" class="coop-input">
+              <p class="error-text"></p>
+            </div>
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-user"></i> نام خانوادگی <span class="req">*</span></label>
+              <input type="text" name="lastName" id="lastName" placeholder="مثلاً: رضایی" class="coop-input">
+              <p class="error-text"></p>
+            </div>
+          </div>
+
+          <div class="coop-group">
+            <label class="coop-label"><i class="fa-solid fa-id-card"></i> کد ملی <span class="req">*</span></label>
+            <div class="nc-wrap">
+              <input type="text" name="nationalCode" id="nationalCode" placeholder="۱۰ رقم بدون خط تیره" maxlength="10" dir="ltr" class="coop-input" style="text-align:left;padding-left:42px">
+              <i id="ncStatusIcon" class="fa-solid fa-circle-info nc-icon"></i>
+            </div>
+            <p class="error-text"></p>
+            <p class="coop-hint">کد ملی به‌صورت زنده اعتبارسنجی می‌شود.</p>
+          </div>
+
+          <div class="coop-grid">
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-calendar"></i> تاریخ تولد (شمسی) <span class="req">*</span></label>
+              <input type="text" name="birthDate" id="birthDate" placeholder="روی فیلد کلیک کنید" readonly class="coop-input">
+              <p class="error-text"></p>
+            </div>
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-venus-mars"></i> جنسیت <span class="req">*</span></label>
+              <div class="pill-row">
+                <label class="pill"><input type="radio" name="gender" value="مرد"><span>♂ مرد</span></label>
+                <label class="pill"><input type="radio" name="gender" value="زن"><span>♀ زن</span></label>
+              </div>
+              <p class="error-text"></p>
+            </div>
+          </div>
+
+          <div class="coop-section" id="militarySection">
+            <label class="coop-label"><i class="fa-solid fa-shield"></i> وضعیت خدمت سربازی <span class="req">*</span></label>
+            <div class="pill-row">
+              <label class="pill"><input type="radio" name="militaryStatus" value="پایان خدمت"><span>پایان خدمت</span></label>
+              <label class="pill"><input type="radio" name="militaryStatus" value="معاف"><span>معاف</span></label>
+            </div>
+          </div>
+
+          <div class="coop-group" id="militaryFileGroup" style="display:none">
+            <label class="coop-label"><i class="fa-solid fa-file-shield"></i> تصویر کارت پایان خدمت</label>
+            <div class="file-drop" data-file="military">
+              <input type="file" id="militaryFile" name="militaryFile" accept="image/*,.pdf">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <p>حداکثر ۵۰ کیلوبایت — تصویر یا PDF — کلیک یا رهاکردن فایل</p>
+            </div>
+            <div class="file-info"></div>
+          </div>
+        </div>
+
+        <!-- ═══ مرحله ۲: مدارک ═══ -->
+        <div class="step-content" data-step="2">
+          <div class="coop-group">
+            <label class="coop-label"><i class="fa-solid fa-id-card"></i> تصویر کارت ملی <span class="req">*</span></label>
+            <div class="file-drop" data-file="nationalCard">
+              <input type="file" id="nationalCardFile" name="nationalCardFile" accept="image/*,.pdf">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <p>حداکثر ۵۰ کیلوبایت — تصویر یا PDF — کلیک یا رهاکردن فایل</p>
+            </div>
+            <div class="file-info"></div>
+          </div>
+
+          <div class="coop-group">
+            <label class="coop-label"><i class="fa-solid fa-graduation-cap"></i> آخرین مدرک تحصیلی <span class="req">*</span></label>
+            <select name="educationLevel" id="educationLevel" class="coop-input">
+              <option value="">انتخاب کنید...</option>
+              <option>دیپلم</option>
+              <option>فوق دیپلم</option>
+              <option>کارشناسی</option>
+              <option>کارشناسی ارشد</option>
+              <option>دکتری</option>
+              <option>فوق دکتری</option>
+            </select>
+            <p class="error-text"></p>
+          </div>
+
+          <div class="coop-group">
+            <label class="coop-label"><i class="fa-solid fa-file-pdf"></i> تصویر آخرین مدرک تحصیلی <span class="req">*</span></label>
+            <div class="file-drop" data-file="education">
+              <input type="file" id="educationFile" name="educationFile" accept="image/*,.pdf">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <p>حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
+            </div>
+            <div class="file-info"></div>
+          </div>
+
+          <div class="coop-group">
+            <label class="coop-label"><i class="fa-solid fa-certificate"></i> وضعیت پروانه <span class="req">*</span></label>
+            <div class="pill-row">
+              <label class="pill"><input type="radio" name="licenseStatus" value="دارد" onchange="toggleLicense(true)"><span>✔ دارد</span></label>
+              <label class="pill"><input type="radio" name="licenseStatus" value="ندارد" onchange="toggleLicense(false)"><span>✖ ندارد</span></label>
+            </div>
+            <p class="error-text"></p>
+          </div>
+
+          <div class="coop-section" id="licenseSection">
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-file-certificate"></i> تصویر پروانه</label>
+              <div class="file-drop" data-file="license">
+                <input type="file" id="licenseFile" name="licenseFile" accept="image/*,.pdf">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <p>حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
+              </div>
+              <div class="file-info"></div>
+            </div>
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-file-certificate"></i> پروانه فعالیت مرکز</label>
+              <div class="file-drop" data-file="centerLicense">
+                <input type="file" id="centerLicenseFile" name="centerLicenseFile" accept="image/*,.pdf">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <p>حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
+              </div>
+              <div class="file-info"></div>
+            </div>
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-align-right"></i> توضیحات پروانه فعالیت</label>
+              <textarea name="licenseDesc" id="licenseDesc" rows="3" placeholder="توضیحات..." class="coop-input" style="resize:vertical"></textarea>
+            </div>
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-file-shield"></i> تصویر مجوز مرکز</label>
+              <div class="file-drop" data-file="centerPermit">
+                <input type="file" id="centerPermitFile" name="centerPermitFile" accept="image/*,.pdf">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <p>حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
+              </div>
+              <div class="file-info"></div>
+            </div>
+          </div>
+
+          <div class="coop-group">
+            <label class="coop-label"><i class="fa-solid fa-house"></i> وضعیت مالکیت مرکز <span class="req">*</span></label>
+            <div class="pill-row">
+              <label class="pill"><input type="radio" name="ownershipStatus" value="سند دارد" onchange="toggleProperty(true)"><span>سند دارد</span></label>
+              <label class="pill"><input type="radio" name="ownershipStatus" value="استیجاری" onchange="toggleProperty(false)"><span>استیجاری</span></label>
+            </div>
+            <p class="error-text"></p>
+          </div>
+
+          <div class="coop-group" id="propertyFileGroup" style="display:none">
+            <label class="coop-label"><i class="fa-solid fa-file"></i> مدارک مربوط به ملک</label>
+            <div class="file-drop" data-file="property">
+              <input type="file" id="propertyFile" name="propertyFile" accept="image/*,.pdf">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <p>حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
+            </div>
+            <div class="file-info"></div>
+          </div>
+        </div>
+
+        <!-- ═══ مرحله ۳: مرکز ═══ -->
+        <div class="step-content" data-step="3">
+          <div class="coop-grid">
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-map"></i> استان <span class="req">*</span></label>
+              <select name="province" id="province" class="coop-input">
+                <option value="">انتخاب کنید...</option>
+              </select>
+              <p class="error-text"></p>
+            </div>
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-city"></i> شهرستان <span class="req">*</span></label>
+              <select name="county" id="county" disabled class="coop-input">
+                <option value="">ابتدا استان را انتخاب کنید</option>
+              </select>
+              <p class="error-text"></p>
+            </div>
+          </div>
+
+          <div class="coop-grid">
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-phone"></i> تلفن مرکز <span class="req">*</span></label>
+              <input type="tel" name="centerPhone" id="centerPhone" placeholder="02126246282" dir="ltr" maxlength="11" class="coop-input" style="text-align:left">
+              <p class="error-text"></p>
+            </div>
+            <div class="coop-group">
+              <label class="coop-label"><i class="fa-solid fa-envelope"></i> کد پستی <span class="req">*</span></label>
+              <input type="text" name="postalCode" id="postalCode" placeholder="۱۰ رقم" maxlength="10" dir="ltr" class="coop-input" style="text-align:left">
+              <p class="error-text"></p>
+            </div>
+          </div>
+
+          <div class="coop-group">
+            <label class="coop-label"><i class="fa-solid fa-location-dot"></i> نشانی کامل و پستی <span class="req">*</span></label>
+            <textarea name="fullAddress" id="fullAddress" rows="3" placeholder="استان، شهرستان، خیابان، پلاک..." class="coop-input" style="resize:vertical"></textarea>
+            <p class="error-text"></p>
+          </div>
+
+          <div class="coop-grid-4">
+            <div class="coop-group">
+              <label class="coop-label" style="font-size:.8rem">اتاق مشاوره فردی</label>
+              <input type="number" name="individualRooms" id="individualRooms" min="0" placeholder="۰" class="coop-input" style="text-align:center">
+            </div>
+            <div class="coop-group">
+              <label class="coop-label" style="font-size:.8rem">اتاق مشاوره گروهی</label>
+              <input type="number" name="groupRooms" id="groupRooms" min="0" placeholder="۰" class="coop-input" style="text-align:center">
+            </div>
+            <div class="coop-group">
+              <label class="coop-label" style="font-size:.8rem">اتاق کودک</label>
+              <input type="number" name="childRooms" id="childRooms" min="0" placeholder="۰" class="coop-input" style="text-align:center">
+            </div>
+            <div class="coop-group">
+              <label class="coop-label" style="font-size:.8rem">تعداد مشاورین</label>
+              <input type="number" name="counselorsCount" id="counselorsCount" min="0" placeholder="۰" class="coop-input" style="text-align:center">
+            </div>
+          </div>
+
+          <div class="coop-group">
+            <label class="coop-label"><i class="fa-solid fa-couch"></i> فضایی برای انتظار مراجعین</label>
+            <div class="pill-row">
+              <label class="pill"><input type="radio" name="waitingArea" value="دارد"><span>دارد</span></label>
+              <label class="pill"><input type="radio" name="waitingArea" value="ندارد"><span>ندارد</span></label>
+            </div>
+          </div>
+
+          <div class="coop-grid">
+            <div class="coop-group">
+              <label class="coop-label">پذیرش طراحی و تجهیز با الگوی شرکت</label>
+              <div class="pill-row">
+                <label class="pill"><input type="radio" name="designAcceptance" value="آری"><span>آری</span></label>
+                <label class="pill"><input type="radio" name="designAcceptance" value="خیر"><span>خیر</span></label>
+              </div>
+            </div>
+            <div class="coop-group">
+              <label class="coop-label">سهولت دسترسی برای مراجعین</label>
+              <div class="pill-row">
+                <label class="pill"><input type="radio" name="accessibility" value="آری"><span>آری</span></label>
+                <label class="pill"><input type="radio" name="accessibility" value="خیر"><span>خیر</span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="coop-group">
+            <label class="coop-label"><i class="fa-solid fa-mobile-screen"></i> شماره همراه برای تماس ضروری <span class="req">*</span></label>
+            <input type="tel" name="mobile" id="mobile" placeholder="09123456789" dir="ltr" maxlength="11" class="coop-input" style="text-align:left">
+            <p class="error-text"></p>
+          </div>
+        </div>
+
+        <!-- ═══ مرحله ۴: تأیید نهایی ═══ -->
+        <div class="step-content" data-step="4">
+          <div class="coop-summary coop-group">
+            <h4><i class="fa-solid fa-clipboard-check"></i> خلاصه اطلاعات:</h4>
+            <div id="summary" style="max-height:320px;overflow-y:auto"></div>
+          </div>
+
+          <div class="captcha-box coop-group">
+            <label class="coop-label"><i class="fa-solid fa-shield-halved"></i> کد امنیتی (کپچا) <span class="req">*</span></label>
+            <div class="captcha-row">
+              <img src="/captcha.png" alt="کپچا" id="captchaImg" width="170" height="54"
+                   title="برای دریافت عبارت جدید کلیک کنید">
+              <input type="text" name="captcha" id="captchaInput" placeholder="حاصل را وارد کنید" maxlength="2" inputmode="numeric"
+                     class="coop-input" style="flex:1;text-align:center;font-weight:800;font-size:1.1rem">
+            </div>
+            <p class="coop-hint">نتیجه عبارت بالا را وارد کنید — با کلیک روی تصویر، عبارت جدید می‌گیرید.</p>
+          </div>
+
+          <label class="terms-box" style="cursor:pointer">
+            <input type="checkbox" name="terms" id="terms">
+            <span>صحت تمام اطلاعات وارد شده را تأیید می‌کنم و <a href="#" style="color:var(--rose);text-decoration:underline">قوانین و مقررات</a> مرکز رز را می‌پذیرم. <span class="req" style="color:var(--red)">*</span></span>
+          </label>
+        </div>
+
+        <div class="coop-actions">
+          <button type="button" id="prevBtn" class="coop-btn coop-btn-prev" style="display:none">
+            <i class="fa-solid fa-arrow-right"></i> قبلی
+          </button>
+          <button type="button" id="nextBtn" class="coop-btn">
+            مرحله بعد <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <button type="submit" id="submitBtn" class="coop-btn" style="display:none">
+            <span id="btnText">ارسال نهایی</span>
+            <i class="fa-solid fa-paper-plane" id="btnIcon"></i>
+            <span class="spinner" id="spinner"></span>
+          </button>
+        </div>
+
+        <p class="coop-hint" style="text-align:center;margin-top:16px">
+          <i class="fa-solid fa-shield-halved"></i> اطلاعات شما به‌صورت امن روی سرور مرکز رز ذخیره می‌شود.
+        </p>
+      </form>
+
+      <div class="coop-toast" id="toast"></div>
+
+      <div class="coop-success" id="successBox">
+        <i class="fa-solid fa-circle-check"></i>
+        <p style="font-weight:800;font-size:1.1rem;color:#14663f">درخواست شما با موفقیت ثبت شد!</p>
+        <p style="font-size:.88rem;color:var(--ink-soft)">کد پیگیری شما:</p>
+        <p class="code-big" id="trackingCode" dir="ltr"></p>
+        <p style="font-size:.8rem;color:var(--ink-soft)">وضعیت درخواست را می‌توانید از صفحه <a href="/tracking/">«پیگیری درخواست»</a> دنبال کنید.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
 <script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
-
 <script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
-      animation: {
-        'fade-up': 'fadeUp 0.5s ease-out forwards',
-        'shake': 'shake 0.4s ease-in-out',
-        'slide-in': 'slideIn 0.4s ease-out',
-      },
-      keyframes: {
-        fadeUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-        shake: { '0%, 100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-6px)' }, '75%': { transform: 'translateX(6px)' } },
-        slideIn: { from: { opacity: '0', transform: 'translateY(-20px)' }, to: { opacity: '1', transform: 'translateY(0)' } }
-      }
-    }
-  }
-}
-</script>
-
-<style>
-  :root {
-    --theme-1: #667eea;
-    --theme-2: #764ba2;
-    --theme-3: #f093fb;
-    --theme-4: #4facfe;
-    --theme-accent: #667eea;
-    --theme-accent-dark: #764ba2;
-  }
-  body { font-family: 'Vazirmatn', sans-serif; }
-  .animated-bg {
-    background: linear-gradient(-45deg, var(--theme-1), var(--theme-2), var(--theme-3), var(--theme-4));
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-  }
-  @keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  .dark .animated-bg {
-    background: linear-gradient(-45deg, #1e1b4b, #312e81, #4c1d95, #1e3a8a);
-  }
-  .glass-card { background: rgba(255,255,255,0.97); backdrop-filter: blur(20px); }
-  .dark .glass-card { background: rgba(30,30,50,0.97); }
-  .form-input { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-  .form-input:focus {
-    border-color: var(--theme-accent);
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
-    transform: translateY(-2px);
-  }
-  .form-input.error { border-color: #ef4444 !important; box-shadow: 0 0 0 4px rgba(239,68,68,0.15) !important; }
-  .form-input.success { border-color: #10b981 !important; box-shadow: 0 0 0 4px rgba(16,185,129,0.15) !important; }
-  .submit-btn {
-    background: linear-gradient(135deg, var(--theme-accent) 0%, var(--theme-accent-dark) 100%);
-    background-size: 200% 200%;
-    transition: all 0.4s ease;
-  }
-  .submit-btn:hover:not(:disabled) { background-position: 100% 100%; transform: translateY(-3px); box-shadow: 0 15px 35px rgba(102,126,234,0.5); }
-  .file-drop { transition: all 0.3s ease; border: 2px dashed #d1d5db; }
-  .file-drop:hover, .file-drop.dragover { border-color: var(--theme-accent); background: rgba(102,126,234,0.05); }
-  .dark .file-drop { border-color: #4b5563; }
-  .file-drop.error { border-color: #ef4444; background: rgba(239,68,68,0.05); }
-  .file-drop.success { border-color: #10b981; background: rgba(16,185,129,0.05); }
-  .step-content { display: none; }
-  .step-content.active { display: block; animation: fadeUp 0.5s ease-out; }
-  .progress-bar { transition: width 0.5s ease; }
-  .step-dot { transition: all 0.3s ease; }
-  .step-dot.active { background: var(--theme-accent); transform: scale(1.2); }
-  .step-dot.completed { background: #10b981; }
-  .dark .step-dot { background: #4b5563; }
-  .dark .step-dot.active { background: var(--theme-accent); }
-  .dark .step-dot.completed { background: #34d399; }
-  .theme-swatch {
-    width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
-    transition: all 0.3s ease; border: 3px solid transparent;
-    position: relative;
-  }
-  .theme-swatch:hover { transform: scale(1.2); }
-  .theme-swatch.active { border-color: white; box-shadow: 0 0 0 3px rgba(0,0,0,0.2); }
-  .theme-swatch.active::after {
-    content: '✓';
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    color: white; font-weight: bold; font-size: 14px;
-    text-shadow: 0 0 3px rgba(0,0,0,0.5);
-  }
-  .datepicker-plot-area { font-family: 'Vazirmatn', sans-serif !important; }
-  .captcha-box img { border-radius: 12px; cursor: pointer; border: 1px solid #e5e7eb; }
-  .dark .captcha-box img { border-color: #4b5563; }
-</style>
-</head>
-
-<body class="min-h-screen animated-bg py-8 px-4 transition-colors duration-500">
-
-<div class="fixed top-4 left-4 z-50 flex flex-col gap-2">
-  <button id="themeToggle" class="w-12 h-12 rounded-full glass-card shadow-lg flex items-center justify-center hover:scale-110 transition-transform" title="تغییر دارک/روشن">
-    <i id="themeIcon" class="fa-solid fa-moon text-gray-700 dark:text-yellow-300 text-lg"></i>
-  </button>
-  <a href="/" class="w-12 h-12 rounded-full glass-card shadow-lg flex items-center justify-center hover:scale-110 transition-transform" title="بازگشت به سایت">
-    <i class="fa-solid fa-house text-gray-700 dark:text-gray-300 text-lg"></i>
-  </a>
-</div>
-
-<div class="fixed top-4 right-4 z-50">
-  <div class="glass-card rounded-2xl p-3 shadow-lg">
-    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center font-semibold">
-      <i class="fa-solid fa-palette"></i> تم رنگی
-    </p>
-    <div class="flex gap-2">
-      <div class="theme-swatch active" data-theme="purple" style="background: linear-gradient(135deg, #667eea, #764ba2);" title="بنفش"></div>
-      <div class="theme-swatch" data-theme="green" style="background: linear-gradient(135deg, #10b981, #059669);" title="سبز"></div>
-      <div class="theme-swatch" data-theme="blue" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" title="آبی"></div>
-      <div class="theme-swatch" data-theme="orange" style="background: linear-gradient(135deg, #f97316, #ea580c);" title="نارنجی"></div>
-      <div class="theme-swatch" data-theme="pink" style="background: linear-gradient(135deg, #ec4899, #be185d);" title="صورتی"></div>
-    </div>
-  </div>
-</div>
-
-<div class="glass-card w-full max-w-3xl mx-auto rounded-3xl p-6 md:p-10 relative z-10 shadow-2xl mt-16 md:mt-0">
-
-  <div class="text-center mb-6">
-    <div class="w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-lg mb-4" style="background: linear-gradient(135deg, var(--theme-accent), var(--theme-accent-dark));">
-      <i class="fa-solid fa-briefcase text-white text-3xl"></i>
-    </div>
-    <h1 class="text-2xl md:text-3xl font-bold mb-1" style="background: linear-gradient(135deg, var(--theme-accent), var(--theme-accent-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-      فراخوان همکاری
-    </h1>
-    <p class="text-gray-500 dark:text-gray-400 text-sm">لطفاً اطلاعات زیر را با دقت تکمیل کنید</p>
-  </div>
-
-  <div class="mb-6">
-    <div class="flex justify-between items-center mb-3">
-      <div class="flex items-center gap-2">
-        <span class="step-dot w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold active" data-step="1">۱</span>
-        <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">مشخصات فردی</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="step-dot w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold" data-step="2">۲</span>
-        <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">مدارک</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="step-dot w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold" data-step="3">۳</span>
-        <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">مرکز</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="step-dot w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold" data-step="4">۴</span>
-        <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">تأیید</span>
-      </div>
-    </div>
-    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-      <div id="progressBar" class="progress-bar h-full rounded-full" style="width:25%; background: linear-gradient(to left, var(--theme-accent), var(--theme-accent-dark));"></div>
-    </div>
-    <p class="text-center text-xs text-gray-400 dark:text-gray-500 mt-1">مرحله <span id="currentStepNum">۱</span> از ۴</p>
-  </div>
-
-  <form id="mainForm" action="/cooperation/" method="post" enctype="multipart/form-data" novalidate>
-    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-
-    <!-- مرحله ۱ -->
-    <div class="step-content active" data-step="1">
-      <div class="space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-user ml-1" style="color: var(--theme-accent);"></i> نام <span class="text-red-500">*</span>
-            </label>
-            <input type="text" name="firstName" id="firstName" placeholder="مثلاً: علی"
-              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200">
-            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-          </div>
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-user ml-1" style="color: var(--theme-accent);"></i> نام خانوادگی <span class="text-red-500">*</span>
-            </label>
-            <input type="text" name="lastName" id="lastName" placeholder="مثلاً: رضایی"
-              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200">
-            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-          </div>
-        </div>
-
-        <div class="group">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-id-card ml-1" style="color: var(--theme-accent);"></i> کد ملی <span class="text-red-500">*</span>
-          </label>
-          <div class="relative">
-            <input type="text" name="nationalCode" id="nationalCode" placeholder="۱۰ رقم بدون خط تیره" maxlength="10" dir="ltr"
-              class="form-input w-full px-4 py-3 pl-11 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-left">
-            <i id="ncStatusIcon" class="fa-solid fa-circle-info absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg transition-all"></i>
-          </div>
-          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-          <p class="text-xs text-gray-400 mt-1"><i class="fa-solid fa-info-circle"></i> کد ملی به‌صورت زنده اعتبارسنجی می‌شود</p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-calendar ml-1" style="color: var(--theme-accent);"></i> تاریخ تولد (شمسی) <span class="text-red-500">*</span>
-            </label>
-            <input type="text" name="birthDate" id="birthDate" placeholder="روی فیلد کلیک کنید" readonly
-              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 cursor-pointer">
-            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-          </div>
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-venus-mars ml-1" style="color: var(--theme-accent);"></i> جنسیت <span class="text-red-500">*</span>
-            </label>
-            <div class="flex gap-3">
-              <label class="flex-1 cursor-pointer">
-                <input type="radio" name="gender" value="مرد" class="peer sr-only">
-                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">
-                  <i class="fa-solid fa-mars"></i> مرد
-                </div>
-              </label>
-              <label class="flex-1 cursor-pointer">
-                <input type="radio" name="gender" value="زن" class="peer sr-only">
-                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-600 font-semibold transition">
-                  <i class="fa-solid fa-venus"></i> زن
-                </div>
-              </label>
-            </div>
-            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-          </div>
-        </div>
-
-        <div id="militarySection" class="group hidden animate-fade-up">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-shield ml-1" style="color: var(--theme-accent);"></i> وضعیت خدمت سربازی <span class="text-red-500">*</span>
-          </label>
-          <div class="flex flex-wrap gap-3">
-            <label class="flex-1 min-w-[120px] cursor-pointer">
-              <input type="radio" name="militaryStatus" value="پایان خدمت" class="peer sr-only">
-              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 text-sm font-semibold transition">پایان خدمت</div>
-            </label>
-            <label class="flex-1 min-w-[120px] cursor-pointer">
-              <input type="radio" name="militaryStatus" value="معاف" class="peer sr-only">
-              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 text-sm font-semibold transition">معاف</div>
-            </label>
-          </div>
-        </div>
-
-        <div id="militaryFileGroup" class="group hidden animate-fade-up">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-file-shield ml-1" style="color: var(--theme-accent);"></i> تصویر کارت پایان خدمت
-          </label>
-          <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="military">
-            <input type="file" id="militaryFile" name="militaryFile" class="hidden" accept="image/*,.pdf">
-            <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
-            <p class="text-xs text-gray-500 dark:text-gray-400">حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
-          </div>
-          <div class="file-info hidden mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- مرحله ۲ -->
-    <div class="step-content" data-step="2">
-      <div class="space-y-4">
-        <div class="group">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-id-card ml-1" style="color: var(--theme-accent);"></i> تصویر کارت ملی <span class="text-red-500">*</span>
-          </label>
-          <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="nationalCard">
-            <input type="file" id="nationalCardFile" name="nationalCardFile" class="hidden" accept="image/*,.pdf">
-            <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
-            <p class="text-xs text-gray-500 dark:text-gray-400">حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
-          </div>
-          <div class="file-info hidden mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
-        </div>
-
-        <div class="group">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-graduation-cap ml-1" style="color: var(--theme-accent);"></i> آخرین مدرک تحصیلی <span class="text-red-500">*</span>
-          </label>
-          <select name="educationLevel" id="educationLevel"
-            class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 cursor-pointer">
-            <option value="">انتخاب کنید...</option>
-            <option>دیپلم</option>
-            <option>فوق دیپلم</option>
-            <option>کارشناسی</option>
-            <option>کارشناسی ارشد</option>
-            <option>دکتری</option>
-            <option>فوق دکتری</option>
-          </select>
-          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-        </div>
-
-        <div class="group">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-file-pdf ml-1" style="color: var(--theme-accent);"></i> تصویر آخرین مدرک تحصیلی <span class="text-red-500">*</span>
-          </label>
-          <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="education">
-            <input type="file" id="educationFile" name="educationFile" class="hidden" accept="image/*,.pdf">
-            <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
-            <p class="text-xs text-gray-500 dark:text-gray-400">حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
-          </div>
-          <div class="file-info hidden mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
-        </div>
-
-        <div class="group">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-certificate ml-1" style="color: var(--theme-accent);"></i> وضعیت پروانه <span class="text-red-500">*</span>
-          </label>
-          <div class="flex gap-3">
-            <label class="flex-1 cursor-pointer">
-              <input type="radio" name="licenseStatus" value="دارد" class="peer sr-only" onchange="toggleLicense(true)">
-              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">
-                <i class="fa-solid fa-check-circle"></i> دارد
-              </div>
-            </label>
-            <label class="flex-1 cursor-pointer">
-              <input type="radio" name="licenseStatus" value="ندارد" class="peer sr-only" onchange="toggleLicense(false)">
-              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition">
-                <i class="fa-solid fa-times-circle"></i> ندارد
-              </div>
-            </label>
-          </div>
-          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-        </div>
-
-        <div id="licenseSection" class="hidden space-y-4 p-4 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/10 animate-fade-up">
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-file-certificate text-emerald-500 ml-1"></i> تصویر پروانه (حداکثر ۵۰KB)
-            </label>
-            <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="license">
-              <input type="file" id="licenseFile" name="licenseFile" class="hidden" accept="image/*,.pdf">
-              <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
-              <p class="text-xs text-gray-500 dark:text-gray-400">کلیک یا رها کردن</p>
-            </div>
-            <div class="file-info hidden mt-2 p-2 rounded-lg bg-white dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
-          </div>
-
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-file-certificate text-emerald-500 ml-1"></i> پروانه فعالیت مرکز (حداکثر ۵۰KB)
-            </label>
-            <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="centerLicense">
-              <input type="file" id="centerLicenseFile" name="centerLicenseFile" class="hidden" accept="image/*,.pdf">
-              <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
-              <p class="text-xs text-gray-500 dark:text-gray-400">کلیک یا رها کردن</p>
-            </div>
-            <div class="file-info hidden mt-2 p-2 rounded-lg bg-white dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
-          </div>
-
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-align-right text-emerald-500 ml-1"></i> توضیحات پروانه فعالیت
-            </label>
-            <textarea name="licenseDesc" id="licenseDesc" rows="3" placeholder="توضیحات..."
-              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none text-gray-800 dark:text-gray-200 resize-none"></textarea>
-          </div>
-
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-file-shield text-emerald-500 ml-1"></i> تصویر مجوز مرکز (حداکثر ۵۰KB)
-            </label>
-            <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="centerPermit">
-              <input type="file" id="centerPermitFile" name="centerPermitFile" class="hidden" accept="image/*,.pdf">
-              <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
-              <p class="text-xs text-gray-500 dark:text-gray-400">کلیک یا رها کردن</p>
-            </div>
-            <div class="file-info hidden mt-2 p-2 rounded-lg bg-white dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
-          </div>
-        </div>
-
-        <div class="group">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-house ml-1" style="color: var(--theme-accent);"></i> وضعیت مالکیت مرکز <span class="text-red-500">*</span>
-          </label>
-          <div class="flex gap-3">
-            <label class="flex-1 cursor-pointer">
-              <input type="radio" name="ownershipStatus" value="سند دارد" class="peer sr-only" onchange="toggleProperty(true)">
-              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">
-                <i class="fa-solid fa-file-contract"></i> سند دارد
-              </div>
-            </label>
-            <label class="flex-1 cursor-pointer">
-              <input type="radio" name="ownershipStatus" value="استیجاری" class="peer sr-only" onchange="toggleProperty(false)">
-              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">
-                <i class="fa-solid fa-key"></i> استیجاری
-              </div>
-            </label>
-          </div>
-          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-        </div>
-
-        <div id="propertyFileGroup" class="group hidden animate-fade-up">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-file ml-1" style="color: var(--theme-accent);"></i> مدارک مربوط به ملک (حداکثر ۵۰KB)
-          </label>
-          <div class="file-drop rounded-xl p-4 text-center cursor-pointer" data-file="property">
-            <input type="file" id="propertyFile" name="propertyFile" class="hidden" accept="image/*,.pdf">
-            <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
-            <p class="text-xs text-gray-500 dark:text-gray-400">حداکثر ۵۰ کیلوبایت — تصویر یا PDF</p>
-          </div>
-          <div class="file-info hidden mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center gap-2 text-xs"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- مرحله ۳ -->
-    <div class="step-content" data-step="3">
-      <div class="space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-map ml-1" style="color: var(--theme-accent);"></i> استان <span class="text-red-500">*</span>
-            </label>
-            <select name="province" id="province"
-              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 cursor-pointer">
-              <option value="">انتخاب کنید...</option>
-            </select>
-            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-          </div>
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-city ml-1" style="color: var(--theme-accent);"></i> شهرستان <span class="text-red-500">*</span>
-            </label>
-            <select name="county" id="county" disabled
-              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-              <option value="">ابتدا استان را انتخاب کنید</option>
-            </select>
-            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-phone ml-1" style="color: var(--theme-accent);"></i> تلفن مرکز <span class="text-red-500">*</span>
-            </label>
-            <input type="tel" name="centerPhone" id="centerPhone" placeholder="01123456789" dir="ltr" maxlength="11"
-              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-left">
-            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-          </div>
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              <i class="fa-solid fa-envelope ml-1" style="color: var(--theme-accent);"></i> کد پستی <span class="text-red-500">*</span>
-            </label>
-            <input type="text" name="postalCode" id="postalCode" placeholder="۱۰ رقم" maxlength="10" dir="ltr"
-              class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-left">
-            <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-          </div>
-        </div>
-
-        <div class="group">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-location-dot ml-1" style="color: var(--theme-accent);"></i> نشانی کامل و پستی <span class="text-red-500">*</span>
-          </label>
-          <textarea name="fullAddress" id="fullAddress" rows="3" placeholder="استان، شهرستان، خیابان، پلاک..."
-            class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 resize-none"></textarea>
-          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-        </div>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div class="group">
-            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">اتاق مشاوره فردی</label>
-            <input type="number" name="individualRooms" id="individualRooms" min="0" placeholder="۰"
-              class="form-input w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center">
-          </div>
-          <div class="group">
-            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">اتاق مشاوره گروهی</label>
-            <input type="number" name="groupRooms" id="groupRooms" min="0" placeholder="۰"
-              class="form-input w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center">
-          </div>
-          <div class="group">
-            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">اتاق کودک</label>
-            <input type="number" name="childRooms" id="childRooms" min="0" placeholder="۰"
-              class="form-input w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center">
-          </div>
-          <div class="group">
-            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">تعداد مشاورین</label>
-            <input type="number" name="counselorsCount" id="counselorsCount" min="0" placeholder="۰"
-              class="form-input w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center">
-          </div>
-        </div>
-
-        <div class="group">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-couch ml-1" style="color: var(--theme-accent);"></i> فضایی برای انتظار مراجعین
-          </label>
-          <div class="flex gap-3">
-            <label class="flex-1 cursor-pointer">
-              <input type="radio" name="waitingArea" value="دارد" class="peer sr-only">
-              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">دارد</div>
-            </label>
-            <label class="flex-1 cursor-pointer">
-              <input type="radio" name="waitingArea" value="ندارد" class="peer sr-only">
-              <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition">ندارد</div>
-            </label>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">پذیرش طراحی و تجهیز با الگوی شرکت</label>
-            <div class="flex gap-3">
-              <label class="flex-1 cursor-pointer">
-                <input type="radio" name="designAcceptance" value="آری" class="peer sr-only">
-                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">آری</div>
-              </label>
-              <label class="flex-1 cursor-pointer">
-                <input type="radio" name="designAcceptance" value="خیر" class="peer sr-only">
-                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition">خیر</div>
-              </label>
-            </div>
-          </div>
-          <div class="group">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">سهولت دسترسی برای مراجعین</label>
-            <div class="flex gap-3">
-              <label class="flex-1 cursor-pointer">
-                <input type="radio" name="accessibility" value="آری" class="peer sr-only">
-                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-semibold transition">آری</div>
-              </label>
-              <label class="flex-1 cursor-pointer">
-                <input type="radio" name="accessibility" value="خیر" class="peer sr-only">
-                <div class="text-center py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition">خیر</div>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="group">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-mobile-screen ml-1" style="color: var(--theme-accent);"></i> شماره همراه برای تماس ضروری <span class="text-red-500">*</span>
-          </label>
-          <input type="tel" name="mobile" id="mobile" placeholder="09123456789" dir="ltr" maxlength="11"
-            class="form-input w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-left">
-          <p class="error-text text-red-500 text-xs mt-1 hidden"></p>
-        </div>
-      </div>
-    </div>
-
-    <!-- مرحله ۴ -->
-    <div class="step-content" data-step="4">
-      <div class="space-y-4">
-        <div class="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-2" style="border-color: var(--theme-accent);">
-          <p class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">
-            <i class="fa-solid fa-clipboard-check" style="color: var(--theme-accent);"></i> خلاصه اطلاعات:
-          </p>
-          <div id="summary" class="text-sm text-gray-600 dark:text-gray-300 space-y-1.5 max-h-96 overflow-y-auto"></div>
-        </div>
-
-        <div class="captcha-box p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            <i class="fa-solid fa-shield-halved ml-1" style="color: var(--theme-accent);"></i> کد امنیتی (کپچا) <span class="text-red-500">*</span>
-          </label>
-          <div class="flex items-center gap-3">
-            <img src="/captcha.png" alt="کپچا" id="captchaImg" width="170" height="54"
-                 title="برای دریافت عبارت جدید کلیک کنید" onclick="refreshCaptcha()">
-            <input type="text" name="captcha" id="captchaInput" placeholder="حاصل را وارد کنید" maxlength="2" inputmode="numeric"
-              class="form-input flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none text-gray-800 dark:text-gray-200 text-center text-lg font-bold">
-          </div>
-          <p class="text-xs text-gray-400 mt-2">نتیجه عبارت بالا را وارد کنید — با کلیک روی تصویر عبارت جدید می‌گیرید</p>
-        </div>
-
-        <label class="flex items-center gap-3 cursor-pointer p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 transition">
-          <input type="checkbox" name="terms" id="terms" class="w-5 h-5 rounded border-gray-300 focus:ring-2">
-          <span class="text-sm text-gray-700 dark:text-gray-300">
-            صحت تمام اطلاعات وارد شده را تأیید می‌کنم و <a href="#" class="underline" style="color: var(--theme-accent);">قوانین و مقررات</a> را می‌پذیرم. <span class="text-red-500">*</span>
-          </span>
-        </label>
-      </div>
-    </div>
-
-    <div class="flex gap-3 mt-6">
-      <button type="button" id="prevBtn" class="hidden px-6 py-3 rounded-xl font-bold text-gray-600 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-        <i class="fa-solid fa-arrow-right ml-1"></i> قبلی
-      </button>
-      <button type="button" id="nextBtn" class="flex-1 py-3 rounded-xl font-bold text-white submit-btn flex items-center justify-center gap-2">
-        مرحله بعد <i class="fa-solid fa-arrow-left"></i>
-      </button>
-      <button type="submit" id="submitBtn" class="hidden flex-1 py-3 rounded-xl font-bold text-white submit-btn items-center justify-center gap-2">
-        <span id="btnText">ارسال نهایی</span>
-        <i class="fa-solid fa-paper-plane" id="btnIcon"></i>
-        <svg id="spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-      </button>
-    </div>
-
-    <p class="text-center text-xs text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1 mt-4">
-      <i class="fa-solid fa-shield-halved"></i> اطلاعات شما به‌صورت امن روی سرور مرکز رز ذخیره می‌شود
-    </p>
-  </form>
-
-  <div id="toast" class="hidden mt-5 p-4 rounded-xl text-center font-semibold animate-slide-in"></div>
-  <div id="successBox" class="hidden mt-5 p-6 rounded-xl text-center bg-green-50 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700">
-    <i class="fa-solid fa-circle-check text-green-500 text-4xl mb-3"></i>
-    <p class="font-bold text-green-700 dark:text-green-300 text-lg mb-2">درخواست شما با موفقیت ثبت شد!</p>
-    <p class="text-sm text-gray-600 dark:text-gray-300">کد پیگیری شما:</p>
-    <p id="trackingCode" class="text-2xl font-black tracking-wider my-2 text-green-600 dark:text-green-400" dir="ltr"></p>
-    <p class="text-xs text-gray-500 dark:text-gray-400">وضعیت درخواست را می‌توانید از صفحه «پیگیری درخواست» سایت دنبال کنید.</p>
-  </div>
-</div>
-
-<script>
-// ═══════════════════════════════════════════════════════════════════
-//  تم‌ها
-// ═══════════════════════════════════════════════════════════════════
-const THEMES = {
-  purple: { 1: '#667eea', 2: '#764ba2', 3: '#f093fb', 4: '#4facfe', accent: '#667eea', accentDark: '#764ba2' },
-  green:  { 1: '#10b981', 2: '#059669', 3: '#6ee7b7', 4: '#34d399', accent: '#10b981', accentDark: '#059669' },
-  blue:   { 1: '#3b82f6', 2: '#1d4ed8', 3: '#60a5fa', 4: '#93c5fd', accent: '#3b82f6', accentDark: '#1d4ed8' },
-  orange: { 1: '#f97316', 2: '#ea580c', 3: '#fdba74', 4: '#fb923c', accent: '#f97316', accentDark: '#ea580c' },
-  pink:   { 1: '#ec4899', 2: '#be185d', 3: '#f9a8d4', 4: '#f472b6', accent: '#ec4899', accentDark: '#be185d' }
-};
-
-function applyTheme(themeName) {
-  const t = THEMES[themeName];
-  if (!t) return;
-  const root = document.documentElement;
-  root.style.setProperty('--theme-1', t[1]);
-  root.style.setProperty('--theme-2', t[2]);
-  root.style.setProperty('--theme-3', t[3]);
-  root.style.setProperty('--theme-4', t[4]);
-  root.style.setProperty('--theme-accent', t.accent);
-  root.style.setProperty('--theme-accent-dark', t.accentDark);
-  document.querySelectorAll('.theme-swatch').forEach(s => {
-    s.classList.toggle('active', s.dataset.theme === themeName);
-  });
-  localStorage.setItem('formTheme', themeName);
-}
-
-document.querySelectorAll('.theme-swatch').forEach(s => {
-  s.addEventListener('click', () => applyTheme(s.dataset.theme));
-});
-applyTheme(localStorage.getItem('formTheme') || 'purple');
-
-// ═══════════════════════════════════════════════════════════════════
-//  دارک مود
-// ═══════════════════════════════════════════════════════════════════
-const themeToggle = document.getElementById('themeToggle');
-const themeIcon = document.getElementById('themeIcon');
-const html = document.documentElement;
-
-function setDark(dark) {
-  html.classList.toggle('dark', dark);
-  themeIcon.className = dark ? 'fa-solid fa-sun text-yellow-300 text-lg' : 'fa-solid fa-moon text-gray-700 text-lg';
-  localStorage.setItem('darkMode', dark ? 'dark' : 'light');
-}
-if (localStorage.darkMode === 'dark' || (!localStorage.darkMode && window.matchMedia('(prefers-color-scheme: dark)').matches)) setDark(true);
-else setDark(false);
-themeToggle.addEventListener('click', () => setDark(!html.classList.contains('dark')));
-
-// ═══════════════════════════════════════════════════════════════════
-//  استان‌ها و شهرستان‌ها
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ استان‌ها و شهرستان‌ها ═══════════════
 const PROVINCES = {
   'آذربایجان شرقی': ['تبریز','مراغه','مرند','اهر','بناب','میانه','سراب','شبستر','آذرشهر','اسکو','بستان‌آباد','عجب‌شیر','ملکان','هریس','هشترود','جلفا','چاراویماق','ورزقان','خداآفرین','کلیبر'],
   'آذربایجان غربی': ['ارومیه','خوی','میاندوآب','مهاباد','بوکان','سلماس','نقده','پیرانشهر','ماکو','سردشت','تکاب','شاهین‌دژ','اشنویه','چالدران','پلدشت','شوط','چایپاره'],
@@ -721,9 +573,7 @@ provinceSelect.addEventListener('change', function() {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════
-//  تقویم شمسی
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ تقویم شمسی ═══════════════
 $(document).ready(function() {
   $('#birthDate').persianDatepicker({
     format: 'YYYY/MM/DD',
@@ -741,9 +591,7 @@ $(document).ready(function() {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════
-//  اعتبارسنجی
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ اعتبارسنجی کد ملی و کد پستی ═══════════════
 function checkCodeMeli(code) {
   var L = code.length;
   if (L < 8 || parseInt(code, 10) == 0) return false;
@@ -764,41 +612,40 @@ function checkPostalCode(code) {
 
 document.getElementById('nationalCode').addEventListener('input', function() {
   const icon = document.getElementById('ncStatusIcon');
-  const errorEl = this.closest('.group').querySelector('.error-text');
+  const errorEl = this.closest('.coop-group').querySelector('.error-text');
   this.value = this.value.replace(/\D/g, '');
   const val = this.value;
   if (val.length === 0) {
-    icon.className = 'fa-solid fa-circle-info absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg transition-all';
+    icon.className = 'fa-solid fa-circle-info nc-icon';
     this.classList.remove('success', 'error');
-    if (errorEl) errorEl.classList.add('hidden');
+    if (errorEl) errorEl.classList.remove('show');
     return;
   }
   if (val.length < 10) {
-    icon.className = 'fa-solid fa-hourglass-half absolute left-4 top-1/2 -translate-y-1/2 text-yellow-500 text-lg transition-all';
+    icon.className = 'fa-solid fa-hourglass-half nc-icon wait';
     this.classList.remove('success', 'error');
-    if (errorEl) errorEl.classList.add('hidden');
+    if (errorEl) errorEl.classList.remove('show');
     return;
   }
   if (checkCodeMeli(val)) {
-    icon.className = 'fa-solid fa-circle-check absolute left-4 top-1/2 -translate-y-1/2 text-green-500 text-lg transition-all';
+    icon.className = 'fa-solid fa-circle-check nc-icon ok';
     this.classList.add('success'); this.classList.remove('error');
-    if (errorEl) errorEl.classList.add('hidden');
+    if (errorEl) errorEl.classList.remove('show');
   } else {
-    icon.className = 'fa-solid fa-circle-xmark absolute left-4 top-1/2 -translate-y-1/2 text-red-500 text-lg transition-all';
+    icon.className = 'fa-solid fa-circle-xmark nc-icon bad';
     this.classList.add('error'); this.classList.remove('success');
-    if (errorEl) { errorEl.textContent = 'کد ملی وارد شده معتبر نیست'; errorEl.classList.remove('hidden'); }
+    if (errorEl) { errorEl.textContent = 'کد ملی وارد شده معتبر نیست'; errorEl.classList.add('show'); }
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════
-//  مدیریت فایل‌ها — همه حداکثر ۵۰KB
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ مدیریت فایل‌ها — حداکثر ۵۰KB ═══════════════
 const fileStore = {};
 
 document.querySelectorAll('.file-drop').forEach(dropEl => {
   const key = dropEl.dataset.file;
   const input = dropEl.querySelector('input[type=file]');
   const infoEl = dropEl.parentElement.querySelector('.file-info');
+  input.style.display = 'none';
 
   dropEl.addEventListener('click', () => input.click());
   dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('dragover'); });
@@ -826,7 +673,7 @@ function handleFile(file, dropEl, input, infoEl, key) {
   const c = constraints[key] || { max: 50, label: 'فایل' };
 
   if (sizeKB > c.max) {
-    showToast(`❌ حجم فایل ${c.label} نباید بیشتر از ${c.max} کیلوبایت باشد (حجم فایل شما: ${sizeKB.toFixed(1)} KB)`, 'error');
+    showToast(`❌ حجم فایل ${c.label} نباید بیشتر از ${c.max} کیلوبایت باشد (حجم فایل شما: ${sizeKB.toFixed(1)} KB)`, 'err');
     input.value = '';
     return;
   }
@@ -836,19 +683,13 @@ function handleFile(file, dropEl, input, infoEl, key) {
   dropEl.classList.remove('error');
 
   const previewIcon = file.type.startsWith('image/') ? 'fa-image' : 'fa-file-pdf';
-  const previewColor = file.type.startsWith('image/') ? 'text-purple-500' : 'text-red-500';
-
   infoEl.innerHTML = `
-    <i class="fa-solid ${previewIcon} ${previewColor} text-lg"></i>
-    <div class="flex-1 min-w-0">
-      <p class="text-gray-700 dark:text-gray-200 truncate font-semibold">${file.name}</p>
-      <p class="text-gray-400">${sizeKB.toFixed(1)} KB</p>
-    </div>
-    <button type="button" class="text-red-500 hover:text-red-700 transition" onclick="removeFile('${key}')">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
+    <i class="fa-solid ${previewIcon}" style="color:var(--rose)"></i>
+    <div class="fi-name">${file.name}</div>
+    <span class="fi-size">${sizeKB.toFixed(1)} KB</span>
+    <button type="button" onclick="removeFile('${key}')" title="حذف فایل"><i class="fa-solid fa-xmark"></i></button>
   `;
-  infoEl.classList.remove('hidden');
+  infoEl.classList.add('show');
   dropEl.querySelector('p').textContent = '✓ فایل انتخاب شد — برای تغییر کلیک کنید';
 }
 
@@ -860,31 +701,27 @@ function removeFile(key) {
   const input = dropEl.querySelector('input[type=file]');
   input.value = '';
   dropEl.classList.remove('success', 'error');
-  dropEl.querySelector('p').textContent = 'کلیک یا رها کردن';
-  infoEl.classList.add('hidden');
+  dropEl.querySelector('p').textContent = 'حداکثر ۵۰ کیلوبایت — تصویر یا PDF — کلیک یا رهاکردن فایل';
+  infoEl.classList.remove('show');
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  نمایش شرطی
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ نمایش شرطی ═══════════════
 function toggleLicense(show) {
-  document.getElementById('licenseSection').classList.toggle('hidden', !show);
+  document.getElementById('licenseSection').classList.toggle('show', show);
 }
 function toggleProperty(show) {
-  document.getElementById('propertyFileGroup').classList.toggle('hidden', !show);
+  document.getElementById('propertyFileGroup').style.display = show ? '' : 'none';
 }
 
 document.querySelectorAll('input[name="gender"]').forEach(r => {
   r.addEventListener('change', function() {
     const isMale = this.value === 'مرد';
-    document.getElementById('militarySection').classList.toggle('hidden', !isMale);
-    document.getElementById('militaryFileGroup').classList.toggle('hidden', !isMale);
+    document.getElementById('militarySection').classList.toggle('show', isMale);
+    document.getElementById('militaryFileGroup').style.display = isMale ? '' : 'none';
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════
-//  مدیریت مراحل
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ مدیریت مراحل ═══════════════
 let currentStep = 1;
 const totalSteps = 4;
 const progressBar = document.getElementById('progressBar');
@@ -903,10 +740,9 @@ function showStep(step) {
   });
   progressBar.style.width = (step / totalSteps) * 100 + '%';
   currentStepNum.textContent = ['۱','۲','۳','۴'][step-1] || step;
-  prevBtn.classList.toggle('hidden', step === 1);
-  nextBtn.classList.toggle('hidden', step === totalSteps);
-  submitBtn.classList.toggle('hidden', step !== totalSteps);
-  submitBtn.classList.toggle('flex', step === totalSteps);
+  prevBtn.style.display = step === 1 ? 'none' : '';
+  nextBtn.style.display = step === totalSteps ? 'none' : '';
+  submitBtn.style.display = step === totalSteps ? '' : 'none';
   if (step === totalSteps) buildSummary();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -916,9 +752,7 @@ nextBtn.addEventListener('click', () => {
   if (validateStep(currentStep)) { currentStep++; showStep(currentStep); }
 });
 
-// ═══════════════════════════════════════════════════════════════════
-//  اعتبارسنجی مراحل
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ اعتبارسنجی مراحل ═══════════════
 const VALIDATORS = {
   firstName: v => !v.trim() ? 'نام الزامی است' : v.trim().length < 2 ? 'نام باید حداقل ۲ حرف باشد' : null,
   lastName: v => !v.trim() ? 'نام خانوادگی الزامی است' : v.trim().length < 2 ? 'نام خانوادگی باید حداقل ۲ حرف باشد' : null,
@@ -955,16 +789,14 @@ function validateField(input) {
   const validator = VALIDATORS[name];
   if (!validator) return true;
   const error = validator(input.value);
-  const errorEl = input.closest('.group')?.querySelector('.error-text');
+  const errorEl = input.closest('.coop-group') ? input.closest('.coop-group').querySelector('.error-text') : null;
   if (error) {
     input.classList.add('error'); input.classList.remove('success');
-    if (errorEl) { errorEl.textContent = error; errorEl.classList.remove('hidden'); }
-    input.classList.add('animate-shake');
-    setTimeout(() => input.classList.remove('animate-shake'), 500);
+    if (errorEl) { errorEl.textContent = error; errorEl.classList.add('show'); }
     return false;
   }
   input.classList.remove('error'); input.classList.add('success');
-  if (errorEl) errorEl.classList.add('hidden');
+  if (errorEl) errorEl.classList.remove('show');
   return true;
 }
 
@@ -980,13 +812,13 @@ function validateStep(step) {
 
   if (step === 1) {
     if (!document.querySelector('input[name="gender"]:checked')) {
-      const errEl = document.querySelector('input[name="gender"]').closest('.group').querySelector('.error-text');
-      if (errEl) { errEl.textContent = 'جنسیت را انتخاب کنید'; errEl.classList.remove('hidden'); }
+      const errEl = document.querySelector('input[name="gender"]').closest('.coop-group').querySelector('.error-text');
+      if (errEl) { errEl.textContent = 'جنسیت را انتخاب کنید'; errEl.classList.add('show'); }
       valid = false;
     }
-    if (document.querySelector('input[name="gender"]:checked')?.value === 'مرد') {
+    if (document.querySelector('input[name="gender"]:checked') && document.querySelector('input[name="gender"]:checked').value === 'مرد') {
       if (!document.querySelector('input[name="militaryStatus"]:checked')) {
-        showToast('❌ وضعیت خدمت سربازی را انتخاب کنید', 'error');
+        showToast('❌ وضعیت خدمت سربازی را انتخاب کنید', 'err');
         valid = false;
       }
     }
@@ -994,21 +826,21 @@ function validateStep(step) {
 
   if (step === 2) {
     if (!document.querySelector('input[name="licenseStatus"]:checked')) {
-      const errEl = document.querySelector('input[name="licenseStatus"]').closest('.group').querySelector('.error-text');
-      if (errEl) { errEl.textContent = 'وضعیت پروانه را انتخاب کنید'; errEl.classList.remove('hidden'); }
+      const errEl = document.querySelector('input[name="licenseStatus"]').closest('.coop-group').querySelector('.error-text');
+      if (errEl) { errEl.textContent = 'وضعیت پروانه را انتخاب کنید'; errEl.classList.add('show'); }
       valid = false;
     }
     if (!document.querySelector('input[name="ownershipStatus"]:checked')) {
-      const errEl = document.querySelector('input[name="ownershipStatus"]').closest('.group').querySelector('.error-text');
-      if (errEl) { errEl.textContent = 'وضعیت مالکیت را انتخاب کنید'; errEl.classList.remove('hidden'); }
+      const errEl = document.querySelector('input[name="ownershipStatus"]').closest('.coop-group').querySelector('.error-text');
+      if (errEl) { errEl.textContent = 'وضعیت مالکیت را انتخاب کنید'; errEl.classList.add('show'); }
       valid = false;
     }
     if (!fileStore.nationalCard) {
-      showToast('❌ آپلود تصویر کارت ملی الزامی است', 'error');
+      showToast('❌ آپلود تصویر کارت ملی الزامی است', 'err');
       valid = false;
     }
     if (!fileStore.education) {
-      showToast('❌ آپلود تصویر مدرک تحصیلی الزامی است', 'error');
+      showToast('❌ آپلود تصویر مدرک تحصیلی الزامی است', 'err');
       valid = false;
     }
   }
@@ -1032,9 +864,7 @@ document.querySelectorAll('input, textarea, select').forEach(input => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════
-//  خلاصه
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ خلاصه اطلاعات ═══════════════
 function buildSummary() {
   const summary = document.getElementById('summary');
   const fd = new FormData(document.getElementById('mainForm'));
@@ -1042,7 +872,7 @@ function buildSummary() {
 
   const files = Object.keys(fileStore).map(k => {
     const labels = { nationalCard: 'کارت ملی', military: 'پایان خدمت', education: 'مدرک', license: 'پروانه', centerLicense: 'پروانه مرکز', centerPermit: 'مجوز مرکز', property: 'مدارک ملک' };
-    return `<span class="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs px-2 py-1 rounded ml-1"><i class="fa-solid fa-check"></i> ${labels[k]}</span>`;
+    return `<span class="sum-file"><i class="fa-solid fa-check"></i> ${labels[k]}</span>`;
   }).join('');
 
   summary.innerHTML = `
@@ -1063,27 +893,19 @@ function buildSummary() {
     <p><strong>تعداد مشاورین:</strong> ${d.counselorsCount || 0}</p>
     <p><strong>فضای انتظار:</strong> ${d.waitingArea || '—'}</p>
     <p><strong>پذیرش طراحی:</strong> ${d.designAcceptance || '—'} | <strong>دسترسی:</strong> ${d.accessibility || '—'}</p>
-    <p class="pt-2"><strong>فایل‌های پیوست:</strong> ${files || 'بدون فایل'}</p>
+    <p style="margin-top:8px"><strong>فایل‌های پیوست:</strong><br>${files || 'بدون فایل'}</p>
   `;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  توست
-// ═══════════════════════════════════════════════════════════════════
-function showToast(msg, type = 'success') {
+// ═══════════════ توست ═══════════════
+function showToast(msg, type = 'ok') {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
-  toast.className = `mt-5 p-4 rounded-xl text-center font-semibold animate-slide-in ${
-    type === 'success' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-2 border-green-300 dark:border-green-700'
-                       : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-2 border-red-300 dark:border-red-700'
-  }`;
-  toast.classList.remove('hidden');
-  setTimeout(() => toast.classList.add('hidden'), 5000);
+  toast.className = `coop-toast show ${type}`;
+  setTimeout(() => toast.classList.remove('show'), 5000);
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  کپچا
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ کپچا ═══════════════
 function refreshCaptcha() {
   const img = document.getElementById('captchaImg');
   img.src = '/captcha.png?t=' + Date.now();
@@ -1091,60 +913,58 @@ function refreshCaptcha() {
 }
 document.getElementById('captchaImg').addEventListener('click', refreshCaptcha);
 
-// ═══════════════════════════════════════════════════════════════════
-//  ارسال نهایی (fetch با FormData — فایل‌ها به‌صورت multipart)
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════ ارسال نهایی ═══════════════
 document.getElementById('mainForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
   if (!document.getElementById('terms').checked) {
-    showToast('❌ لطفاً قوانین و مقررات را بپذیرید', 'error');
+    showToast('❌ لطفاً قوانین و مقررات را بپذیرید', 'err');
     return;
   }
   if (!document.getElementById('captchaInput').value.trim()) {
-    showToast('❌ لطفاً پاسخ کپچا را وارد کنید', 'error');
+    showToast('❌ لطفاً پاسخ کپچا را وارد کنید', 'err');
     return;
   }
 
   submitBtn.disabled = true;
   document.getElementById('btnText').textContent = 'در حال ارسال...';
-  document.getElementById('btnIcon').classList.add('hidden');
-  document.getElementById('spinner').classList.remove('hidden');
+  document.getElementById('btnIcon').style.display = 'none';
+  document.getElementById('spinner').classList.add('show');
 
   try {
     const fd = new FormData(document.getElementById('mainForm'));
-
     const response = await fetch('/cooperation/', { method: 'POST', body: fd });
     const res = await response.json();
 
     if (res.result === 'success') {
-      document.getElementById('toast').classList.add('hidden');
-      document.getElementById('successBox').classList.remove('hidden');
+      document.getElementById('toast').classList.remove('show');
+      document.getElementById('successBox').classList.add('show');
       document.getElementById('trackingCode').textContent = res.tracking_code;
-      document.getElementById('mainForm').classList.add('hidden');
+      document.getElementById('mainForm').style.display = 'none';
+      document.querySelector('.coop-steps').style.display = 'none';
+      document.querySelector('.coop-progress').style.display = 'none';
+      document.querySelector('.coop-stepnum').style.display = 'none';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      showToast('❌ ' + (res.message || 'خطای ناشناخته'), 'error');
+      showToast('❌ ' + (res.message || 'خطای ناشناخته'), 'err');
       refreshCaptcha();
     }
 
     submitBtn.disabled = false;
     document.getElementById('btnText').textContent = 'ارسال نهایی';
-    document.getElementById('btnIcon').classList.remove('hidden');
-    document.getElementById('spinner').classList.add('hidden');
+    document.getElementById('btnIcon').style.display = '';
+    document.getElementById('spinner').classList.remove('show');
 
   } catch (err) {
-    showToast('❌ خطا در ارتباط با سرور: ' + err.message, 'error');
+    showToast('❌ خطا در ارتباط با سرور: ' + err.message, 'err');
     refreshCaptcha();
     submitBtn.disabled = false;
     document.getElementById('btnText').textContent = 'ارسال نهایی';
-    document.getElementById('btnIcon').classList.remove('hidden');
-    document.getElementById('spinner').classList.add('hidden');
+    document.getElementById('btnIcon').style.display = '';
+    document.getElementById('spinner').classList.remove('show');
   }
 });
 
 showStep(1);
 </script>
-
-</body>
-</html>
+{% endblock %}
