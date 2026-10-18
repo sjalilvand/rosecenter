@@ -1,0 +1,58 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="a-card" style="max-width:680px">
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    <div class="a-field">
+      <label>عنوان اسلاید *</label>
+      <input type="text" name="title" value="{{ row['title'] if row else '' }}" required>
+    </div>
+
+    <div class="a-field">
+      <label>زیرعنوان / توضیح کوتاه</label>
+      <textarea name="subtitle" rows="2">{{ row['subtitle'] if row else '' }}</textarea>
+    </div>
+
+    <div class="a-field">
+      <label>تصویر اسلاید (اختیاری)</label>
+      {% if row and row['image'] %}
+      <div style="margin-bottom:8px">
+        <img src="{{ url_for('public_upload_file', filename=row['image']) }}" alt="" style="max-width:280px;border-radius:10px;display:block">
+        <p class="a-hint">برای تغییر تصویر، فایل جدید انتخاب کنید.</p>
+      </div>
+      {% endif %}
+      <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp">
+      <p class="a-hint">فرمت‌های مجاز: PNG، JPG، WEBP — حداکثر ۳ مگابایت. ابعاد پیشنهادی: ۱۶۰۰×۷۰۰ پیکسل. اگر تصویر انتخاب نکنید، پس‌زمینه گرادیانی رز استفاده می‌شود.</p>
+    </div>
+
+    <div class="a-field">
+      <label>لینک دکمه (اختیاری)</label>
+      <input type="text" name="link" value="{{ row['link'] if row else '' }}" dir="ltr" placeholder="/courses/ یا https://...">
+      <p class="a-hint">مثال: /centers/ برای مراکز، /courses/ برای دوره‌ها، /chat/ برای چت هوشمند</p>
+    </div>
+
+    <div class="a-field">
+      <label>متن دکمه</label>
+      <input type="text" name="button_label" value="{{ row['button_label'] if row else 'مشاهده بیشتر' }}">
+    </div>
+
+    <div class="a-field">
+      <label>ترتیب نمایش</label>
+      <input type="number" name="sort_order" value="{{ row['sort_order'] if row else 0 }}">
+    </div>
+
+    <div class="a-field">
+      <label class="a-check">
+        <input type="checkbox" name="is_visible" {% if not row or row['is_visible'] %}checked{% endif %}>
+        نمایش در اسلایدر صفحه اصلی
+      </label>
+    </div>
+
+    <div class="a-actions-bar">
+      <button type="submit" class="btn btn-primary">ذخیره</button>
+      <a href="{{ url_for('admin_slides') }}" class="btn">بازگشت</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

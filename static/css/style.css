@@ -31,25 +31,25 @@
 
 /* ---------- متغیرها و ریست ---------- */
 :root {
-  /* پالت سبز مدرسه‌ای (الهام از قالب روان‌بُنه) */
-  --rose: #15803d;          /* رنگ اصلی (سبز) */
-  --rose-dark: #00430e;     /* سبز تیره برند */
-  --rose-light: #dcfce7;
-  --rose-softer: #f3faf5;
-  --lime: #84cc16;          /* رنگ تاکیدی لیمویی */
-  --lime-dark: #4d7c0f;
-  --ink: #1c2420;           /* متن اصلی */
-  --ink-soft: #5b6660;      /* متن ثانویه */
-  --line: #e1eae3;
+  /* پالت برند رز (مانند rosecenter.ir) */
+  --rose: #c2185b;          /* رنگ اصلی رز */
+  --rose-dark: #8e1147;
+  --rose-light: #fce4ec;
+  --rose-softer: #fdf1f5;
+  --lime: #d54b86;          /* رنگ تاکیدی صورتی */
+  --lime-dark: #b0356c;
+  --ink: #22262e;           /* متن اصلی */
+  --ink-soft: #5a616e;      /* متن ثانویه */
+  --line: #eadfe4;
   --bg: #ffffff;
-  --bg-soft: #f5faf6;
+  --bg-soft: #faf6f8;
   --gold: #c9a227;
   --green: #1d8a5f;
   --red: #d63b3b;
   --radius: 14px;
   --radius-sm: 10px;
-  --shadow: 0 10px 30px rgba(28, 36, 32, .08);
-  --shadow-rose: 0 12px 34px rgba(21, 128, 61, .16);
+  --shadow: 0 10px 30px rgba(34, 38, 46, .08);
+  --shadow-rose: 0 12px 34px rgba(194, 24, 91, .16);
   --font: "Vazirmatn", Tahoma, Arial, sans-serif;
   --container: 1200px;
   --header-h: 76px;
@@ -86,7 +86,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   background: linear-gradient(135deg, var(--rose), var(--rose-dark));
   color: #fff; box-shadow: var(--shadow-rose);
 }
-.btn-primary:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 16px 40px rgba(21,128,61,.28); }
+.btn-primary:hover { transform: translateY(-2px); color: #fff; box-shadow: 0 16px 40px rgba(194,24,91,.28); }
 .btn-lime { background: linear-gradient(135deg, var(--lime), var(--lime-dark)); color: #fff; }
 .btn-lime:hover { transform: translateY(-2px); color: #fff; }
 .btn-outline { border: 2px solid var(--rose); color: var(--rose); background: transparent; }
@@ -228,9 +228,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .hero {
   position: relative; overflow: hidden;
   background:
-    radial-gradient(900px 420px at 85% -10%, rgba(21,128,61,.13), transparent 60%),
-    radial-gradient(700px 380px at -5% 110%, rgba(132,204,22,.12), transparent 55%),
-    linear-gradient(180deg, #f2faf4, #ffffff);
+    radial-gradient(900px 420px at 85% -10%, rgba(194,24,91,.14), transparent 60%),
+    radial-gradient(700px 380px at -5% 110%, rgba(201,162,39,.10), transparent 55%),
+    linear-gradient(180deg, #fdf5f8, #ffffff);
   padding: 70px 0 80px;
 }
 .hero-inner { display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; align-items: center; }
@@ -310,7 +310,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   border-radius: 24px; min-height: 340px;
   background:
     radial-gradient(400px 260px at 80% 20%, rgba(255,255,255,.35), transparent),
-    linear-gradient(135deg, var(--rose-dark), var(--rose) 55%, #2fa355);
+    linear-gradient(135deg, var(--rose-dark), var(--rose) 55%, #e2558f);
   box-shadow: var(--shadow-rose);
   display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
 }
@@ -353,7 +353,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 /* مشاوره تلفنی/آنلاین - بنر */
 .banner {
   border-radius: 24px; overflow: hidden; position: relative;
-  background: linear-gradient(120deg, var(--rose-dark), var(--rose) 60%, #2fa355);
+  background: linear-gradient(120deg, var(--rose-dark), var(--rose) 60%, #e2558f);
   color: #fff; padding: 54px; display: grid; grid-template-columns: 1.2fr .8fr; gap: 30px; align-items: center;
   box-shadow: var(--shadow-rose);
 }
@@ -493,8 +493,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
    ================================================================== */
 .page-hero {
   background:
-    radial-gradient(700px 300px at 90% -20%, rgba(21,128,61,.16), transparent 60%),
-    linear-gradient(180deg, #f2faf4, #fff);
+    radial-gradient(700px 300px at 90% -20%, rgba(194,24,91,.16), transparent 60%),
+    linear-gradient(180deg, #fdf5f8, #fff);
   padding: 52px 0 44px; text-align: center; border-bottom: 1px solid var(--line);
 }
 .page-hero h1 { font-size: clamp(1.6rem, 3vw, 2.3rem); font-weight: 800; margin-bottom: 10px; }
@@ -585,7 +585,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .news-card:hover { box-shadow: var(--shadow); transform: translateY(-5px); }
 .news-thumb {
   height: 170px; position: relative;
-  background: linear-gradient(135deg, var(--rose-dark), var(--rose) 65%, #2fa355);
+  background: linear-gradient(135deg, var(--rose-dark), var(--rose) 65%, #e2558f);
   display: flex; align-items: center; justify-content: center;
 }
 .news-thumb img { width: 62px; height: 62px; opacity: .9; }
@@ -615,7 +615,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .article-head .meta { display: flex; justify-content: center; gap: 18px; color: var(--ink-soft); font-size: .84rem; }
 .article-cover {
   height: 300px; border-radius: 20px; margin-bottom: 30px;
-  background: linear-gradient(135deg, var(--rose-dark), var(--rose) 65%, #2fa355);
+  background: linear-gradient(135deg, var(--rose-dark), var(--rose) 65%, #e2558f);
   display: flex; align-items: center; justify-content: center;
 }
 .article-cover img { width: 90px; height: 90px; opacity: .9; }
@@ -632,7 +632,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .academy-hero::before {
   content: ""; position: absolute; inset: 0;
-  background: radial-gradient(600px 300px at 85% 15%, rgba(21,128,61,.35), transparent 60%),
+  background: radial-gradient(600px 300px at 85% 15%, rgba(194,24,91,.35), transparent 60%),
               radial-gradient(500px 260px at 10% 90%, rgba(201,162,39,.2), transparent 55%);
 }
 .academy-hero > * { position: relative; }
@@ -832,6 +832,89 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .block-card:hover .block-arrow { transform: translateX(-5px); }
 .block-form .block-icon { background: #e8f1fd; }
 .block-article .block-icon { background: #fff6e5; }
-.block-course .block-icon { background: #e8f7ef; }
+.block-course .block-icon { background: var(--rose-light); }
 @media (max-width: 900px) { .blocks-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px) { .blocks-grid { grid-template-columns: 1fr; } }
+
+/* ==================================================================
+   اسلایدر صفحه اصلی (تم رز)
+   ================================================================== */
+.btn-light {
+  background: #fff; color: var(--rose-dark); font-weight: 800;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+.btn-light:hover { transform: translateY(-2px); color: var(--rose); box-shadow: 0 14px 32px rgba(0,0,0,.24); }
+
+.hero-slider {
+  position: relative; overflow: hidden;
+  height: clamp(300px, 44vw, 460px);
+  background: var(--rose-dark);
+}
+.hs-track, .hs-slide { position: absolute; inset: 0; }
+.hs-slide {
+  opacity: 0; visibility: hidden; transition: opacity .8s ease, visibility .8s;
+  display: flex; align-items: center;
+  background-size: cover; background-position: center;
+}
+.hs-slide.active { opacity: 1; visibility: visible; z-index: 2; }
+/* گرادیان‌های رز برای اسلایدهای بدون تصویر */
+.hs-slide:nth-child(3n+1) {
+  background:
+    radial-gradient(700px 340px at 88% -10%, rgba(255,255,255,.22), transparent 60%),
+    linear-gradient(120deg, var(--rose-dark), var(--rose) 55%, #e2558f);
+}
+.hs-slide:nth-child(3n+2) {
+  background:
+    radial-gradient(600px 320px at 8% 110%, rgba(201,162,39,.28), transparent 55%),
+    linear-gradient(120deg, #6d0d38, var(--rose-dark) 45%, var(--rose));
+}
+.hs-slide:nth-child(3n+3) {
+  background:
+    radial-gradient(700px 340px at 90% 10%, rgba(255,255,255,.16), transparent 55%),
+    linear-gradient(120deg, var(--rose), #a3134e 55%, #6d0d38);
+}
+.hs-slide.has-img::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(60,8,34,.82) 0%, rgba(60,8,34,.45) 55%, rgba(60,8,34,.18));
+}
+.hs-overlay { position: absolute; inset: 0; }
+.hs-content { position: relative; z-index: 3; width: 100%; color: #fff; padding-top: 10px; padding-bottom: 10px; }
+.hs-kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: .85rem; font-weight: 700; letter-spacing: .3px;
+  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25);
+  padding: 6px 14px; border-radius: 999px; margin-bottom: 14px; backdrop-filter: blur(4px);
+}
+.hs-kicker::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #ffd9e8; }
+.hs-content h2 {
+  font-size: clamp(1.5rem, 3.4vw, 2.6rem); font-weight: 800; line-height: 1.5;
+  margin-bottom: 12px; text-shadow: 0 2px 14px rgba(0,0,0,.25);
+}
+.hs-content p {
+  font-size: clamp(.95rem, 1.6vw, 1.12rem); line-height: 1.9; max-width: 640px;
+  opacity: .94; margin-bottom: 22px; text-shadow: 0 1px 8px rgba(0,0,0,.25);
+}
+.hs-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+  width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer;
+  background: rgba(255,255,255,.16); color: #fff; font-size: 1.7rem; line-height: 1;
+  backdrop-filter: blur(4px); transition: background .25s, transform .25s;
+  display: flex; align-items: center; justify-content: center; padding-bottom: 4px;
+}
+.hs-arrow:hover { background: rgba(255,255,255,.34); transform: translateY(-50%) scale(1.08); }
+.hs-prev { right: 18px; }
+.hs-next { left: 18px; }
+.hs-dots {
+  position: absolute; bottom: 16px; right: 0; left: 0; z-index: 5;
+  display: flex; justify-content: center; gap: 8px;
+}
+.hs-dot {
+  width: 10px; height: 10px; border-radius: 999px; border: none; cursor: pointer;
+  background: rgba(255,255,255,.45); transition: width .3s, background .3s; padding: 0;
+}
+.hs-dot.active { width: 28px; background: #fff; }
+@media (max-width: 700px) {
+  .hs-arrow { width: 38px; height: 38px; font-size: 1.4rem; }
+  .hs-prev { right: 10px; } .hs-next { left: 10px; }
+  .hero-slider { height: 340px; }
+}

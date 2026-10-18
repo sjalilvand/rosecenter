@@ -2,6 +2,33 @@
 {% from "_macros.html" import lms_course_card %}
 
 {% block content %}
+<!-- اسلایدر صفحه اصلی -->
+{% if slides %}
+<section class="hero-slider" id="heroSlider" aria-label="اسلایدر معرفی">
+  <div class="hs-track">
+    {% for s in slides %}
+    <div class="hs-slide {% if s.image %}has-img{% endif %}{% if loop.first %} active{% endif %}"
+         {% if s.image %}style="background-image:url('{{ url_for('public_upload_file', filename=s.image) }}')"{% endif %}>
+      <div class="hs-overlay"></div>
+      <div class="container hs-content">
+        <span class="hs-kicker">مرکز خدمات روانشناسی و مشاوره رز</span>
+        <h2>{{ s.title }}</h2>
+        {% if s.subtitle %}<p>{{ s.subtitle }}</p>{% endif %}
+        {% if s.link %}
+        <a href="{{ s.link }}" class="btn btn-light">{{ s.button_label or 'مشاهده بیشتر' }}</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% if slides|length > 1 %}
+  <button class="hs-arrow hs-prev" type="button" aria-label="اسلاید قبلی">‹</button>
+  <button class="hs-arrow hs-next" type="button" aria-label="اسلاید بعدی">›</button>
+  <div class="hs-dots" role="tablist"></div>
+  {% endif %}
+</section>
+{% endif %}
+
 <!-- قهرمان -->
 <section class="hero">
   <div class="container hero-inner">

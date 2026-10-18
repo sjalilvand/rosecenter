@@ -425,6 +425,20 @@ def init_db(app):
         )
     """)
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS slides (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            title        TEXT NOT NULL,
+            subtitle     TEXT NOT NULL DEFAULT '',
+            image        TEXT NOT NULL DEFAULT '',
+            link         TEXT NOT NULL DEFAULT '',
+            button_label TEXT NOT NULL DEFAULT 'مشاهده بیشتر',
+            sort_order   INTEGER NOT NULL DEFAULT 0,
+            is_visible   INTEGER NOT NULL DEFAULT 1,
+            created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
     # ---------- مایگریشن‌های سبک (ستون‌های اضافه‌شده در نسخه‌های بعد) ----------
     def _add_column(table, col_sql):
         cols = {r[1] for r in c.execute(f"PRAGMA table_info({table})")}

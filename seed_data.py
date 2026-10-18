@@ -289,6 +289,28 @@ def seed():
             ("سامانه نمونه", "rc_demo0000000000000000000000000000", "کلید نمونه — برای آزمایش API جایگزین کنید"),
         )
 
+    # ---------- اسلایدر صفحه اصلی ----------
+    c.execute("SELECT COUNT(*) FROM slides")
+    if c.fetchone()[0] == 0:
+        default_slides = [
+            ("کلینیک‌های زنجیره‌ای روانشناسی و مشاوره رز",
+             "بیش از ۳۰ مرکز فعال در سراسر کشور؛ همراه شما در مسیر سلامت روان",
+             "", "/centers/", "مشاهده مراکز"),
+            ("آکادمی رز — دوره‌های تخصصی روانشناسی",
+             "کارگاه‌ها و دوره‌های تخصصی با گواهی معتبر؛ هم‌اکنون در دوره‌ها ثبت‌نام کنید",
+             "", "/courses/", "مشاهده دوره‌ها"),
+            ("دستیار هوشمند رز — پاسخگوی ۲۴ ساعته",
+             "هر سوالی درباره خدمات، دوره‌ها و مراکز دارید، از چت هوشمند بپرسید",
+             "", "/chat/", "شروع گفتگو"),
+        ]
+        for i, (title, subtitle, image, link, btn) in enumerate(default_slides, 1):
+            c.execute(
+                """INSERT OR IGNORE INTO slides
+                   (title, subtitle, image, link, button_label, sort_order, is_visible)
+                   VALUES (?,?,?,?,?,?,1)""",
+                (title, subtitle, image, link, btn, i),
+            )
+
     db.commit()
     db.close()
     print("✓ داده‌های اولیه با موفقیت درج شد.")

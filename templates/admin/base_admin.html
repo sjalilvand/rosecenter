@@ -47,6 +47,9 @@
       <a href="{{ url_for('admin_board') }}" class="{{ 'active' if 'admin/board' in request.path }}">
         <span class="a-ic">👔</span> هیئت مدیره
       </a>
+      <a href="{{ url_for('admin_slides') }}" class="{{ 'active' if 'admin/slides' in request.path }}">
+        <span class="a-ic">🖼</span> اسلایدر صفحه اصلی
+      </a>
       <a href="{{ url_for('admin_users') }}" class="{{ 'active' if 'admin/users' in request.path }}">
         <span class="a-ic">👥</span> مدیریت کاربران
       </a>

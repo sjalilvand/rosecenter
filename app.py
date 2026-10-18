@@ -281,6 +281,8 @@ def home():
     testimonials = database.query("SELECT * FROM testimonials ORDER BY sort_order")
     faqs = database.query("SELECT * FROM faqs ORDER BY sort_order")
     centers = database.query("SELECT id, province FROM centers WHERE is_soon=0 ORDER BY sort_order")
+    slides = database.query(
+        "SELECT * FROM slides WHERE is_visible=1 ORDER BY sort_order, id")
     # بلوک‌های دینامیک صفحه اصلی (مدیریت از پنل ادمین)
     blocks = _load_home_blocks()
     # بخش‌های دوره‌ها به سبک LMS
@@ -300,7 +302,7 @@ def home():
     latest_news = database.query(
         "SELECT * FROM news WHERE published=1 ORDER BY published_at DESC, id DESC LIMIT 3")
     return render_template("home.html", services=services, testimonials=testimonials,
-                           faqs=faqs, centers=centers, blocks=blocks,
+                           faqs=faqs, centers=centers, blocks=blocks, slides=slides,
                            courses_registration=courses_registration,
                            courses_popular=courses_popular, courses_free=courses_free,
                            course_cats=course_cats, forum_teaser=forum_teaser,
@@ -1673,6 +1675,18 @@ def admin_upload_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=False)
 
 
+# فایل‌های عمومی (تصاویر اسلایدر و اعضای هیئت مدیره) — قابل مشاهده برای همه بازدیدکنندگان
+PUBLIC_UPLOAD_PREFIXES = ("slide_", "board_")
+
+
+@app.route("/uploads/<path:filename>")
+def public_upload_file(filename):
+    """سرو تصاویر عمومی (اسلایدر، هیئت مدیره) — فقط فایل‌های مجاز"""
+    if not filename.startswith(PUBLIC_UPLOAD_PREFIXES):
+        abort(404)
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=False)
+
+
 # ---------- مدیریت دوره‌های آموزشی ----------
 @app.route("/admin/courses")
 @admin_required
@@ -2875,6 +2889,145 @@ def admin_board_delete(rid):
     database.execute("DELETE FROM board_members WHERE id=?", (rid,))
     flash("عضو حذف شد.", "success")
     return redirect(url_for("admin_board"))
+
+
+# ---------- اسلایدر صفحه اصلی ----------
+SLIDE_UPLOAD_EXT = {"png", "jpg", "jpeg", "webp"}
+
+
+def _save_slide_image(file_storage, slide_id):
+    """ذخیره تصویر اسلاید"""
+    if not file_storage or not file_storage.filename:
+        return ""
+    filename = os.path.basename(file_storage.filename)
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in SLIDE_UPLOAD_EXT:
+        raise ValueError("تصویر باید با فرمت PNG، JPG یا WEBP باشد")
+    data = file_storage.read()
+    if len(data) > 3 * 1024 * 1024:
+        raise ValueError("حجم تصویر نباید بیشتر از ۳ مگابایت باشد")
+    safe_name = f"slide_{slide_id}.{ext}"
+    with open(os.path.join(app.config["UPLOAD_FOLDER"], safe_name), "wb") as fh:
+        fh.write(data)
+    return safe_name
+
+
+@app.route("/admin/slides")
+@admin_required
+def admin_slides():
+    rows = database.query("SELECT * FROM slides ORDER BY sort_order, id")
+    return render_template("admin/slides.html", rows=rows, page_title="اسلایدر صفحه اصلی")
+
+
+@app.route("/admin/slides/new", methods=["GET", "POST"])
+@admin_required
+@admin_csrf
+def admin_slide_new():
+    if request.method == "POST":
+        f = request.form
+        title = f.get("title", "").strip()
+        if not title:
+            flash("عنوان اسلاید الزامی است.", "error")
+            return redirect(request.url)
+        mx = database.query("SELECT MAX(sort_order) m FROM slides", one=True)["m"] or 0
+        new_id = database.execute(
+            """INSERT INTO slides (title, subtitle, image, link, button_label, sort_order, is_visible)
+               VALUES (?,?,?,?,?,?,?)""",
+            (title, f.get("subtitle", "").strip(), "", f.get("link", "").strip(),
+             f.get("button_label", "").strip() or "مشاهده بیشتر", mx + 1,
+             1 if f.get("is_visible") else 0))
+        try:
+            img = _save_slide_image(request.files.get("image"), new_id)
+            if img:
+                database.execute("UPDATE slides SET image=? WHERE id=?", (img, new_id))
+        except ValueError as e:
+            flash(f"اسلاید ذخیره شد اما تصویر ذخیره نشد: {e}", "error")
+            return redirect(url_for("admin_slides"))
+        flash("اسلاید جدید اضافه شد و در صفحه اصلی نمایش داده می‌شود.", "success")
+        return redirect(url_for("admin_slides"))
+    return render_template("admin/slide_form.html", row=None, page_title="اسلاید جدید")
+
+
+@app.route("/admin/slides/<int:rid>", methods=["GET", "POST"])
+@admin_required
+@admin_csrf
+def admin_slide_edit(rid):
+    row = database.query("SELECT * FROM slides WHERE id=?", (rid,), one=True)
+    if not row:
+        abort(404)
+    if request.method == "POST":
+        f = request.form
+        title = f.get("title", "").strip()
+        if not title:
+            flash("عنوان اسلاید الزامی است.", "error")
+            return redirect(request.url)
+        database.execute(
+            """UPDATE slides SET title=?, subtitle=?, link=?, button_label=?, sort_order=?, is_visible=?
+               WHERE id=?""",
+            (title, f.get("subtitle", "").strip(), f.get("link", "").strip(),
+             f.get("button_label", "").strip() or "مشاهده بیشتر",
+             f.get("sort_order", 0, type=int), 1 if f.get("is_visible") else 0, rid))
+        try:
+            img = _save_slide_image(request.files.get("image"), rid)
+            if img:
+                if row["image"] and row["image"] != img:
+                    try:
+                        os.remove(os.path.join(app.config["UPLOAD_FOLDER"], row["image"]))
+                    except OSError:
+                        pass
+                database.execute("UPDATE slides SET image=? WHERE id=?", (img, rid))
+        except ValueError as e:
+            flash(f"اسلاید به‌روزرسانی شد اما تصویر جدید ذخیره نشد: {e}", "error")
+            return redirect(url_for("admin_slides"))
+        flash("اسلاید به‌روزرسانی شد.", "success")
+        return redirect(url_for("admin_slides"))
+    return render_template("admin/slide_form.html", row=row, page_title="ویرایش اسلاید")
+
+
+@app.route("/admin/slides/<int:rid>/toggle", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_slide_toggle(rid):
+    database.execute("UPDATE slides SET is_visible = 1 - is_visible WHERE id=?", (rid,))
+    return redirect(url_for("admin_slides"))
+
+
+@app.route("/admin/slides/<int:rid>/move", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_slide_move(rid):
+    direction = request.form.get("dir", "up")
+    row = database.query("SELECT * FROM slides WHERE id=?", (rid,), one=True)
+    if row:
+        if direction == "up":
+            other = database.query(
+                "SELECT * FROM slides WHERE sort_order<=? AND id!=? ORDER BY sort_order DESC, id DESC LIMIT 1",
+                (row["sort_order"], rid), one=True)
+        else:
+            other = database.query(
+                "SELECT * FROM slides WHERE sort_order>=? AND id!=? ORDER BY sort_order, id LIMIT 1",
+                (row["sort_order"], rid), one=True)
+        if other:
+            database.execute("UPDATE slides SET sort_order=? WHERE id=?",
+                             (row["sort_order"], other["id"]))
+            database.execute("UPDATE slides SET sort_order=? WHERE id=?",
+                             (other["sort_order"], rid))
+    return redirect(url_for("admin_slides"))
+
+
+@app.route("/admin/slides/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_slide_delete(rid):
+    row = database.query("SELECT * FROM slides WHERE id=?", (rid,), one=True)
+    if row and row["image"]:
+        try:
+            os.remove(os.path.join(app.config["UPLOAD_FOLDER"], row["image"]))
+        except OSError:
+            pass
+    database.execute("DELETE FROM slides WHERE id=?", (rid,))
+    flash("اسلاید حذف شد.", "success")
+    return redirect(url_for("admin_slides"))
 
 
 # ---------- تنظیمات ----------

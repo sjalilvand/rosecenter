@@ -60,7 +60,7 @@
 .lms-course-card:hover { transform: translateY(-6px); box-shadow: 0 18px 44px rgba(0,0,0,.10); border-color: transparent; }
 .lms-thumb {
   height: 132px; display: flex; align-items: center; justify-content: center; position: relative;
-  background: linear-gradient(135deg, var(--rose-dark), var(--rose) 70%, #2fa355);
+  background: linear-gradient(135deg, var(--rose-dark), var(--rose) 70%, #e2558f);
   font-size: 3rem;
 }
 .lms-thumb .cat-badge {
@@ -206,7 +206,7 @@
   position: fixed; bottom: 22px; left: 22px; z-index: 500;
   width: 62px; height: 62px; border-radius: 50%; border: none;
   background: linear-gradient(135deg, var(--rose), var(--rose-dark));
-  color: #fff; box-shadow: 0 14px 34px rgba(21,128,61,.35);
+  color: #fff; box-shadow: 0 14px 34px rgba(194,24,91,.35);
   display: flex; align-items: center; justify-content: center; cursor: pointer;
   transition: transform .25s;
 }
@@ -239,7 +239,7 @@
 }
 .chat-head b { display: block; font-size: .95rem; }
 .chat-head small { opacity: .85; font-size: .74rem; display: inline-flex; align-items: center; gap: 5px; }
-.chat-head small::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--lime); }
+.chat-head small::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
 .chat-close {
   margin-inline-start: auto; background: rgba(255,255,255,.15); border: none; color: #fff;
   width: 32px; height: 32px; border-radius: 10px; font-size: 1.2rem; line-height: 1;
@@ -363,7 +363,7 @@
 .board-avatar {
   width: 96px; height: 96px; margin: 0 auto 16px; border-radius: 50%;
   background: linear-gradient(135deg, var(--rose-light), var(--rose-softer));
-  border: 3px solid #fff; box-shadow: 0 6px 18px rgba(21,128,61,.18);
+  border: 3px solid #fff; box-shadow: 0 6px 18px rgba(194,24,91,.18);
   display: flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 2rem; font-weight: 800; color: var(--rose-dark);
 }

@@ -18,7 +18,7 @@
       <div class="board-card">
         <div class="board-avatar">
           {% if m.photo %}
-          <img src="{{ url_for('admin_upload_file', filename=m.photo) }}" alt="{{ m.full_name }}">
+          <img src="{{ url_for('public_upload_file', filename=m.photo) }}" alt="{{ m.full_name }}">
           {% else %}
           {{ m.full_name[:1] }}
           {% endif %}

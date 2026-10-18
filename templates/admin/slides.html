@@ -1,0 +1,61 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="a-toolbar">
+  <p class="a-hint" style="margin:0">اسلایدهای صفحه اصلی را اینجا مدیریت کنید؛ ترتیب نمایش را با دکمه‌های ▲▼ تغییر دهید. اسلایدهای بدون تصویر با پس‌زمینه گرادیانی رز نمایش داده می‌شوند.</p>
+  <a href="{{ url_for('admin_slide_new') }}" class="btn btn-primary">+ اسلاید جدید</a>
+</div>
+
+<div class="a-card">
+  <table class="a-table">
+    <thead>
+      <tr><th>#</th><th>تصویر</th><th>عنوان</th><th>زیرعنوان</th>
+          <th>لینک</th><th>ترتیب</th><th>وضعیت</th><th>عملیات</th></tr>
+    </thead>
+    <tbody>
+      {% for s in rows %}
+      <tr>
+        <td>{{ s['id'] }}</td>
+        <td>
+          {% if s['image'] %}
+          <img src="{{ url_for('public_upload_file', filename=s['image']) }}" alt="" style="width:72px;height:44px;object-fit:cover;border-radius:8px">
+          {% else %}
+          <span class="tag tag-pink" style="min-width:72px;text-align:center;display:inline-block">گرادیان رز</span>
+          {% endif %}
+        </td>
+        <td><strong>{{ s['title'] }}</strong></td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s['subtitle'] or '—' }}</td>
+        <td dir="ltr" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s['link'] or '—' }}</td>
+        <td>{{ s['sort_order'] }}</td>
+        <td>
+          {% if s['is_visible'] %}<span class="tag tag-green">نمایش</span>
+          {% else %}<span class="tag tag-red">مخفی</span>{% endif %}
+        </td>
+        <td class="a-actions">
+          <form method="post" action="{{ url_for('admin_slide_move', rid=s['id']) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="dir" value="up">
+            <button type="submit" class="btn btn-sm" title="انتقال به بالا">▲</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_slide_move', rid=s['id']) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="dir" value="down">
+            <button type="submit" class="btn btn-sm" title="انتقال به پایین">▼</button>
+          </form>
+          <a href="{{ url_for('admin_slide_edit', rid=s['id']) }}" class="btn btn-sm">ویرایش</a>
+          <form method="post" action="{{ url_for('admin_slide_toggle', rid=s['id']) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm">{{ 'مخفی' if s['is_visible'] else 'نمایش' }}</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_slide_delete', rid=s['id']) }}" data-confirm="این اسلاید حذف شود؟">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-danger">حذف</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:var(--ink-soft)">هنوز اسلایدی اضافه نشده است؛ با دکمه «اسلاید جدید» اولین اسلاید را بسازید.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
