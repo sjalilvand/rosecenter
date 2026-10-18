@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>{{ cat.icon }} {{ cat.title }}</h1>
+    <p class="lead">{{ cat.description }}</p>
+    <nav class="breadcrumb" style="margin-top:10px">
+      <a href="{{ url_for('forum_index') }}">انجمن‌ها</a><span class="sep">/</span><span>{{ cat.title }}</span>
+    </nav>
+  </div>
+</section>
+
+<section class="section" style="padding-top:34px">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        {% for c in cats %}
+        <a href="{{ url_for('forum_category', slug=c.slug) }}" class="cat-chip {{ 'active' if c.id == cat.id }}">
+          <span class="ci">{{ c.icon }}</span> {{ c.title }}
+        </a>
+        {% endfor %}
+      </div>
+      {% if cur_user %}
+      <a href="{{ url_for('forum_new_topic', cat_slug=cat.slug) }}" class="btn btn-primary">+ تاپیک جدید</a>
+      {% else %}
+      <a href="{{ url_for('login', next='/forum/' + cat.slug + '/') }}" class="btn btn-outline">برای ایجاد تاپیک وارد شوید</a>
+      {% endif %}
+    </div>
+
+    <form class="center-search" method="get" action="{{ url_for('forum_category', slug=cat.slug) }}">
+      <input type="text" name="q" value="{{ q }}" placeholder="جستجو در تاپیک‌های این انجمن…">
+      <button type="submit" class="btn btn-primary">جستجو</button>
+    </form>
+
+    {% if topics %}
+    <div class="topic-table">
+      {% for t in topics %}
+      <div class="topic-row">
+        <div class="t-av">{{ t.author_name[:1] if t.author_name else '؟' }}</div>
+        <div class="topic-main">
+          <h4>
+            {% if t.is_pinned %}<span class="pin-badge">📌 سنجاق‌شده</span>{% endif %}
+            {% if t.is_locked %}<span class="lock-badge">🔒 قفل</span>{% endif %}
+            <a href="{{ url_for('forum_topic', tid=t.id) }}">{{ t.title }}</a>
+          </h4>
+          <div class="topic-meta">
+            <span>✍ {{ t.author_name }}</span>
+            <span>🗓 {{ t.created_at[:10] | jdate }}</span>
+            <span>آخرین فعالیت: {{ t.last_activity_at[:10] | jdate }}</span>
+          </div>
+        </div>
+        <div class="topic-counts">
+          <span>💬 {{ t.replies }}</span>
+          <span>👁 {{ t.views }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <span class="empty-ic">🌱</span>
+      <h3>هنوز تاپیکی در این انجمن نیست</h3>
+      <p>{% if cur_user %}اولین نفر باشید و {% endif %}تاپیک جدیدی ایجاد کنید.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>مستندات چت هوشمند ({{ rows|length }} مستند — مجموع {{ total_hits }} پاسخ موفق)</span>
+    <div style="display:flex;gap:8px">
+      <a href="{{ url_for('admin_chat_logs') }}" class="btn btn-outline btn-sm">گفتگوهای کاربران</a>
+      <a href="{{ url_for('admin_chat_doc_new') }}" class="btn btn-primary btn-sm">+ مستند جدید</a>
+    </div>
+  </div>
+
+  <p class="hint" style="background:var(--rose-softer);border:1px solid var(--rose-light);border-radius:10px;padding:12px 16px;margin-bottom:16px">
+    💡 این مستندات پایگاه دانش دستیار هوشمند سایت هستند. برای هر مستند: <b>کلیدواژه‌ها</b> را با «،» جدا کنید؛
+    هر چه کلیدواژه دقیق‌تر باشد، شانس تطابق با سوال کاربر بیشتر است. لینک هدایت به کاربر کمک می‌کند سریع به صفحه مربوط برود.
+  </p>
+
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>عنوان</th><th>دسته</th><th>کلیدواژه‌ها</th><th>لینک</th><th>اولویت</th><th>هیت</th><th>فعال</th><th>عملیات</th></tr></thead>
+      <tbody>
+        {% for d in rows %}
+        <tr>
+          <td><b>{{ d.title }}</b><br><small style="color:#777">{{ d.content[:60] }}…</small></td>
+          <td>{{ d.category }}</td>
+          <td><small>{{ d.keywords[:70] }}{% if d.keywords|length > 70 %}…{% endif %}</small></td>
+          <td><small>{{ d.link or '—' }}</small></td>
+          <td>{{ d.priority }}</td>
+          <td><b>{{ d.hit_count }}</b></td>
+          <td>{{ '✅' if d.is_active else '⚪' }}</td>
+          <td>
+            <div class="actions">
+              <a href="{{ url_for('admin_chat_doc_edit', rid=d.id) }}" class="btn btn-outline btn-sm">ویرایش</a>
+              <form method="post" action="{{ url_for('admin_chat_doc_delete', rid=d.id) }}" data-confirm="این مستند حذف شود؟" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">🤖</div>هنوز مستندی ثبت نشده — با دکمه «مستند جدید» پایگاه دانش چت را بسازید.</div>
+  {% endif %}
+</div>
+{% endblock %}

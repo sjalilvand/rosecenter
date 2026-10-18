@@ -1,0 +1,109 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>مدیریت انجمن‌ها</span>
+    <a href="{{ url_for('forum_index') }}" target="_blank" class="btn btn-outline btn-sm">مشاهده انجمن‌ها ↗</a>
+  </div>
+
+  <div class="panel" style="box-shadow:none;border:1px dashed var(--line);margin-bottom:18px">
+    <form method="post" action="{{ url_for('admin_forum_cat_new') }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="field" style="margin:0;flex:2;min-width:180px">
+        <label>عنوان انجمن <span class="req">*</span></label>
+        <input type="text" name="title" required placeholder="مثلاً: انجمن والدگری">
+      </div>
+      <div class="field" style="margin:0;flex:2;min-width:200px">
+        <label>توضیح</label>
+        <input type="text" name="description" placeholder="توضیح کوتاه انجمن">
+      </div>
+      <div class="field" style="margin:0;min-width:80px">
+        <label>آیکون</label>
+        <input type="text" name="icon" value="💬">
+      </div>
+      <button type="submit" class="btn btn-primary">+ افزودن</button>
+    </form>
+  </div>
+
+  <!-- دسته‌بندی‌ها -->
+  <h3 style="font-weight:800;margin-bottom:10px">انجمن‌ها ({{ cats|length }})</h3>
+  {% if cats %}
+  <div class="table-wrap" style="margin-bottom:26px">
+    <table class="admin-table">
+      <thead><tr><th>آیکون</th><th>عنوان / توضیح</th><th>تاپیک‌ها</th><th>عملیات</th></tr></thead>
+      <tbody>
+        {% for c in cats %}
+        <tr>
+          <td style="font-size:1.3rem">{{ c.icon }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_forum_cat_edit', rid=c.id) }}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <input type="text" name="title" value="{{ c.title }}" style="width:160px">
+              <input type="text" name="description" value="{{ c.description }}" style="width:240px">
+              <input type="text" name="icon" value="{{ c.icon }}" style="width:52px;text-align:center">
+              <input type="number" name="sort_order" value="{{ c.sort_order }}" style="width:64px">
+              <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;cursor:pointer">
+                <input type="checkbox" name="is_visible" {{ 'checked' if c.is_visible }}> نمایش
+              </label>
+              <button class="btn btn-outline btn-sm">ذخیره</button>
+            </form>
+          </td>
+          <td>{{ c.topics_count }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_forum_cat_delete', rid=c.id) }}" data-confirm="این انجمن و همه تاپیک‌ها/پاسخ‌هایش حذف شود؟">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- تاپیک‌ها -->
+  <h3 style="font-weight:800;margin-bottom:10px">تاپیک‌های اخیر</h3>
+  {% if topics %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>عنوان</th><th>انجمن</th><th>نویسنده</th><th>پاسخ‌ها</th><th>بازدید</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+      <tbody>
+        {% for t in topics %}
+        <tr>
+          <td><a href="{{ url_for('forum_topic', tid=t.id) }}" target="_blank">{{ t.title[:60] }}</a></td>
+          <td>{{ t.cat_title }}</td>
+          <td>{{ t.author_name }}</td>
+          <td>{{ t.posts }}</td>
+          <td>{{ t.views }}</td>
+          <td>
+            {% if t.is_pinned %}📌 {% endif %}
+            {% if t.is_locked %}🔒{% endif %}
+            {{ '🟢' if t.is_visible else '⚪' }}
+          </td>
+          <td>
+            <div class="actions">
+              <form method="post" action="{{ url_for('admin_forum_topic_pin', rid=t.id) }}" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-neutral btn-sm">{{ 'برداشتن سنجاق' if t.is_pinned else 'سنجاق' }}</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_forum_topic_lock', rid=t.id) }}" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-neutral btn-sm">{{ 'بازکردن' if t.is_locked else 'قفل' }}</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_forum_topic_delete', rid=t.id) }}" data-confirm="تاپیک و پاسخ‌هایش حذف شود؟" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">💬</div>هنوز تاپیکی ثبت نشده است.</div>
+  {% endif %}
+</div>
+{% endblock %}

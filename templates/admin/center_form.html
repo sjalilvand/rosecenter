@@ -1,24 +1,31 @@
 {% extends "admin/base_admin.html" %}
 {% block content %}
-<div class="panel" style="max-width:860px">
+<div class="panel" style="max-width:900px">
   <div class="panel-title">
-    {{ 'ویرایش مرکز استانی' if item else 'ایجاد مرکز استانی جدید' }}
+    {{ 'ویرایش مرکز / کلینیک' if item else 'ایجاد مرکز جدید' }}
     <a href="{{ url_for('admin_centers') }}" class="btn btn-outline btn-sm">بازگشت</a>
   </div>
   <form method="post">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <div class="form-row">
       <div class="field">
+        <label>نوع مرکز</label>
+        <select name="kind">
+          <option value="مرکز استانی" {{ 'selected' if item and item.kind == 'مرکز استانی' }}>مرکز استانی</option>
+          <option value="کلینیک" {{ 'selected' if item and item.kind == 'کلینیک' }}>کلینیک</option>
+        </select>
+      </div>
+      <div class="field">
         <label>استان <span class="req">*</span></label>
         <input type="text" name="province" value="{{ item.province if item else '' }}" required>
       </div>
-      <div class="field">
-        <label>تلفن کلینیک</label>
-        <input type="text" name="clinic_phone" value="{{ item.clinic_phone if item else '' }}" dir="ltr" style="text-align:right">
-      </div>
     </div>
     <div class="field">
-      <label>آدرس کلینیک مرکزی</label>
+      <label>نام مرکز / کلینیک</label>
+      <input type="text" name="clinic_name" value="{{ item.clinic_name if item else '' }}" placeholder="مثلاً: کلینیک مشاوره راه زندگی">
+    </div>
+    <div class="field">
+      <label>آدرس</label>
       <textarea name="address" style="min-height:80px">{{ item.address if item else '' }}</textarea>
     </div>
     <div class="form-row">
@@ -31,9 +38,23 @@
         <input type="text" name="work_hours" value="{{ item.work_hours if item else '' }}" placeholder="مثلاً: ۸ تا ۱۵">
       </div>
     </div>
+    <div class="form-row">
+      <div class="field">
+        <label>تلفن مرکز</label>
+        <input type="text" name="clinic_phone" value="{{ item.clinic_phone if item else '' }}" dir="ltr" style="text-align:right">
+      </div>
+      <div class="field">
+        <label>ایمیل</label>
+        <input type="email" name="email" value="{{ item.email if item else '' }}" dir="ltr" style="text-align:right">
+      </div>
+    </div>
+    <div class="field">
+      <label>وب‌سایت</label>
+      <input type="url" name="website" value="{{ item.website if item else '' }}" dir="ltr" style="text-align:right">
+    </div>
     <div class="form-grid-3">
       <div class="field">
-        <label>نام مدیر کلینیک</label>
+        <label>نام مدیر مرکز</label>
         <input type="text" name="manager_name" value="{{ item.manager_name if item else '' }}">
       </div>
       <div class="field">
@@ -56,15 +77,41 @@
       <input type="url" name="map_url" value="{{ item.map_url if item else '' }}" dir="ltr" style="text-align:right">
     </div>
     <div class="form-row">
-      <div class="checkbox-row">
-        <input type="checkbox" name="is_soon" id="soon" {{ 'checked' if item and item.is_soon }}>
-        <label for="soon" style="margin:0">به‌زودی فعال می‌شود</label>
+      <div class="field">
+        <label>عرض جغرافیایی (Latitude)</label>
+        <input type="text" name="lat" value="{{ item.lat if item and item.lat is not none else '' }}" dir="ltr" style="text-align:right" placeholder="35.6892">
+      </div>
+      <div class="field">
+        <label>طول جغرافیایی (Longitude)</label>
+        <input type="text" name="lng" value="{{ item.lng if item and item.lng is not none else '' }}" dir="ltr" style="text-align:right" placeholder="51.3890">
+      </div>
+    </div>
+    <div class="field">
+      <label>توانایی‌ها و خدمات (با «،» جدا کنید)</label>
+      <textarea name="capabilities" style="min-height:70px" placeholder="روان‌درمانی فردی، زوج‌درمانی، نوروفیدبک">{{ item.capabilities if item else '' }}</textarea>
+      <span class="hint">این موارد در صفحه جزئیات مرکز و پاپ‌آپ نقشه نمایش داده می‌شود.</span>
+    </div>
+    <div class="form-row">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="checkbox-row">
+          <input type="checkbox" name="is_soon" id="soon" {{ 'checked' if item and item.is_soon }}>
+          <label for="soon" style="margin:0">به‌زودی فعال می‌شود</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" name="is_approved" id="approved" {{ 'checked' if (item and item.is_approved) or not item }}>
+          <label for="approved" style="margin:0">تأیید شده (نمایش در نقشه و فهرست)</label>
+        </div>
       </div>
       <div class="field" style="margin:0">
         <label>ترتیب نمایش</label>
         <input type="number" name="sort_order" value="{{ item.sort_order if item else 0 }}">
       </div>
     </div>
+    {% if item and item.submitter_name %}
+    <div class="hint" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;margin-top:10px">
+      📥 ثبت‌شده توسط: <b>{{ item.submitter_name }}</b> — <span dir="ltr">{{ item.submitter_phone }}</span>
+    </div>
+    {% endif %}
     <div style="margin-top:18px">
       <button type="submit" class="btn btn-primary">ذخیره</button>
     </div>

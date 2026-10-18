@@ -1,0 +1,52 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>گفتگوهای چت هوشمند</span>
+    <div style="display:flex;gap:8px">
+      <a href="{{ url_for('admin_chat_docs') }}" class="btn btn-outline btn-sm">مستندات چت</a>
+      <a href="{{ url_for('admin_chat_logs', unanswered=1) }}" class="btn btn-outline btn-sm {{ '' if only_unanswered else '' }}">فقط بی‌پاسخ‌ها</a>
+      <a href="{{ url_for('admin_chat_logs') }}" class="btn btn-outline btn-sm">همه</a>
+    </div>
+  </div>
+
+  <div class="stat-cards" style="margin-bottom:18px">
+    <div class="stat-card"><span class="sc-label">کل سوال‌ها</span><b class="sc-value">{{ stats.total }}</b></div>
+    <div class="stat-card"><span class="sc-label">پاسخ داده‌شده</span><b class="sc-value">{{ stats.answered }}</b></div>
+    <div class="stat-card"><span class="sc-label">بی‌پاسخ</span><b class="sc-value">{{ stats.unanswered }}</b></div>
+    <div class="stat-card"><span class="sc-label">امروز</span><b class="sc-value">{{ stats.today }}</b></div>
+  </div>
+
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>سوال کاربر</th><th>پاسخ دستیار</th><th>منبع پاسخ</th><th>امتیاز</th><th>کاربر</th><th>زمان</th><th>عملیات</th></tr></thead>
+      <tbody>
+        {% for l in rows %}
+        <tr>
+          <td style="max-width:220px"><b>{{ l.question[:80] }}{% if l.question|length > 80 %}…{% endif %}</b></td>
+          <td style="max-width:260px"><small>{{ l.answer[:120] }}{% if l.answer|length > 120 %}…{% endif %}</small></td>
+          <td><small>{{ l.matched_doc[:40] or '—' }}</small></td>
+          <td>{{ '%.1f'|format(l.score) }}</td>
+          <td>{{ '✅' if l.is_answered else '❌' }}</td>
+          <td><small>{{ l.created_at | jdate(True) }}</small></td>
+          <td>
+            <form method="post" action="{{ url_for('admin_chat_log_delete', rid=l.id) }}" style="display:inline">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" action="{{ url_for('admin_chat_logs_clear') }}" style="margin-top:14px" data-confirm="کل تاریخچه گفتگوها پاک شود؟">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-danger btn-sm">پاک کردن کل تاریخچه</button>
+  </form>
+  {% else %}
+  <div class="empty-state"><div class="big">💬</div>هنوز گفتگویی ثبت نشده است.</div>
+  {% endif %}
+</div>
+{% endblock %}

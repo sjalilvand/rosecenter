@@ -324,6 +324,107 @@ def init_db(app):
         )
     """)
 
+    # ---------- دسته‌بندی دوره‌ها (سبک مدرسه روان‌بُنه) ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS course_categories (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            slug       TEXT UNIQUE NOT NULL,
+            title      TEXT NOT NULL,
+            icon       TEXT NOT NULL DEFAULT '📘',
+            color      TEXT NOT NULL DEFAULT '#15803d',
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            is_visible INTEGER NOT NULL DEFAULT 1
+        )
+    """)
+
+    # ---------- انجمن‌ها ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS forum_categories (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            slug        TEXT UNIQUE NOT NULL,
+            title       TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            icon        TEXT NOT NULL DEFAULT '💬',
+            sort_order  INTEGER NOT NULL DEFAULT 0,
+            is_visible  INTEGER NOT NULL DEFAULT 1
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS forum_topics (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_id      INTEGER NOT NULL,
+            user_id          INTEGER,
+            author_name      TEXT NOT NULL DEFAULT '',
+            title            TEXT NOT NULL,
+            content          TEXT NOT NULL DEFAULT '',
+            views            INTEGER NOT NULL DEFAULT 0,
+            is_pinned        INTEGER NOT NULL DEFAULT 0,
+            is_locked        INTEGER NOT NULL DEFAULT 0,
+            is_visible       INTEGER NOT NULL DEFAULT 1,
+            created_at       TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            last_activity_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (category_id) REFERENCES forum_categories(id) ON DELETE CASCADE
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS forum_posts (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            topic_id    INTEGER NOT NULL,
+            user_id     INTEGER,
+            author_name TEXT NOT NULL DEFAULT '',
+            content     TEXT NOT NULL,
+            is_visible  INTEGER NOT NULL DEFAULT 1,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (topic_id) REFERENCES forum_topics(id) ON DELETE CASCADE
+        )
+    """)
+
+    # ---------- مستندات چت هوشمند (پایگاه دانش) ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS chat_documents (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            title      TEXT NOT NULL,
+            content    TEXT NOT NULL,
+            keywords   TEXT NOT NULL DEFAULT '',
+            link       TEXT NOT NULL DEFAULT '',
+            link_label TEXT NOT NULL DEFAULT '',
+            category   TEXT NOT NULL DEFAULT 'عمومی',
+            priority   INTEGER NOT NULL DEFAULT 0,
+            hit_count  INTEGER NOT NULL DEFAULT 0,
+            is_active  INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
+    # ---------- لاگ گفتگوهای چت ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS chat_logs (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_key  TEXT NOT NULL DEFAULT '',
+            user_id      INTEGER,
+            question     TEXT NOT NULL,
+            answer       TEXT NOT NULL DEFAULT '',
+            matched_doc  TEXT NOT NULL DEFAULT '',
+            score        REAL NOT NULL DEFAULT 0,
+            is_answered  INTEGER NOT NULL DEFAULT 0,
+            created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
+    # ---------- اعضای هیئت مدیره ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS board_members (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name  TEXT NOT NULL,
+            role       TEXT NOT NULL DEFAULT 'عضو هیئت مدیره',
+            bio        TEXT NOT NULL DEFAULT '',
+            photo      TEXT NOT NULL DEFAULT '',
+            skills     TEXT NOT NULL DEFAULT '',
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            is_visible INTEGER NOT NULL DEFAULT 1
+        )
+    """)
+
     # ---------- مایگریشن‌های سبک (ستون‌های اضافه‌شده در نسخه‌های بعد) ----------
     def _add_column(table, col_sql):
         cols = {r[1] for r in c.execute(f"PRAGMA table_info({table})")}
@@ -336,6 +437,28 @@ def init_db(app):
     _add_column("bookings", "api_key_id INTEGER")
     _add_column("course_registrations", "user_id INTEGER")
     _add_column("hr_calls", "user_id INTEGER")
+
+    # گسترش دوره‌ها (نسخه LMS)
+    _add_column("courses", "category_id INTEGER")
+    _add_column("courses", "status TEXT NOT NULL DEFAULT 'registration'")
+    _add_column("courses", "rating REAL NOT NULL DEFAULT 4.5")
+    _add_column("courses", "votes INTEGER NOT NULL DEFAULT 0")
+    _add_column("courses", "students INTEGER NOT NULL DEFAULT 0")
+    _add_column("courses", "price_num INTEGER NOT NULL DEFAULT 0")
+    _add_column("courses", "is_free INTEGER NOT NULL DEFAULT 0")
+    _add_column("courses", "is_special INTEGER NOT NULL DEFAULT 0")
+    _add_column("courses", "thumb TEXT NOT NULL DEFAULT ''")
+
+    # گسترش مراکز (ثبت مراکز و کلینیک‌ها + نقشه)
+    _add_column("centers", "kind TEXT NOT NULL DEFAULT 'مرکز استانی'")
+    _add_column("centers", "lat REAL")
+    _add_column("centers", "lng REAL")
+    _add_column("centers", "capabilities TEXT NOT NULL DEFAULT ''")
+    _add_column("centers", "is_approved INTEGER NOT NULL DEFAULT 1")
+    _add_column("centers", "submitter_name TEXT NOT NULL DEFAULT ''")
+    _add_column("centers", "submitter_phone TEXT NOT NULL DEFAULT ''")
+    _add_column("centers", "email TEXT NOT NULL DEFAULT ''")
+    _add_column("centers", "website TEXT NOT NULL DEFAULT ''")
 
     db.commit()
     db.close()

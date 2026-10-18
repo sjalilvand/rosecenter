@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>ثبت مرکز / کلینیک جدید</h1>
+    <p class="lead">
+      اگر مدیر یک مرکز یا کلینیک مشاوره هستید، اطلاعات مرکز خود را ثبت کنید؛ پس از بررسی و تأیید مدیریت،
+      مرکز شما روی نقشه ایران و فهرست مراکز رز نمایش داده می‌شود.
+    </p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:34px">
+  <div class="container" style="max-width:860px">
+    <form method="post" action="{{ url_for('center_register') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="form-card">
+        <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:18px">۱. مشخصات مرکز</h3>
+        <div class="form-row">
+          <div class="field">
+            <label>نوع مرکز <span class="req">*</span></label>
+            <select name="kind" required>
+              <option value="کلینیک">کلینیک</option>
+              <option value="مرکز استانی">مرکز استانی</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>استان <span class="req">*</span></label>
+            <input type="text" name="province" required list="provinceList" placeholder="مثلاً: تهران">
+            <datalist id="provinceList">
+              {% for p in provinces %}<option value="{{ p.province }}">{% endfor %}
+            </datalist>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cr_name">نام مرکز / کلینیک <span class="req">*</span></label>
+          <input type="text" id="cr_name" name="clinic_name" required placeholder="مثلاً: کلینیک مشاوره نمونه">
+        </div>
+        <div class="field">
+          <label>نشانی کامل <span class="req">*</span></label>
+          <textarea name="address" required placeholder="نشانی کامل مرکز…" style="min-height:90px"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>تلفن مرکز</label>
+            <input type="tel" name="clinic_phone" dir="ltr" style="text-align:right" placeholder="021-12345678">
+          </div>
+          <div class="field">
+            <label>ساعات کاری</label>
+            <input type="text" name="work_hours" placeholder="مثلاً: ۸ تا ۱۶">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>نام مدیر مرکز</label>
+            <input type="text" name="manager_name" placeholder="اختیاری">
+          </div>
+          <div class="field">
+            <label>ایمیل / وب‌سایت</label>
+            <div style="display:flex;gap:8px">
+              <input type="email" name="email" placeholder="ایمیل (اختیاری)" dir="ltr" style="text-align:right">
+              <input type="url" name="website" placeholder="وب‌سایت (اختیاری)" dir="ltr" style="text-align:right">
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-weight:800;font-size:1.1rem;margin:22px 0 14px">۲. توانایی‌ها و خدمات</h3>
+        <div class="cap-grid">
+          {% for cap in caps %}
+          <label class="cap-check">
+            <input type="checkbox" name="capabilities" value="{{ cap }}">
+            <span>✓ {{ cap }}</span>
+          </label>
+          {% endfor %}
+        </div>
+
+        <h3 style="font-weight:800;font-size:1.1rem;margin:22px 0 14px">۳. موقعیت روی نقشه</h3>
+        <div class="map-pick-box"><div id="pickMap"></div></div>
+        <span class="coord-hint">💡 روی نقشه کلیک کنید تا موقعیت مرکز مشخص شود (اختیاری ولی توصیه‌شده).</span>
+        <div class="form-row">
+          <div class="field">
+            <label>عرض جغرافیایی (Latitude)</label>
+            <input type="text" id="latInput" name="lat" dir="ltr" style="text-align:right" placeholder="35.6892">
+          </div>
+          <div class="field">
+            <label>طول جغرافیایی (Longitude)</label>
+            <input type="text" id="lngInput" name="lng" dir="ltr" style="text-align:right" placeholder="51.3890">
+          </div>
+        </div>
+
+        <h3 style="font-weight:800;font-size:1.1rem;margin:22px 0 14px">۴. اطلاعات ثبت‌کننده</h3>
+        <div class="form-row">
+          <div class="field">
+            <label>نام و نام خانوادگی <span class="req">*</span></label>
+            <input type="text" name="submitter_name" required placeholder="نام شما">
+          </div>
+          <div class="field">
+            <label>شماره همراه <span class="req">*</span></label>
+            <input type="tel" name="submitter_phone" required dir="ltr" style="text-align:right" placeholder="۰۹۱۲۳۴۵۶۷۸۹">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">ثبت درخواست نمایش مرکز</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var map = L.map('pickMap').setView([32.5, 54.3], 5);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18, attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  var marker = null;
+  var latInput = document.getElementById('latInput');
+  var lngInput = document.getElementById('lngInput');
+
+  function setMarker(lat, lng) {
+    if (marker) marker.setLatLng([lat, lng]);
+    else marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+    marker.on('dragend', function () {
+      var p = marker.getLatLng();
+      latInput.value = p.lat.toFixed(6);
+      lngInput.value = p.lng.toFixed(6);
+    });
+    latInput.value = lat.toFixed(6);
+    lngInput.value = lng.toFixed(6);
+  }
+
+  map.on('click', function (e) { setMarker(e.latlng.lat, e.latlng.lng); });
+
+  // اگر مقادیر اولیه هست (مثلاً بعد از خطا) نشانگر را بگذار
+  if (latInput.value && lngInput.value) {
+    try { setMarker(parseFloat(latInput.value), parseFloat(lngInput.value)); } catch (e) {}
+  }
+})();
+</script>
+{% endblock %}

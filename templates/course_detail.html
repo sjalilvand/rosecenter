@@ -1,62 +1,80 @@
 {% extends "base.html" %}
+{% from "_macros.html" import lms_course_card %}
 {% block content %}
 <section class="page-hero">
   <div class="container">
+    {% if course.cat_title %}
+    <span class="tag" style="margin-bottom:12px">{{ course.cat_icon or '📘' }} {{ course.cat_title }}</span>
+    {% endif %}
     <h1>{{ course.title }}</h1>
-    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><a href="{{ url_for('academy') }}">آکادمی رز</a><span class="sep">/</span><span>{{ course.title }}</span></nav>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><a href="{{ url_for('courses') }}">دوره‌ها</a><span class="sep">/</span><span>{{ course.title }}</span></nav>
     <p class="lead">{{ course.summary }}</p>
+    <div style="display:flex;justify-content:center;gap:18px;margin-top:14px;flex-wrap:wrap;font-size:.88rem;color:var(--ink-soft);font-weight:700">
+      <span class="lms-rating">
+        <svg class="star-ic" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        {{ '%.1f'|format(course.rating or 4.5) }} ({{ course.votes or 0 }} رأی)
+      </span>
+      <span>👥 {{ course.students or 0 }} دانشجو</span>
+      {% if status_labels.get(course.status) %}
+      <span class="tag">{{ status_labels.get(course.status) }}</span>
+      {% endif %}
+    </div>
   </div>
 </section>
 
 <section class="section">
   <div class="container split-page">
-    <aside class="side-panel">
-      <h3>مشخصات دوره</h3>
-      <ul>
-        <li>مدرس: {{ course.teacher or 'به‌زودی اعلام می‌شود' }}</li>
-        <li>سطح دوره: {{ course.level }}</li>
-        {% if course.duration %}<li>مدت دوره: {{ course.duration }}</li>{% endif %}
-        {% if course.start_date %}<li>تاریخ شروع: {{ course.start_date }}</li>{% endif %}
-        {% if course.schedule %}<li>زمان‌بندی: {{ course.schedule }}</li>{% endif %}
-        <li>ظرفیت: {{ registered }} ثبت‌نام از {{ course.capacity or 'نامحدود' }}</li>
-      </ul>
-      <div class="side-contact">
-        <a href="tel:{{ settings.academy_phone1 }}">☎ {{ settings.academy_phone1 }}</a>
-        <a href="tel:{{ settings.academy_phone2 }}">☎ {{ settings.academy_phone2 }}</a>
+    <aside>
+      <div class="side-panel">
+        <h3>مشخصات دوره</h3>
+        <ul>
+          <li>مدرس: {{ course.teacher or 'به‌زودی اعلام می‌شود' }}</li>
+          <li>سطح دوره: {{ course.level }}</li>
+          {% if course.duration %}<li>مدت دوره: {{ course.duration }}</li>{% endif %}
+          {% if course.start_date %}<li>تاریخ شروع: {{ course.start_date }}</li>{% endif %}
+          {% if course.schedule %}<li>زمان‌بندی: {{ course.schedule }}</li>{% endif %}
+          <li>ثبت‌نام: {{ course.regs }} نفر{% if course.capacity %} از {{ course.capacity }} ظرفیت{% endif %}</li>
+        </ul>
+        <div class="side-contact">
+          <a href="tel:{{ settings.academy_phone1 }}">☎ {{ settings.academy_phone1 }}</a>
+          <a href="tel:{{ settings.academy_phone2 }}">☎ {{ settings.academy_phone2 }}</a>
+        </div>
+      </div>
+
+      <div class="cd-card" style="margin-top:18px">
+        <span class="lms-price {{ 'free' if course.is_free }}" style="font-size:1.5rem">
+          {% if course.is_free %}رایگان{% else %}{{ course.price or '—' }}{% endif %}
+        </span>
+        <div style="margin-top:16px">
+          {% if not course.is_open %}
+            <div class="err-msg" style="background:#fee2e2;color:#b91c1c;padding:10px 16px;border-radius:99px;font-size:.88rem;font-weight:700;text-align:center">ثبت‌نام بسته است</div>
+          {% elif course.capacity and course.regs >= course.capacity %}
+            <div class="err-msg" style="background:#fee2e2;color:#b91c1c;padding:10px 16px;border-radius:99px;font-size:.88rem;font-weight:700;text-align:center">تکمیل ظرفیت</div>
+          {% elif course.status == 'ended' %}
+            <div style="background:#eee;color:#777;padding:10px 16px;border-radius:99px;font-size:.88rem;font-weight:700;text-align:center">این دوره برگزار شده است</div>
+          {% else %}
+            <a href="{{ url_for('course_register', course_id=course.id) }}" class="btn btn-primary btn-block">ثبت‌نام در این دوره</a>
+          {% endif %}
+        </div>
       </div>
     </aside>
 
     <div>
       <div class="form-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-          <span style="font-size:1.3rem;font-weight:800;color:var(--rose)">{{ course.price }}</span>
-          {% if not course.is_open %}
-            <span style="background:#fee2e2;color:#b91c1c;padding:6px 14px;border-radius:99px;font-size:.85rem;font-weight:700">ثبت‌نام بسته است</span>
-          {% elif course.capacity and registered >= course.capacity %}
-            <span style="background:#fee2e2;color:#b91c1c;padding:6px 14px;border-radius:99px;font-size:.85rem;font-weight:700">تکمیل ظرفیت</span>
-          {% else %}
-            <a href="{{ url_for('course_register', course_id=course.id) }}" class="btn btn-primary">ثبت‌نام در این دوره</a>
-          {% endif %}
-        </div>
-        <div class="course-content" style="line-height:2;color:var(--ink-soft);font-size:.95rem">
+        <h3 style="font-weight:800;font-size:1.15rem;margin-bottom:16px">درباره این دوره</h3>
+        <div class="course-content prose" style="max-width:none">
           {% for para in course.content.split('\n') if para.strip() %}
-          <p style="margin-bottom:12px">{{ para }}</p>
+          <p>{{ para }}</p>
           {% endfor %}
         </div>
       </div>
 
       {% if others %}
       <div style="margin-top:28px">
-        <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:14px">دوره‌های دیگر</h3>
-        <div class="news-grid">
+        <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:14px">دوره‌های مرتبط</h3>
+        <div class="lms-grid cols-4" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
           {% for c in others %}
-          <article class="news-card">
-            <div class="news-card-body">
-              <h3 style="font-size:.95rem;font-weight:800;margin-bottom:6px">{{ c.title }}</h3>
-              <p style="color:var(--ink-soft);font-size:.85rem;margin-bottom:10px">{{ c.summary[:90] }}{% if c.summary|length > 90 %}…{% endif %}</p>
-              <a href="{{ url_for('course_detail', slug=c.slug) }}" class="btn btn-outline btn-sm">مشاهده</a>
-            </div>
-          </article>
+          {{ lms_course_card(c, status_labels) }}
           {% endfor %}
         </div>
       </div>

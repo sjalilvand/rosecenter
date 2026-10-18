@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import lms_course_card %}
 
 {% block content %}
 <!-- قهرمان -->
@@ -6,14 +7,14 @@
   <div class="container hero-inner">
     <div class="hero-copy">
       <span class="hero-kicker">کلینیک‌های زنجیره‌ای روانشناسی و مشاوره رز</span>
-      <h1>همراه شما در مسیر <span class="accent">سلامت روان</span> و زندگی آرام‌تر</h1>
+      <h1>همراه شما در مسیر <span class="accent">سلامت روان</span> و یادگیری تخصصی</h1>
       <p class="lead">
-        تیمی از روانشناسان و مشاوران متخصص با بهره‌گیری از روش‌های علمی و نوین، راهکارهای مؤثری برای
-        چالش‌ها و دغدغه‌های شما ارائه می‌دهند؛ از روان‌درمانی فردی و گروهی تا نوروفیدبک و درمان با واقعیت افزوده.
+        مدرسه‌ای برای همه؛ از درمان و مشاوره حرفه‌ای تا دوره‌های تخصصی روانشناسی، انجمن‌های گفتگو و
+        دستیار هوشمند پاسخ‌گو — همه در یک مجموعه در سراسر کشور.
       </p>
       <div class="hero-actions">
-        <a href="{{ url_for('consultation') }}" class="btn btn-primary">درخواست مشاوره</a>
-        <a href="{{ url_for('centers') }}" class="btn btn-outline">مراکز استانی</a>
+        <a href="{{ url_for('courses') }}" class="btn btn-primary">شروع یادگیری</a>
+        <a href="{{ url_for('consultation') }}" class="btn btn-outline">درخواست مشاوره</a>
       </div>
       <div class="hero-stats">
         <div class="hero-stat"><b>+۳۰</b><span>مرکز فعال در سراسر کشور</span></div>
@@ -23,20 +24,20 @@
     </div>
 
     <div class="hero-art">
-      <div class="hero-badge hero-badge--t1"><span class="dot"></span> نوبت‌دهی آنلاین فعال است</div>
+      <div class="hero-badge hero-badge--t1"><span class="dot"></span> دستیار هوشمند آنلاین است</div>
       <div class="hero-card">
         <div class="hero-card-grid">
-          <a href="/psychotherapy/" class="hero-mini">
-            <img src="{{ url_for('static', filename='img/icon-therapy.svg') }}" alt="روان‌درمانی">
-            <span>روان‌درمانی</span>
+          <a href="{{ url_for('courses') }}" class="hero-mini">
+            <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17z"/></svg>
+            <span>دوره‌های آموزشی</span>
           </a>
-          <a href="/consulting/" class="hero-mini">
-            <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 00-9 9 8.9 8.9 0 001.7 5.3L3 21l3.8-1.5A9 9 0 1012 3zm-4 10a1.3 1.3 0 111.3-1.3A1.3 1.3 0 018 13zm4 0a1.3 1.3 0 111.3-1.3A1.3 1.3 0 0112 13zm4 0a1.3 1.3 0 111.3-1.3A1.3 1.3 0 0116 13z"/></svg>
-            <span>مشاوره</span>
+          <a href="{{ url_for('forum_index') }}" class="hero-mini">
+            <svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.9 2 11.7c0 2.7 1.4 5.1 3.7 6.7-.1 1-.5 2.5-1.6 3.6 0 0 2.6-.2 4.6-1.8 1 .3 2.1.5 3.3.5 5.5 0 10-3.9 10-8.7S17.5 3 12 3z"/></svg>
+            <span>انجمن‌های تخصصی</span>
           </a>
-          <a href="/education/" class="hero-mini">
-            <img src="{{ url_for('static', filename='img/icon-edu.svg') }}" alt="آموزش">
-            <span>آموزش</span>
+          <a href="{{ url_for('centers_map') }}" class="hero-mini">
+            <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 00-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"/></svg>
+            <span>نقشه مراکز</span>
           </a>
           <a href="{{ url_for('consultation') }}" class="hero-mini">
             <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h-2v-5H5v-2h5V5h2v5h5z"/></svg>
@@ -46,6 +47,100 @@
       </div>
       <div class="hero-badge hero-badge--t2"><b>۴.۹ ★</b> رضایت مراجعین</div>
     </div>
+  </div>
+</section>
+
+<!-- دسته‌بندی دوره‌ها -->
+{% if course_cats %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">دسته‌بندی دوره‌ها</span>
+      <h2>مسیر یادگیری خود را انتخاب کنید</h2>
+      <p>از کودک و نوجوان تا تخصص‌های بالینی؛ دوره‌های رز در دسته‌های موضوعی دسته‌بندی شده‌اند.</p>
+    </div>
+    <div class="cat-grid">
+      {% for c in course_cats %}
+      <a href="{{ url_for('courses', cat=c.slug) }}" class="cat-card">
+        <span class="cc-ic">{{ c.icon }}</span>
+        <b>{{ c.title }}</b>
+        <small>{{ c.course_count if 'course_count' in c.keys() else '' }} دوره</small>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- دوره‌های در حال ثبت‌نام -->
+{% if courses_registration %}
+<section class="section section-soft">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">دوره‌های در حال ثبت‌نام</span>
+      <h2>ظرفیت‌های جدید مهر ماه رز</h2>
+      <p>همین حالا ثبت‌نام کنید؛ ظرفیت دوره‌ها محدود است.</p>
+    </div>
+    <div class="lms-grid cols-4">
+      {% for c in courses_registration[:8] %}
+      {{ lms_course_card(c, status_labels) }}
+      {% endfor %}
+    </div>
+    <p style="text-align:center;margin-top:30px">
+      <a href="{{ url_for('courses', tab='registration') }}" class="btn btn-outline">مشاهده همه دوره‌های در حال ثبت‌نام ←</a>
+    </p>
+  </div>
+</section>
+{% endif %}
+
+<!-- پرمخاطب‌ترین دوره‌ها -->
+{% if courses_popular %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">پرمخاطب‌ترین دوره‌ها</span>
+      <h2>محبوب‌ترین انتخاب‌های یادگیرندگان</h2>
+    </div>
+    <div class="lms-grid cols-4">
+      {% for c in courses_popular %}
+      {{ lms_course_card(c, status_labels) }}
+      {% endfor %}
+    </div>
+    <p style="text-align:center;margin-top:30px">
+      <a href="{{ url_for('courses', tab='popular') }}" class="btn btn-outline">پرمخاطب‌ترین‌ها را ببینید ←</a>
+    </p>
+  </div>
+</section>
+{% endif %}
+
+<!-- انجمن‌های تخصصی -->
+<section class="section section-soft">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">انجمن‌های تخصصی</span>
+      <h2>جای گفتگو و هم‌یادگیری</h2>
+      <p>سوال بپرسید، تجربه به اشتراک بگذارید و در کنار متخصصان و هم‌مسیرها رشد کنید.</p>
+    </div>
+    {% if forum_cats %}
+    <div class="forum-grid">
+      {% for c in forum_cats[:4] %}
+      <div class="forum-cat-card">
+        <div class="f-ic">{{ c.icon }}</div>
+        <div>
+          <h3><a href="{{ url_for('forum_category', slug=c.slug) }}">{{ c.title }}</a></h3>
+          <p>{{ c.description[:110] }}{% if c.description|length > 110 %}…{% endif %}</p>
+          <div class="forum-stats">
+            <span><b>{{ c.topics_count }}</b> تاپیک</span>
+            <span><b>{{ c.posts_count }}</b> پاسخ</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p style="text-align:center;margin-top:30px">
+      <a href="{{ url_for('forum_index') }}" class="btn btn-primary">ورود به انجمن‌ها ←</a>
+    </p>
   </div>
 </section>
 
@@ -100,6 +195,28 @@
 </section>
 {% endif %}
 
+<!-- مشاوره تلفنی و آنلاین -->
+<section class="section" style="padding-top:0">
+  <div class="container">
+    <div class="banner">
+      <div>
+        <h2>مشاوره تلفنی و آنلاین</h2>
+        <p>
+          مشاوره آنلاین و تلفنی به عنوان یک روش انعطاف‌پذیر، دسترسی راحت به حمایت روانی و
+          راهنمایی در تصمیم‌گیری‌های مهم را در هر زمان و مکان فراهم می‌کند.
+        </p>
+      </div>
+      <div class="banner-actions">
+        <a href="{{ url_for('consultation') }}" class="btn btn-ghost">رزرو نوبت آنلاین</a>
+        <span class="banner-phone">
+          <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>
+          {{ settings.phone1 }}
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- درباره مرکز -->
 <section class="section section-soft">
   <div class="container about-split">
@@ -124,73 +241,16 @@
         <div class="about-point">سامانه آموزش‌های تخصصی</div>
         <div class="about-point">مشاوره تلفنی و آنلاین</div>
       </div>
-      <a href="{{ url_for('about') }}" class="btn btn-primary">درباره ما</a>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a href="{{ url_for('about') }}" class="btn btn-primary">درباره ما</a>
+        <a href="{{ url_for('board') }}" class="btn btn-outline">هیئت مدیره</a>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- انواع مشاوره -->
+<!-- فرم دریافت نوبت -->
 <section class="section">
-  <div class="container">
-    <div class="section-head">
-      <span class="tag">مشاوره</span>
-      <h2>خدمات مشاوره ما</h2>
-      <p>فرصتی برای بررسی نگرانی‌ها، شناخت مسیر زندگی و دریافت ابزارهایی برای ارتقای مهارت‌های فردی و اجتماعی.</p>
-    </div>
-    <div class="counsel-grid">
-      <div class="counsel-card">
-        <span class="num">۰۱</span>
-        <h3>مشاوره فردی</h3>
-        <p>بهبود خودآگاهی، افزایش اعتمادبه‌نفس و مدیریت احساسات در کنار یک مشاور متخصص.</p>
-      </div>
-      <div class="counsel-card">
-        <span class="num">۰۲</span>
-        <h3>مشاوره خانواده و پیش از ازدواج</h3>
-        <p>ایجاد الگوهای رفتاری سالم‌تر در روابط خانوادگی و بهبود ارتباط با اعضای خانواده.</p>
-      </div>
-      <div class="counsel-card">
-        <span class="num">۰۳</span>
-        <h3>مشاوره شغلی و تحصیلی</h3>
-        <p>شناخت نقاط قوت و ضعف، انتخاب مسیر مناسب و طراحی برنامه دقیق برای موفقیت.</p>
-      </div>
-      <div class="counsel-card">
-        <span class="num">۰۴</span>
-        <h3>مشاوره کودک و نوجوان</h3>
-        <p>تقویت مهارت‌های تصمیم‌گیری و حل مسئله و افزایش اعتمادبه‌نفس کودکان و نوجوانان.</p>
-      </div>
-      <div class="counsel-card">
-        <span class="num">۰۵</span>
-        <h3>اجرا و تفسیر آزمون‌های مشاوره‌ای</h3>
-        <p>تست‌های شخصیت‌شناسی، استعدادیابی و سبک‌های یادگیری با تفسیر متخصص.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- مشاوره تلفنی و آنلاین -->
-<section class="section" style="padding-top:0">
-  <div class="container">
-    <div class="banner">
-      <div>
-        <h2>مشاوره تلفنی و آنلاین</h2>
-        <p>
-          مشاوره آنلاین و تلفنی به عنوان یک روش انعطاف‌پذیر، دسترسی راحت به حمایت روانی و
-          راهنمایی در تصمیم‌گیری‌های مهم را در هر زمان و مکان فراهم می‌کند.
-        </p>
-      </div>
-      <div class="banner-actions">
-        <a href="{{ url_for('consultation') }}" class="btn btn-ghost">رزرو نوبت آنلاین</a>
-        <span class="banner-phone">
-          <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>
-          {{ settings.phone1 }}
-        </span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- روان‌درمانی و دریافت نوبت -->
-<section class="section section-soft">
   <div class="container booking-wrap">
     <div class="booking-side">
       <span class="tag">روان‌درمانی</span>
@@ -245,44 +305,6 @@
   </div>
 </section>
 
-<!-- آموزش -->
-<section class="section">
-  <div class="container">
-    <div class="section-head">
-      <span class="tag">آموزش</span>
-      <h2>ارتقای دانش و مهارت‌های فردی و تخصصی</h2>
-      <p>برنامه‌های آموزشی گسترده برای عموم مردم، دانشجویان و متخصصان حوزه روانشناسی و مشاوره.</p>
-    </div>
-    <div class="edu-grid">
-      <div class="edu-card">
-        <div class="edu-icon"><svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17z"/></svg></div>
-        <h3>دوره‌های عمومی</h3>
-        <p>ویژه عموم علاقه‌مندان؛ همایش‌ها و کارگاه‌های حضوری و آنلاین با موضوعات کاربردی زندگی.</p>
-        <div class="edu-topics">
-          <span class="edu-topic">تربیت جنسی در سایه عفاف</span>
-          <span class="edu-topic">چالش‌های دوره نوجوانی</span>
-          <span class="edu-topic">مدیریت روابط بین‌فردی و خانوادگی</span>
-        </div>
-      </div>
-      <div class="edu-card">
-        <div class="edu-icon"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 00-7 7c0 2.4 1.2 4.5 3 5.7V17a2 2 0 002 2h4a2 2 0 002-2v-2.3c1.8-1.2 3-3.3 3-5.7a7 7 0 00-7-7zm-2 19h4v1a1 1 0 01-1 1h-2a1 1 0 01-1-1z"/></svg></div>
-        <h3>کارگاه‌های تخصصی</h3>
-        <p>ویژه روانشناسان و مشاوران؛ کارگاه‌های حضوری و غیرحضوری با گواهی معتبر.</p>
-        <div class="edu-topics">
-          <span class="edu-topic">مصاحبه تشخیصی DSM-5</span>
-          <span class="edu-topic">درمان شناختی-رفتاری (CBT)</span>
-          <span class="edu-topic">نوروفیدبک</span>
-          <span class="edu-topic">گروه‌درمانی</span>
-          <span class="edu-topic">اخلاق حرفه‌ای</span>
-        </div>
-      </div>
-    </div>
-    <p style="text-align:center;margin-top:26px">
-      <a href="/education/" class="btn btn-outline">آشنایی بیشتر با ساختار دوره‌های آموزشی</a>
-    </p>
-  </div>
-</section>
-
 <!-- نظرات مراجعین -->
 {% if testimonials %}
 <section class="section section-soft">
@@ -311,7 +333,7 @@
     <div class="section-head">
       <span class="tag">سوالات متداول</span>
       <h2>ما اینجا هستیم تا پاسخ بدهیم</h2>
-      <p>پاسخ پرتکرارترین پرسش‌های شما درباره خدمات، درمان‌ها و فرآیندهای مرکز رز.</p>
+      <p>پاسخ پرتکرارترین پرسش‌های شما درباره خدمات، درمان‌ها و فرآیندهای مرکز رز؛ یا از <a href="#" onclick="document.getElementById('chatFab').click();return false" style="font-weight:800">دستیار هوشمند</a> بپرسید.</p>
     </div>
     <div class="faq-cats">
       <button class="tag faq-cat active" data-cat="all">همه</button>

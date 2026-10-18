@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>ایجاد تاپیک جدید</h1>
+    <p class="lead">در انجمن {{ cat.icon }} {{ cat.title }} سوال یا موضوع خود را مطرح کنید.</p>
+    <nav class="breadcrumb" style="margin-top:8px">
+      <a href="{{ url_for('forum_index') }}">انجمن‌ها</a><span class="sep">/</span>
+      <a href="{{ url_for('forum_category', slug=cat.slug) }}">{{ cat.title }}</a><span class="sep">/</span>
+      <span>تاپیک جدید</span>
+    </nav>
+  </div>
+</section>
+
+<section class="section" style="padding-top:34px">
+  <div class="container" style="max-width:760px">
+    <div class="form-card">
+      <form method="post" action="{{ url_for('forum_new_topic', cat_slug=cat.slug) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="t_title">عنوان تاپیک <span class="req">*</span></label>
+          <input type="text" id="t_title" name="title" required placeholder="مثلاً: چطور برای جلسه اول درمان آماده شوم؟">
+        </div>
+        <div class="field">
+          <label for="t_content">متن تاپیک <span class="req">*</span></label>
+          <textarea id="t_content" name="content" required placeholder="سوال یا تجربه خود را کامل بنویسید…" style="min-height:200px"></textarea>
+          <span class="hint">لطفاً قوانین انجمن را رعایت کنید: احترام به دیگران، عدم انتشار اطلاعات شخصی و محتوای تبلیغاتی.</span>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">انتشار تاپیک</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

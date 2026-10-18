@@ -231,12 +231,19 @@ def get_visible_services():
     return database.query("SELECT * FROM services WHERE is_visible=1 ORDER BY menu_order")
 
 
+def get_nav_course_categories():
+    """دسته‌بندی‌های دوره برای منوی مگا"""
+    return database.query(
+        "SELECT * FROM course_categories WHERE is_visible=1 ORDER BY sort_order")
+
+
 @app.context_processor
 def inject_globals():
     u = current_user()
     return {
         "settings": get_settings(),
         "nav_services": get_visible_services(),
+        "nav_course_categories": get_nav_course_categories(),
         "REQUEST_STATUSES": REQUEST_STATUSES,
         "today_jalali_fa": jdate.today_jalali_fa(),
         "cur_user": u,
@@ -276,8 +283,30 @@ def home():
     centers = database.query("SELECT id, province FROM centers WHERE is_soon=0 ORDER BY sort_order")
     # بلوک‌های دینامیک صفحه اصلی (مدیریت از پنل ادمین)
     blocks = _load_home_blocks()
+    # بخش‌های دوره‌ها به سبک LMS
+    courses_registration = _course_card_rows(
+        "WHERE c.is_open=1 AND c.status='registration'", (), 8)
+    courses_popular = _course_card_rows(
+        "WHERE c.is_open=1", (), 4, order_by="c.students DESC, c.rating DESC")
+    courses_free = _course_card_rows(
+        "WHERE c.is_open=1 AND c.is_free=1", (), 4)
+    course_cats = get_nav_course_categories()
+    forum_teaser = database.query(
+        """SELECT t.*, fc.title AS cat_title, fc.slug AS cat_slug, fc.icon AS cat_icon,
+           (SELECT COUNT(*) FROM forum_posts p WHERE p.topic_id=t.id AND p.is_visible=1) AS replies
+           FROM forum_topics t JOIN forum_categories fc ON fc.id=t.category_id
+           WHERE t.is_visible=1 ORDER BY t.last_activity_at DESC LIMIT 4""")
+    forum_cats = _forum_categories_with_counts()
+    latest_news = database.query(
+        "SELECT * FROM news WHERE published=1 ORDER BY published_at DESC, id DESC LIMIT 3")
     return render_template("home.html", services=services, testimonials=testimonials,
-                           faqs=faqs, centers=centers, blocks=blocks, page_title="خانه")
+                           faqs=faqs, centers=centers, blocks=blocks,
+                           courses_registration=courses_registration,
+                           courses_popular=courses_popular, courses_free=courses_free,
+                           course_cats=course_cats, forum_teaser=forum_teaser,
+                           forum_cats=forum_cats, latest_news=latest_news,
+                           status_labels=COURSE_STATUS_LABELS,
+                           page_title="خانه")
 
 
 HOME_BLOCK_KINDS = {
@@ -496,16 +525,112 @@ def academy():
     return render_template("academy.html", courses=rows, counts=counts, page_title="آکادمی رز — دوره‌های آموزشی")
 
 
+# ==================================================================
+# دوره‌های آموزشی — سبک LMS مدرسه‌ای (مانند روان‌بُنه)
+# ==================================================================
+COURSE_STATUS_LABELS = {
+    "registration": "در حال ثبت‌نام",
+    "running": "در حال برگزاری",
+    "ended": "برگزار شده",
+}
+
+
+def _course_card_rows(where_sql, args, limit=None, order_by="c.sort_order, c.id DESC"):
+    """کوئری دوره‌ها با دسته و تعداد ثبت‌نام برای کارت‌های LMS"""
+    sql = f"""SELECT c.*, cc.title AS cat_title, cc.slug AS cat_slug, cc.icon AS cat_icon,
+              (SELECT COUNT(*) FROM course_registrations r WHERE r.course_id=c.id) AS regs
+              FROM courses c LEFT JOIN course_categories cc ON cc.id = c.category_id
+              {where_sql} ORDER BY {order_by}"""
+    if limit:
+        sql += f" LIMIT {int(limit)}"
+    return database.query(sql, args)
+
+
+@app.route("/courses/")
+def courses():
+    tab = request.args.get("tab", "all").strip()
+    cat = request.args.get("cat", "").strip()
+    q = request.args.get("q", "").strip()
+
+    base_where, base_args = "WHERE c.is_open=1", []
+    join = ""
+    if cat:
+        join = "JOIN course_categories cc ON cc.id = c.category_id AND cc.slug=?"
+        base_args.append(cat)
+    if q:
+        base_where += " AND (c.title LIKE ? OR c.summary LIKE ? OR c.teacher LIKE ?)"
+        base_args += [f"%{q}%"] * 3
+
+    # تب‌ها و شمارنده‌ها
+    tabs = [
+        ("all", "همه دوره‌ها"),
+        ("registration", "در حال ثبت‌نام"),
+        ("running", "در حال برگزاری"),
+        ("popular", "پرمخاطب‌ترین"),
+        ("free", "رایگان"),
+        ("special", "دوره‌های ویژه"),
+    ]
+    tab_counts = {}
+    for key, _label in tabs:
+        w, a = base_where, list(base_args)
+        if key == "registration":
+            w += " AND c.status='registration'"
+        elif key == "running":
+            w += " AND c.status='running'"
+        elif key == "popular":
+            w += " AND c.students >= 100"
+        elif key == "free":
+            w += " AND c.is_free=1"
+        elif key == "special":
+            w += " AND c.is_special=1"
+        row = database.query(
+            f"SELECT COUNT(*) n FROM courses c {join} {w}", a, one=True)
+        tab_counts[key] = row["n"]
+
+    # کوئری اصلی با فیلتر تب
+    where = base_where
+    if tab == "registration":
+        where += " AND c.status='registration'"
+    elif tab == "running":
+        where += " AND c.status='running'"
+    elif tab == "popular":
+        where += " AND c.students >= 100"
+        # پرمخاطب‌ترین: مرتب‌سازی بر اساس تعداد دانشجو
+        rows = _course_card_rows(where, base_args)
+        rows = sorted(rows, key=lambda r: r["students"], reverse=True)
+        cats = get_nav_course_categories()
+        return render_template("courses.html", courses=rows, tabs=tabs, tab=tab,
+                               tab_counts=tab_counts, cats=cats, cat=cat, q=q,
+                               status_labels=COURSE_STATUS_LABELS,
+                               page_title="دوره‌های آموزشی")
+    elif tab == "free":
+        where += " AND c.is_free=1"
+    elif tab == "special":
+        where += " AND c.is_special=1"
+
+    rows = _course_card_rows(where, base_args)
+    cats = get_nav_course_categories()
+    return render_template("courses.html", courses=rows, tabs=tabs, tab=tab,
+                           tab_counts=tab_counts, cats=cats, cat=cat, q=q,
+                           status_labels=COURSE_STATUS_LABELS,
+                           page_title="دوره‌های آموزشی")
+
+
 @app.route("/academy/course/<slug>/")
 def course_detail(slug):
-    course = database.query("SELECT * FROM courses WHERE slug=? AND is_open=1", (slug,), one=True)
+    course = database.query(
+        """SELECT c.*, cc.title AS cat_title, cc.slug AS cat_slug, cc.icon AS cat_icon,
+           (SELECT COUNT(*) FROM course_registrations r WHERE r.course_id=c.id) AS regs
+           FROM courses c LEFT JOIN course_categories cc ON cc.id = c.category_id
+           WHERE c.slug=? AND c.is_open=1""", (slug,), one=True)
     if not course:
         abort(404)
-    registered = database.query(
-        "SELECT COUNT(*) n FROM course_registrations WHERE course_id=?", (course["id"],), one=True)["n"]
     others = database.query(
-        "SELECT * FROM courses WHERE is_open=1 AND id!=? ORDER BY sort_order LIMIT 3", (course["id"],))
-    return render_template("course_detail.html", course=course, registered=registered,
+        """SELECT c.*, cc.title AS cat_title FROM courses c
+           LEFT JOIN course_categories cc ON cc.id = c.category_id
+           WHERE c.is_open=1 AND c.id!=? ORDER BY c.sort_order LIMIT 3""", (course["id"],))
+    return render_template("course_detail.html", course=course,
+                           status_labels=COURSE_STATUS_LABELS,
                            others=others, page_title=course["title"])
 
 
@@ -610,6 +735,415 @@ def api_jalali_today():
         "jalali": {"y": jy, "m": jm, "d": jd, "text": jdate.format_jalali(jy, jm, jd)},
         "today_fa": jdate.today_jalali_fa(),
     })
+
+
+# ==================================================================
+# انجمن‌های تخصصی (Forum)
+# ==================================================================
+def _forum_categories_with_counts():
+    return database.query(
+        """SELECT fc.*,
+             (SELECT COUNT(*) FROM forum_topics t WHERE t.category_id=fc.id AND t.is_visible=1) AS topics_count,
+             (SELECT COUNT(*) FROM forum_posts p JOIN forum_topics t2 ON t2.id=p.topic_id
+               WHERE t2.category_id=fc.id AND p.is_visible=1 AND t2.is_visible=1) AS posts_count
+           FROM forum_categories fc WHERE fc.is_visible=1 ORDER BY fc.sort_order, fc.id""")
+
+
+def _forum_last_activity(category_id):
+    row = database.query(
+        """SELECT MAX(x.at) at FROM (
+             SELECT last_activity_at at FROM forum_topics WHERE category_id=? AND is_visible=1
+             UNION ALL
+             SELECT p.created_at at FROM forum_posts p JOIN forum_topics t ON t.id=p.topic_id
+             WHERE t.category_id=? AND p.is_visible=1 AND t.is_visible=1) x""", (category_id, category_id), one=True)
+    return row["at"] if row and row["at"] else ""
+
+
+@app.route("/forum/")
+def forum_index():
+    cats = _forum_categories_with_counts()
+    for c in cats:
+        c["last_at"] = _forum_last_activity(c["id"])
+    # آخرین تاپیک‌های فعال برای نمایش در صفحه اول انجمن
+    latest = database.query(
+        """SELECT t.*, fc.title AS cat_title, fc.slug AS cat_slug, fc.icon AS cat_icon,
+           (SELECT COUNT(*) FROM forum_posts p WHERE p.topic_id=t.id AND p.is_visible=1) AS replies
+           FROM forum_topics t JOIN forum_categories fc ON fc.id=t.category_id
+           WHERE t.is_visible=1 ORDER BY t.last_activity_at DESC, t.id DESC LIMIT 8""")
+    total_topics = database.query(
+        "SELECT COUNT(*) n FROM forum_topics WHERE is_visible=1", one=True)["n"]
+    total_posts = database.query(
+        "SELECT COUNT(*) n FROM forum_posts WHERE is_visible=1", one=True)["n"]
+    return render_template("forum/index.html", cats=cats, latest=latest,
+                           total_topics=total_topics, total_posts=total_posts,
+                           page_title="انجمن‌های تخصصی")
+
+
+@app.route("/forum/<slug>/")
+def forum_category(slug):
+    cat = database.query(
+        "SELECT * FROM forum_categories WHERE slug=? AND is_visible=1", (slug,), one=True)
+    if not cat:
+        abort(404)
+    q = request.args.get("q", "").strip()
+    where, args = "WHERE t.category_id=? AND t.is_visible=1", [cat["id"]]
+    if q:
+        where += " AND (t.title LIKE ? OR t.content LIKE ?)"
+        args += [f"%{q}%"] * 2
+    topics = database.query(
+        f"""SELECT t.*, (SELECT COUNT(*) FROM forum_posts p WHERE p.topic_id=t.id AND p.is_visible=1) AS replies
+            FROM forum_topics t {where} ORDER BY t.is_pinned DESC, t.last_activity_at DESC, t.id DESC
+            LIMIT 100""", args)
+    cats = _forum_categories_with_counts()
+    return render_template("forum/category.html", cat=cat, topics=topics, cats=cats, q=q,
+                           page_title=f"انجمن {cat['title']}")
+
+
+@app.route("/forum/topic/<int:tid>/")
+def forum_topic(tid):
+    topic = database.query(
+        """SELECT t.*, fc.title AS cat_title, fc.slug AS cat_slug
+           FROM forum_topics t JOIN forum_categories fc ON fc.id=t.category_id
+           WHERE t.id=? AND t.is_visible=1""", (tid,), one=True)
+    if not topic:
+        abort(404)
+    database.execute("UPDATE forum_topics SET views=views+1 WHERE id=?", (tid,))
+    posts = database.query(
+        "SELECT * FROM forum_posts WHERE topic_id=? AND is_visible=1 ORDER BY id", (tid,))
+    return render_template("forum/topic.html", topic=topic, posts=posts,
+                           page_title=topic["title"])
+
+
+@app.route("/forum/new/<cat_slug>/", methods=["GET", "POST"])
+@login_required
+def forum_new_topic(cat_slug):
+    cat = database.query(
+        "SELECT * FROM forum_categories WHERE slug=? AND is_visible=1", (cat_slug,), one=True)
+    if not cat:
+        abort(404)
+    if request.method == "POST":
+        if not valid_csrf():
+            abort(400)
+        u = current_user()
+        title = request.form.get("title", "").strip()
+        content = request.form.get("content", "").strip()
+        if not title or not content:
+            flash("عنوان و متن تاپیک الزامی است.", "error")
+            return redirect(url_for("forum_new_topic", cat_slug=cat_slug))
+        tid = database.execute(
+            """INSERT INTO forum_topics (category_id, user_id, author_name, title, content)
+               VALUES (?,?,?,?,?)""",
+            (cat["id"], u["id"], u["full_name"], title, content))
+        flash("تاپیک شما با موفقیت ایجاد شد. 🎉", "success")
+        return redirect(url_for("forum_topic", tid=tid))
+    return render_template("forum/new_topic.html", cat=cat, page_title=f"تاپیک جدید — {cat['title']}")
+
+
+@app.route("/forum/topic/<int:tid>/reply", methods=["POST"])
+@login_required
+def forum_reply(tid):
+    if not valid_csrf():
+        abort(400)
+    topic = database.query(
+        "SELECT * FROM forum_topics WHERE id=? AND is_visible=1", (tid,), one=True)
+    if not topic:
+        abort(404)
+    if topic["is_locked"]:
+        flash("این تاپیک قفل شده است و امکان پاسخ جدید وجود ندارد.", "error")
+        return redirect(url_for("forum_topic", tid=tid))
+    u = current_user()
+    content = request.form.get("content", "").strip()
+    if not content:
+        flash("متن پاسخ الزامی است.", "error")
+        return redirect(url_for("forum_topic", tid=tid))
+    database.execute(
+        "INSERT INTO forum_posts (topic_id, user_id, author_name, content) VALUES (?,?,?,?)",
+        (tid, u["id"], u["full_name"], content))
+    database.execute(
+        "UPDATE forum_topics SET last_activity_at=datetime('now','localtime') WHERE id=?", (tid,))
+    flash("پاسخ شما ثبت شد.", "success")
+    return redirect(url_for("forum_topic", tid=tid) + "#last-post")
+
+
+# ==================================================================
+# چت آنلاین هوشمند (پاسخ‌گوی سوالات سایت بر پایه مستندات)
+# ==================================================================
+CHAT_FALLBACK = (
+    "متأسفانه پاسخ دقیقی برای این سوال در پایگاه دانش من پیدا نکردم. 🙏\n"
+    "می‌توانید سوال را به شکل دیگری بپرسید یا از طریق «تماس با ما» سوال خود را ثبت کنید "
+    "تا کارشناسان ما پاسخ دهند."
+)
+
+# قواعد هدایت (Intent) — هدایت کاربر به صفحه مناسب
+CHAT_INTENTS = [
+    (["نوبت", "رزرو", "وقت", "درخواست مشاوره", "مشاوره بگیرم", "مشاور آنلاین"],
+     "برای دریافت نوبت مشاوره، فرم «درخواست مشاوره» را تکمیل کنید؛ کارشناسان ما در اسرع وقت با شما تماس می‌گیرند. 📅",
+     [{"label": "درخواست مشاوره", "url": "/consultation/"}, {"label": "مراکز استانی", "url": "/centers/"}]),
+    (["پیگیری", "کد پیگیری", "وضعیت درخواست", "درخواستم", "استعلام"],
+     "برای پیگیری درخواست‌های خود (نوبت، همکاری، ثبت‌نام دوره) کد پیگیری را در صفحه پیگیری وارد کنید. 🔎",
+     [{"label": "پیگیری درخواست", "url": "/tracking/"}]),
+    (["دوره", "آموزش", "کارگاه", "وبینار", "کلاس", "ثبت نام دوره", "ثبت‌نام دوره"],
+     "دوره‌های تخصصی و عمومی آکادمی رز را در صفحه دوره‌ها ببینید؛ می‌توانید بر اساس دسته‌بندی یا وضعیت (در حال ثبت‌نام، در حال برگزاری، رایگان) فیلتر کنید. 🎓",
+     [{"label": "همه دوره‌ها", "url": "/courses/"}, {"label": "در حال ثبت‌نام", "url": "/courses/?tab=registration"}]),
+    (["انجمن", "تالار", "گفتگو", "تاپیک", "پرسش و پاسخ کاربران"],
+     "در انجمن‌های تخصصی رز می‌توانید تاپیک جدید بسازید، به بحث‌ها پاسخ دهید و تجربیات خود را به اشتراک بگذارید (نیاز به ورود به حساب کاربری دارد). 💬",
+     [{"label": "انجمن‌های تخصصی", "url": "/forum/"}, {"label": "ورود / ثبت‌نام", "url": "/login/"}]),
+    (["همکاری", "فراخوان", "راه اندازی مرکز", "راه‌اندازی مرکز", "تأسیس کلینیک", "تاسیس کلینیک"],
+     "فراخوان همکاری مراکز مشاوره شامل ثبت اطلاعات کامل شما، مدارک و مشخصات ملک است؛ پس از بررسی، با شما تماس گرفته می‌شود. 🤝",
+     [{"label": "فراخوان همکاری", "url": "/cooperation/"}]),
+    (["تاریخ", "شمسی", "میلادی", "تبدیل تاریخ", "امروز چندمه"],
+     "ابزار تبدیل تاریخ شمسی و میلادی سایت در دسترس شماست؛ همچنین API تبدیل تاریخ برای سامانه‌های دیگر موجود است. 📅",
+     [{"label": "تبدیل تاریخ", "url": "/jalali/"}]),
+    (["نقشه", "آدرس مرکز", "مرکز کجا", "کلینیک کجا", "لوکیشن", "نزدیک ترین مرکز", "نزدیک‌ترین مرکز"],
+     "تمام مراکز و کلینیک‌های رز را روی نقشه ایران ببینید؛ با کلیک روی هر نشانگر، اطلاعات تماس و توانایی‌های آن مرکز نمایش داده می‌شود. 🗺",
+     [{"label": "نقشه مراکز ایران", "url": "/map/"}]),
+    (["ثبت مرکز", "ثبت کلینیک", "کلینیک جدید", "مرکز جدید", "نمایش کلینیک من"],
+     "اگر مدیر یک مرکز یا کلینیک مشاوره هستید، اطلاعات مرکز خود را ثبت کنید تا پس از تأیید، روی نقشه و فهرست مراکز نمایش داده شود. ➕",
+     [{"label": "ثبت مرکز / کلینیک", "url": "/centers/register/"}]),
+    (["هیئت مدیره", "هیات مدیره", "مدیران", "اعضا", "بنیان گذار", "بنیان‌گذار"],
+     "اعضای هیئت مدیره و تیم راهبری مجموعه رز را با سوابق و توانایی‌هایشان در صفحه هیئت مدیره ببینید. 👥",
+     [{"label": "هیئت مدیره", "url": "/board/"}]),
+    (["تماس", "شماره تماس", "ایمیل", "آدرس", "شماره تلفن", "راه های ارتباطی"],
+     "راه‌های ارتباطی ما: تلفن، ایمیل و فرم تماس. از طریق هر کدام می‌توانید پیام خود را ارسال کنید. ✉️",
+     [{"label": "تماس با ما", "url": "/contact/"}, {"label": "پیشنهاد و انتقاد", "url": "/feedback/"}]),
+    (["ورود", "ثبت نام", "حساب کاربری", "رمز", "پنل کاربری", "لاگین", "لاگ‌این"],
+     "با ساخت حساب کاربری می‌توانید درخواست‌های خود را مدیریت کنید، در دوره‌ها ثبت‌نام کنید و در انجمن‌ها فعالیت داشته باشید. 👤",
+     [{"label": "ورود", "url": "/login/"}, {"label": "ثبت‌نام", "url": "/register/"}]),
+    (["قیمت", "هزینه", "تعرفه", "چند", "تومان", "شهریه"],
+     "قیمت هر دوره در صفحه دوره‌ها و جزئیات همان دوره مشخص است. هزینه خدمات مشاوره به نوع خدمت و مرکز بستگی دارد؛ برای اطلاع دقیق از طریق درخواست مشاوره اقدام کنید. 💰",
+     [{"label": "دوره‌ها و قیمت‌ها", "url": "/courses/"}]),
+    (["سلام", "درود", "خسته نباشید", "وقت بخیر", "aliak", "هی"],
+     "سلام! 😊 خوش آمدید. من دستیار هوشمند مرکز رز هستم؛ درباره خدمات، دوره‌ها، نوبت‌دهی، مراکز یا هر بخش از سایت سوال دارید بپرسید.",
+     []),
+]
+
+PERSIAN_STOPWORDS = {
+    "از", "به", "با", "در", "که", "را", "و", "این", "آن", "برای", "است", "هست", "می",
+    "چگونه", "چطور", "چه", "کجا", "کی", "چی", "چیست", "میخواهم", "می‌خواهم", "درباره",
+    "شما", "من", "ما", "خود", "هم", "تا", "بر", "اگر", "باید", "کند", "کنم", "شود",
+    "دارد", "دارم", "کردن", "شده", "بود", "باشد", "یک", "یکبار", "لطفا", "لطفاً",
+}
+
+
+def _normalize_fa(text):
+    """نرمال‌سازی متن فارسی برای موتور جستجوی چت"""
+    if not text:
+        return ""
+    s = str(text).lower()
+    s = s.replace("ي", "ی").replace("ك", "ک").replace("ۀ", "ه").replace("أ", "ا").replace("إ", "ا")
+    s = s.replace("ؤ", "و").replace("ئ", "ی").replace("ة", "ه")
+    s = s.replace("\u200c", " ")  # نیم‌فاصله
+    s = re.sub(r"[^\w\s\u0600-\u06FF]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def _tokenize_fa(text):
+    tokens = _normalize_fa(text).split()
+    return [t for t in tokens if t not in PERSIAN_STOPWORDS and len(t) > 1]
+
+
+def _chat_score(question, doc):
+    """امتیاز تطابق سوال با یک مستند پایگاه دانش"""
+    q_tokens = _tokenize_fa(question)
+    if not q_tokens:
+        return 0.0
+    doc_keywords = [k.strip() for k in (doc["keywords"] or "").split("،") if k.strip()]
+    doc_keywords += [k.strip() for k in (doc["keywords"] or "").split(",") if k.strip()]
+    doc_text = _normalize_fa(f"{doc['title']} {doc['title']} {doc['content'][:600]}")
+    doc_tokens = set(_tokenize_fa(doc_text))
+    q_norm = _normalize_fa(question)
+
+    score = 0.0
+    # ۱) کلیدواژه‌ها (وزن بالا) — تطابق زیررشته‌ای در سوال
+    for kw in set(doc_keywords):
+        kw_n = _normalize_fa(kw)
+        if kw_n and (kw_n in q_norm or all(w in q_norm for w in kw_n.split() if w)):
+            score += 3.0
+    # ۲) هم‌پوشانی کلمات محتوا
+    for t in q_tokens:
+        if t in doc_tokens:
+            score += 1.0
+    # ۳) تطابق عنوان
+    title_norm = _normalize_fa(doc["title"])
+    for t in q_tokens:
+        if t in title_norm:
+            score += 0.8
+    return score + (doc["priority"] or 0) * 0.5
+
+
+def smart_chat_answer(question):
+    """موتور پاسخ‌گویی هوشمند: برمی‌گرداند (answer, links, matched_title, score, answered)"""
+    q = (question or "").strip()
+    if not q:
+        return CHAT_FALLBACK, [], "", 0.0, False
+
+    # ۱) قواعد هدایت
+    q_norm = _normalize_fa(q)
+    best_intent = None
+    for keys, answer, links in CHAT_INTENTS:
+        for k in keys:
+            k_n = _normalize_fa(k)
+            if k_n and (k_n in q_norm or all(w in q_norm for w in k_n.split() if w)):
+                if not best_intent or len(k_n) > best_intent[0]:
+                    best_intent = (len(k_n), answer, links)
+                break
+    # ۲) مستندات پایگاه دانش
+    docs = database.query("SELECT * FROM chat_documents WHERE is_active=1")
+    best_doc, best_score = None, 0.0
+    for d in docs:
+        s = _chat_score(q, d)
+        if s > best_score:
+            best_doc, best_score = d, s
+
+    # تصمیم نهایی
+    if best_doc and best_score >= 2.5 and (not best_intent or best_score >= 4.5):
+        links = []
+        if best_doc["link"]:
+            links.append({"label": best_doc["link_label"] or "مشاهده", "url": best_doc["link"]})
+        database.execute(
+            "UPDATE chat_documents SET hit_count=hit_count+1 WHERE id=?", (best_doc["id"],))
+        return (f"{best_doc['content']}", links, best_doc["title"], best_score, True)
+    if best_intent:
+        return best_intent[1], best_intent[2], "قاعده هدایت: " + q_norm[:60], 2.0, True
+    if best_doc and best_score >= 1.2:
+        links = []
+        if best_doc["link"]:
+            links.append({"label": best_doc["link_label"] or "مشاهده", "url": best_doc["link"]})
+        return best_doc["content"], links, best_doc["title"], best_score, True
+    # ۳) پاسخ پیش‌فرض با پیشنهاد
+    suggestions = [
+        {"label": "درخواست مشاوره", "url": "/consultation/"},
+        {"label": "دوره‌های آموزشی", "url": "/courses/"},
+        {"label": "انجمن‌های تخصصی", "url": "/forum/"},
+        {"label": "نقشه مراکز", "url": "/map/"},
+        {"label": "تماس با ما", "url": "/contact/"},
+    ]
+    return CHAT_FALLBACK, [], "", best_score, False
+
+
+@app.route("/chat/")
+def chat_page():
+    return render_template("chat.html", page_title="چت هوشمند")
+
+
+@app.route("/chat/api/", methods=["POST"])
+def chat_api():
+    """API چت هوشمند — دریافت سوال و برگرداندن پاسخ + لینک‌های هدایت"""
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    question = str(payload.get("message", "")).strip()
+    session_key = str(payload.get("session_key", ""))[:64]
+    if not question:
+        return jsonify({"ok": False, "error": "سوال خالی است"}), 400
+    if len(question) > 500:
+        question = question[:500]
+    answer, links, matched, score, answered = smart_chat_answer(question)
+    try:
+        database.execute(
+            """INSERT INTO chat_logs (session_key, user_id, question, answer, matched_doc, score, is_answered)
+               VALUES (?,?,?,?,?,?,?)""",
+            (session_key, session.get("uid"), question, answer[:1000], matched, score,
+             1 if answered else 0))
+    except Exception:
+        pass
+    resp = {"ok": True, "answer": answer, "links": links, "answered": answered}
+    return jsonify(resp)
+
+
+# ==================================================================
+# مراکز و کلینیک‌ها — نقشه ایران + جزئیات + ثبت مرکز
+# ==================================================================
+CENTER_CAPABILITIES = [
+    "روان‌درمانی فردی", "زوج‌درمانی", "گروه‌درمانی", "مشاوره کودک و نوجوان",
+    "نوروفیدبک", "واقعیت افزوده (VR)", "آزمون‌های روان‌شناختی", "مشاوره تلفنی و آنلاین",
+    "کارگاه‌های آموزشی", "مشاوره شغلی و تحصیلی", "مداخله بحران", "مشاوره پیش از ازدواج",
+]
+
+
+@app.route("/map/")
+def centers_map():
+    kind = request.args.get("kind", "").strip()
+    q = request.args.get("q", "").strip()
+    where, args = "WHERE is_approved=1 AND lat IS NOT NULL AND lng IS NOT NULL", []
+    if kind in ("مرکز استانی", "کلینیک"):
+        where += " AND kind=?"
+        args.append(kind)
+    if q:
+        where += " AND (province LIKE ? OR clinic_name LIKE ? OR address LIKE ? OR capabilities LIKE ?)"
+        args += [f"%{q}%"] * 4
+    rows = database.query(f"SELECT * FROM centers {where} ORDER BY sort_order, id", args)
+    return render_template("map.html", centers=rows, kind=kind, q=q,
+                           page_title="نقشه مراکز و کلینیک‌ها")
+
+
+@app.route("/centers/<int:cid>/")
+def center_detail(cid):
+    center = database.query(
+        "SELECT * FROM centers WHERE id=? AND is_approved=1", (cid,), one=True)
+    if not center:
+        abort(404)
+    caps = [c.strip() for c in (center["capabilities"] or "").split("،") if c.strip()]
+    near = database.query(
+        """SELECT id, province, clinic_name, kind FROM centers
+           WHERE is_approved=1 AND id!=? ORDER BY sort_order LIMIT 6""", (cid,))
+    return render_template("center_detail.html", center=center, caps=caps, near=near,
+                           page_title=center["clinic_name"] or f"مرکز {center['province']}")
+
+
+@app.route("/centers/register/", methods=["GET", "POST"])
+def center_register():
+    if request.method == "POST":
+        if not valid_csrf():
+            abort(400)
+        f = request.form
+        province = f.get("province", "").strip()
+        clinic_name = f.get("clinic_name", "").strip()
+        address = f.get("address", "").strip()
+        submitter = f.get("submitter_name", "").strip()
+        phone = jdate.en_digits(f.get("submitter_phone", "")).strip()
+        caps = request.form.getlist("capabilities")
+        if not province or not clinic_name or not address:
+            flash("استان، نام مرکز و نشانی الزامی است.", "error")
+            return redirect(url_for("center_register"))
+        if not submitter or not validate_mobile(phone):
+            flash("نام و شماره همراه ثبت‌کننده معتبر نیست.", "error")
+            return redirect(url_for("center_register"))
+        lat = f.get("lat", "").strip()
+        lng = f.get("lng", "").strip()
+        try:
+            lat = float(jdate.en_digits(lat)) if lat else None
+            lng = float(jdate.en_digits(lng)) if lng else None
+        except ValueError:
+            lat = lng = None
+        database.execute(
+            """INSERT INTO centers
+               (province, clinic_name, address, clinic_phone, manager_name, work_hours,
+                kind, lat, lng, capabilities, is_approved, submitter_name, submitter_phone,
+                email, website)
+               VALUES (?,?,?,?,?,?,?,?,?,?,0,?,?,?,?)""",
+            (province, clinic_name, address, jdate.en_digits(f.get("clinic_phone", "")).strip(),
+             f.get("manager_name", "").strip(), f.get("work_hours", "").strip(),
+             f.get("kind", "کلینیک").strip() or "کلینیک", lat, lng,
+             "،".join(caps), submitter, phone,
+             f.get("email", "").strip(), f.get("website", "").strip()))
+        flash("اطلاعات مرکز شما ثبت شد و پس از بررسی و تأیید مدیریت، روی نقشه نمایش داده می‌شود. ✅", "success")
+        return redirect(url_for("center_register"))
+    return render_template("center_register.html", caps=CENTER_CAPABILITIES,
+                           provinces=database.query(
+                               "SELECT DISTINCT province FROM centers ORDER BY province"),
+                           page_title="ثبت مرکز / کلینیک")
+
+
+# ==================================================================
+# اعضای هیئت مدیره
+# ==================================================================
+@app.route("/board/")
+def board():
+    rows = database.query(
+        "SELECT * FROM board_members WHERE is_visible=1 ORDER BY sort_order, id")
+    for r in rows:
+        r["skills_list"] = [s.strip() for s in (r["skills"] or "").split("،") if s.strip()]
+    return render_template("board.html", members=rows, page_title="هیئت مدیره")
 
 
 @app.route("/news/")
@@ -960,6 +1494,17 @@ def admin_dashboard():
         "online": database.query(
             "SELECT COUNT(*) n FROM user_sessions WHERE is_active=1 AND last_seen_at >= datetime('now','localtime','-5 minutes')",
             one=True)["n"],
+        "forum_topics": database.query("SELECT COUNT(*) n FROM forum_topics WHERE is_visible=1", one=True)["n"],
+        "forum_posts": database.query("SELECT COUNT(*) n FROM forum_posts WHERE is_visible=1", one=True)["n"],
+        "chat_docs": database.query("SELECT COUNT(*) n FROM chat_documents WHERE is_active=1", one=True)["n"],
+        "chat_questions": database.query("SELECT COUNT(*) n FROM chat_logs", one=True)["n"],
+        "chat_unanswered": database.query(
+            "SELECT COUNT(*) n FROM chat_logs WHERE is_answered=0", one=True)["n"],
+        "centers_pending": database.query(
+            "SELECT COUNT(*) n FROM centers WHERE is_approved=0", one=True)["n"],
+        "board_members": database.query("SELECT COUNT(*) n FROM board_members", one=True)["n"],
+        "centers_on_map": database.query(
+            "SELECT COUNT(*) n FROM centers WHERE is_approved=1 AND lat IS NOT NULL AND lng IS NOT NULL", one=True)["n"],
     }
     latest_bookings = database.query("SELECT * FROM bookings ORDER BY id DESC LIMIT 6")
     latest_messages = database.query("SELECT * FROM contact_messages ORDER BY id DESC LIMIT 6")
@@ -1161,21 +1706,34 @@ def admin_course_new():
             flash("عنوان دوره الزامی است.", "error")
             return redirect(url_for("admin_course_new"))
         slug = _slugify_course(title)
+        cat_raw = request.form.get("category_id", "").strip()
         database.execute(
             """INSERT INTO courses
             (slug, title, summary, content, teacher, price, duration, capacity,
-             start_date, schedule, level, is_open, sort_order)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+             start_date, schedule, level, is_open, sort_order,
+             category_id, status, rating, votes, students, price_num, is_free, is_special, thumb)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (slug, title, request.form.get("summary", "").strip(),
              request.form.get("content", "").strip(), request.form.get("teacher", "").strip(),
              request.form.get("price", "رایگان").strip(), request.form.get("duration", "").strip(),
              request.form.get("capacity", 0, type=int), request.form.get("start_date", "").strip(),
              request.form.get("schedule", "").strip(), request.form.get("level", "عمومی").strip(),
              1 if request.form.get("is_open") else 0,
-             request.form.get("sort_order", 0, type=int)))
+             request.form.get("sort_order", 0, type=int),
+             int(cat_raw) if cat_raw.isdigit() else None,
+             request.form.get("status", "registration").strip(),
+             request.form.get("rating", 4.5, type=float),
+             request.form.get("votes", 0, type=int),
+             request.form.get("students", 0, type=int),
+             request.form.get("price_num", 0, type=int),
+             1 if request.form.get("is_free") else 0,
+             1 if request.form.get("is_special") else 0,
+             request.form.get("thumb", "🎓").strip() or "🎓"))
         flash("دوره جدید ایجاد شد.", "success")
         return redirect(url_for("admin_courses"))
-    return render_template("admin/course_form.html", row=None, page_title="دوره جدید")
+    cats = database.query("SELECT * FROM course_categories ORDER BY sort_order")
+    return render_template("admin/course_form.html", row=None, cats=cats,
+                           status_labels=COURSE_STATUS_LABELS, page_title="دوره جدید")
 
 
 @app.route("/admin/courses/<int:rid>", methods=["GET", "POST"])
@@ -1190,19 +1748,33 @@ def admin_course_edit(rid):
         if not title:
             flash("عنوان دوره الزامی است.", "error")
             return redirect(url_for("admin_course_edit", rid=rid))
+        cat_raw = request.form.get("category_id", "").strip()
         database.execute(
             """UPDATE courses SET title=?, summary=?, content=?, teacher=?, price=?, duration=?,
-               capacity=?, start_date=?, schedule=?, level=?, is_open=?, sort_order=? WHERE id=?""",
+               capacity=?, start_date=?, schedule=?, level=?, is_open=?, sort_order=?,
+               category_id=?, status=?, rating=?, votes=?, students=?, price_num=?,
+               is_free=?, is_special=?, thumb=? WHERE id=?""",
             (title, request.form.get("summary", "").strip(),
              request.form.get("content", "").strip(), request.form.get("teacher", "").strip(),
              request.form.get("price", "رایگان").strip(), request.form.get("duration", "").strip(),
              request.form.get("capacity", 0, type=int), request.form.get("start_date", "").strip(),
              request.form.get("schedule", "").strip(), request.form.get("level", "عمومی").strip(),
              1 if request.form.get("is_open") else 0,
-             request.form.get("sort_order", 0, type=int), rid))
+             request.form.get("sort_order", 0, type=int),
+             int(cat_raw) if cat_raw.isdigit() else None,
+             request.form.get("status", "registration").strip(),
+             request.form.get("rating", 4.5, type=float),
+             request.form.get("votes", 0, type=int),
+             request.form.get("students", 0, type=int),
+             request.form.get("price_num", 0, type=int),
+             1 if request.form.get("is_free") else 0,
+             1 if request.form.get("is_special") else 0,
+             request.form.get("thumb", "🎓").strip() or "🎓", rid))
         flash("دوره به‌روزرسانی شد.", "success")
         return redirect(url_for("admin_courses"))
-    return render_template("admin/course_form.html", row=row, page_title="ویرایش دوره")
+    cats = database.query("SELECT * FROM course_categories ORDER BY sort_order")
+    return render_template("admin/course_form.html", row=row, cats=cats,
+                           status_labels=COURSE_STATUS_LABELS, page_title="ویرایش دوره")
 
 
 @app.route("/admin/courses/<int:rid>/delete", methods=["POST"])
@@ -1386,12 +1958,24 @@ def admin_news_delete(rid):
     return redirect(url_for("admin_news"))
 
 
-# ---------- مدیریت مراکز استانی ----------
+# ---------- مدیریت مراکز استانی و کلینیک‌ها ----------
 @app.route("/admin/centers")
 @admin_required
 def admin_centers():
-    rows = database.query("SELECT * FROM centers ORDER BY is_soon, sort_order")
-    return render_template("admin/centers.html", rows=rows, page_title="مدیریت مراکز استانی")
+    kind = request.args.get("kind", "").strip()
+    q = request.args.get("q", "").strip()
+    where, args = "WHERE 1=1", []
+    if kind in ("مرکز استانی", "کلینیک"):
+        where += " AND kind=?"
+        args.append(kind)
+    if q:
+        where += " AND (province LIKE ? OR clinic_name LIKE ? OR address LIKE ?)"
+        args += [f"%{q}%"] * 3
+    rows = database.query(
+        f"SELECT * FROM centers {where} ORDER BY is_approved, is_soon, sort_order", args)
+    pending = database.query("SELECT COUNT(*) n FROM centers WHERE is_approved=0", one=True)["n"]
+    return render_template("admin/centers.html", rows=rows, kind=kind, q=q, pending=pending,
+                           page_title="مدیریت مراکز و کلینیک‌ها")
 
 
 @app.route("/admin/centers/new", methods=["GET", "POST"])
@@ -1403,20 +1987,33 @@ def admin_centers_new():
         if not f.get("province", "").strip():
             flash("نام استان الزامی است.", "error")
             return redirect(request.url)
+        lat = f.get("lat", "").strip()
+        lng = f.get("lng", "").strip()
+        try:
+            lat = float(jdate.en_digits(lat)) if lat else None
+            lng = float(jdate.en_digits(lng)) if lng else None
+        except ValueError:
+            lat = lng = None
+        caps = f.get("capabilities", "").strip()
         database.execute(
             """INSERT INTO centers (province, clinic_name, address, postal_code, clinic_phone,
-            manager_name, manager_phone, exec_name, exec_phone, work_hours, map_url, is_soon, sort_order)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            manager_name, manager_phone, exec_name, exec_phone, work_hours, map_url, is_soon, sort_order,
+            kind, lat, lng, capabilities, is_approved, email, website)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (f.get("province", "").strip(), f.get("clinic_name", "").strip(),
              f.get("address", "").strip(), f.get("postal_code", "").strip(),
              f.get("clinic_phone", "").strip(), f.get("manager_name", "").strip(),
              f.get("manager_phone", "").strip(), f.get("exec_name", "").strip(),
              f.get("exec_phone", "").strip(), f.get("work_hours", "").strip(),
              f.get("map_url", "").strip(), 1 if f.get("is_soon") else 0,
-             f.get("sort_order", 0, type=int)))
+             f.get("sort_order", 0, type=int),
+             f.get("kind", "مرکز استانی").strip() or "مرکز استانی", lat, lng,
+             caps, 1 if f.get("is_approved", "on") else 0,
+             f.get("email", "").strip(), f.get("website", "").strip()))
         flash("مرکز جدید اضافه شد.", "success")
         return redirect(url_for("admin_centers"))
-    return render_template("admin/center_form.html", item=None, page_title="مرکز جدید")
+    return render_template("admin/center_form.html", item=None, caps=CENTER_CAPABILITIES,
+                           page_title="مرکز جدید")
 
 
 @app.route("/admin/centers/<int:rid>", methods=["GET", "POST"])
@@ -1428,20 +2025,45 @@ def admin_centers_edit(rid):
         abort(404)
     if request.method == "POST":
         f = request.form
+        lat = f.get("lat", "").strip()
+        lng = f.get("lng", "").strip()
+        try:
+            lat = float(jdate.en_digits(lat)) if lat else None
+            lng = float(jdate.en_digits(lng)) if lng else None
+        except ValueError:
+            lat = lng = None
         database.execute(
             """UPDATE centers SET province=?, clinic_name=?, address=?, postal_code=?,
             clinic_phone=?, manager_name=?, manager_phone=?, exec_name=?, exec_phone=?,
-            work_hours=?, map_url=?, is_soon=?, sort_order=? WHERE id=?""",
+            work_hours=?, map_url=?, is_soon=?, sort_order=?, kind=?, lat=?, lng=?,
+            capabilities=?, is_approved=?, email=?, website=? WHERE id=?""",
             (f.get("province", "").strip(), f.get("clinic_name", "").strip(),
              f.get("address", "").strip(), f.get("postal_code", "").strip(),
              f.get("clinic_phone", "").strip(), f.get("manager_name", "").strip(),
              f.get("manager_phone", "").strip(), f.get("exec_name", "").strip(),
              f.get("exec_phone", "").strip(), f.get("work_hours", "").strip(),
              f.get("map_url", "").strip(), 1 if f.get("is_soon") else 0,
-             f.get("sort_order", 0, type=int), rid))
+             f.get("sort_order", 0, type=int),
+             f.get("kind", "مرکز استانی").strip() or "مرکز استانی", lat, lng,
+             f.get("capabilities", "").strip(), 1 if f.get("is_approved") else 0,
+             f.get("email", "").strip(), f.get("website", "").strip(), rid))
         flash("مرکز به‌روزرسانی شد.", "success")
         return redirect(url_for("admin_centers"))
-    return render_template("admin/center_form.html", item=row, page_title="ویرایش مرکز")
+    return render_template("admin/center_form.html", item=row, caps=CENTER_CAPABILITIES,
+                           page_title="ویرایش مرکز")
+
+
+@app.route("/admin/centers/<int:rid>/approve", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_center_approve(rid):
+    row = database.query("SELECT * FROM centers WHERE id=?", (rid,), one=True)
+    if row:
+        new_state = 0 if row["is_approved"] else 1
+        database.execute("UPDATE centers SET is_approved=? WHERE id=?", (new_state, rid))
+        flash("مرکز تأیید شد و روی نقشه و فهرست مراکز نمایش داده می‌شود." if new_state
+              else "نمایش مرکز غیرفعال شد.", "success")
+    return redirect(url_for("admin_centers"))
 
 
 @app.route("/admin/centers/<int:rid>/delete", methods=["POST"])
@@ -1904,6 +2526,355 @@ def admin_api_key_delete(rid):
 def admin_api_docs():
     rows = database.query("SELECT * FROM api_keys WHERE is_active=1 ORDER BY id DESC")
     return render_template("admin/api_docs.html", keys=rows, page_title="مستندات API")
+
+
+# ---------- مدیریت دسته‌بندی دوره‌ها ----------
+@app.route("/admin/course-categories")
+@admin_required
+def admin_course_categories():
+    rows = database.query(
+        """SELECT cc.*, (SELECT COUNT(*) FROM courses c WHERE c.category_id=cc.id) AS course_count
+           FROM course_categories cc ORDER BY cc.sort_order, cc.id""")
+    return render_template("admin/course_categories.html", rows=rows,
+                           page_title="دسته‌بندی دوره‌ها")
+
+
+@app.route("/admin/course-categories/new", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_course_category_new():
+    title = request.form.get("title", "").strip()
+    if not title:
+        flash("عنوان دسته الزامی است.", "error")
+        return redirect(url_for("admin_course_categories"))
+    slug = jdate.en_digits(request.form.get("slug", "").strip()) or \
+        re.sub(r"\s+", "-", title.strip())[:40]
+    mx = database.query("SELECT MAX(sort_order) m FROM course_categories", one=True)["m"] or 0
+    database.execute(
+        """INSERT OR IGNORE INTO course_categories (slug, title, icon, color, sort_order)
+           VALUES (?,?,?,?,?)""",
+        (slug, title, request.form.get("icon", "📘").strip() or "📘",
+         request.form.get("color", "#15803d").strip() or "#15803d", mx + 1))
+    flash("دسته جدید اضافه شد.", "success")
+    return redirect(url_for("admin_course_categories"))
+
+
+@app.route("/admin/course-categories/<int:rid>/edit", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_course_category_edit(rid):
+    database.execute(
+        "UPDATE course_categories SET title=?, icon=?, color=?, sort_order=?, is_visible=? WHERE id=?",
+        (request.form.get("title", "").strip(), request.form.get("icon", "📘").strip(),
+         request.form.get("color", "#15803d").strip(),
+         request.form.get("sort_order", 0, type=int),
+         1 if request.form.get("is_visible") else 0, rid))
+    flash("دسته به‌روزرسانی شد.", "success")
+    return redirect(url_for("admin_course_categories"))
+
+
+@app.route("/admin/course-categories/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_course_category_delete(rid):
+    database.execute("UPDATE courses SET category_id=NULL WHERE category_id=?", (rid,))
+    database.execute("DELETE FROM course_categories WHERE id=?", (rid,))
+    flash("دسته حذف شد (دوره‌های آن دسته‌بندی خالی شدند).", "success")
+    return redirect(url_for("admin_course_categories"))
+
+
+# ---------- مدیریت انجمن‌ها ----------
+@app.route("/admin/forum")
+@admin_required
+def admin_forum():
+    cats = database.query(
+        """SELECT fc.*,
+             (SELECT COUNT(*) FROM forum_topics t WHERE t.category_id=fc.id) AS topics_count
+           FROM forum_categories fc ORDER BY fc.sort_order, fc.id""")
+    topics = database.query(
+        """SELECT t.*, fc.title AS cat_title,
+             (SELECT COUNT(*) FROM forum_posts p WHERE p.topic_id=t.id) AS posts
+           FROM forum_topics t JOIN forum_categories fc ON fc.id=t.category_id
+           ORDER BY t.id DESC LIMIT 200""")
+    return render_template("admin/forum.html", cats=cats, topics=topics,
+                           page_title="مدیریت انجمن‌ها")
+
+
+@app.route("/admin/forum/categories/new", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_forum_cat_new():
+    title = request.form.get("title", "").strip()
+    if not title:
+        flash("عنوان انجمن الزامی است.", "error")
+        return redirect(url_for("admin_forum"))
+    slug = jdate.en_digits(request.form.get("slug", "").strip()) or \
+        re.sub(r"\s+", "-", title.strip())[:40]
+    mx = database.query("SELECT MAX(sort_order) m FROM forum_categories", one=True)["m"] or 0
+    database.execute(
+        """INSERT OR IGNORE INTO forum_categories (slug, title, description, icon, sort_order)
+           VALUES (?,?,?,?,?)""",
+        (slug, title, request.form.get("description", "").strip(),
+         request.form.get("icon", "💬").strip() or "💬", mx + 1))
+    flash("انجمن جدید اضافه شد.", "success")
+    return redirect(url_for("admin_forum"))
+
+
+@app.route("/admin/forum/categories/<int:rid>/edit", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_forum_cat_edit(rid):
+    database.execute(
+        "UPDATE forum_categories SET title=?, description=?, icon=?, sort_order=?, is_visible=? WHERE id=?",
+        (request.form.get("title", "").strip(), request.form.get("description", "").strip(),
+         request.form.get("icon", "💬").strip(), request.form.get("sort_order", 0, type=int),
+         1 if request.form.get("is_visible") else 0, rid))
+    flash("انجمن به‌روزرسانی شد.", "success")
+    return redirect(url_for("admin_forum"))
+
+
+@app.route("/admin/forum/categories/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_forum_cat_delete(rid):
+    database.execute("DELETE FROM forum_categories WHERE id=?", (rid,))
+    flash("انجمن و تمام تاپیک‌ها/پاسخ‌های آن حذف شد.", "success")
+    return redirect(url_for("admin_forum"))
+
+
+@app.route("/admin/forum/topics/<int:rid>/toggle-pin", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_forum_topic_pin(rid):
+    database.execute(
+        "UPDATE forum_topics SET is_pinned = 1 - is_pinned WHERE id=?", (rid,))
+    return redirect(url_for("admin_forum"))
+
+
+@app.route("/admin/forum/topics/<int:rid>/toggle-lock", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_forum_topic_lock(rid):
+    database.execute(
+        "UPDATE forum_topics SET is_locked = 1 - is_locked WHERE id=?", (rid,))
+    return redirect(url_for("admin_forum"))
+
+
+@app.route("/admin/forum/topics/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_forum_topic_delete(rid):
+    database.execute("DELETE FROM forum_posts WHERE topic_id=?", (rid,))
+    database.execute("DELETE FROM forum_topics WHERE id=?", (rid,))
+    flash("تاپیک و پاسخ‌های آن حذف شد.", "success")
+    return redirect(url_for("admin_forum"))
+
+
+@app.route("/admin/forum/posts/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_forum_post_delete(rid):
+    database.execute("DELETE FROM forum_posts WHERE id=?", (rid,))
+    flash("پاسخ حذف شد.", "success")
+    return redirect(request.referrer or url_for("admin_forum"))
+
+
+# ---------- مدیریت چت هوشمند ----------
+@app.route("/admin/chat-docs")
+@admin_required
+def admin_chat_docs():
+    rows = database.query(
+        """SELECT * FROM chat_documents ORDER BY is_active DESC, priority DESC, id DESC""")
+    total_hits = database.query(
+        "SELECT COALESCE(SUM(hit_count),0) n FROM chat_documents", one=True)["n"]
+    return render_template("admin/chat_docs.html", rows=rows, total_hits=total_hits,
+                           page_title="مستندات چت هوشمند")
+
+
+@app.route("/admin/chat-docs/new", methods=["GET", "POST"])
+@admin_required
+@admin_csrf
+def admin_chat_doc_new():
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        content = request.form.get("content", "").strip()
+        if not title or not content:
+            flash("عنوان و محتوای مستند الزامی است.", "error")
+            return redirect(request.url)
+        database.execute(
+            """INSERT INTO chat_documents (title, content, keywords, link, link_label, category, priority, is_active)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (title, content, request.form.get("keywords", "").strip(),
+             request.form.get("link", "").strip(), request.form.get("link_label", "").strip(),
+             request.form.get("category", "عمومی").strip() or "عمومی",
+             request.form.get("priority", 0, type=int),
+             1 if request.form.get("is_active", "on") else 0))
+        flash("مستند جدید به پایگاه دانش چت اضافه شد.", "success")
+        return redirect(url_for("admin_chat_docs"))
+    return render_template("admin/chat_doc_form.html", row=None, page_title="مستند جدید چت")
+
+
+@app.route("/admin/chat-docs/<int:rid>", methods=["GET", "POST"])
+@admin_required
+@admin_csrf
+def admin_chat_doc_edit(rid):
+    row = database.query("SELECT * FROM chat_documents WHERE id=?", (rid,), one=True)
+    if not row:
+        abort(404)
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        content = request.form.get("content", "").strip()
+        if not title or not content:
+            flash("عنوان و محتوای مستند الزامی است.", "error")
+            return redirect(request.url)
+        database.execute(
+            """UPDATE chat_documents SET title=?, content=?, keywords=?, link=?, link_label=?,
+               category=?, priority=?, is_active=? WHERE id=?""",
+            (title, content, request.form.get("keywords", "").strip(),
+             request.form.get("link", "").strip(), request.form.get("link_label", "").strip(),
+             request.form.get("category", "عمومی").strip() or "عمومی",
+             request.form.get("priority", 0, type=int),
+             1 if request.form.get("is_active") else 0, rid))
+        flash("مستند به‌روزرسانی شد.", "success")
+        return redirect(url_for("admin_chat_docs"))
+    return render_template("admin/chat_doc_form.html", row=row, page_title="ویرایش مستند چت")
+
+
+@app.route("/admin/chat-docs/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_chat_doc_delete(rid):
+    database.execute("DELETE FROM chat_documents WHERE id=?", (rid,))
+    flash("مستند حذف شد.", "success")
+    return redirect(url_for("admin_chat_docs"))
+
+
+@app.route("/admin/chat-logs")
+@admin_required
+def admin_chat_logs():
+    only_unanswered = request.args.get("unanswered") == "1"
+    where = "WHERE is_answered=0" if only_unanswered else ""
+    rows = database.query(
+        f"SELECT * FROM chat_logs {where} ORDER BY id DESC LIMIT 300")
+    stats = {
+        "total": database.query("SELECT COUNT(*) n FROM chat_logs", one=True)["n"],
+        "answered": database.query("SELECT COUNT(*) n FROM chat_logs WHERE is_answered=1", one=True)["n"],
+        "unanswered": database.query("SELECT COUNT(*) n FROM chat_logs WHERE is_answered=0", one=True)["n"],
+        "today": database.query(
+            "SELECT COUNT(*) n FROM chat_logs WHERE created_at >= date('now','localtime')", one=True)["n"],
+    }
+    return render_template("admin/chat_logs.html", rows=rows, stats=stats,
+                           only_unanswered=only_unanswered, page_title="گفتگوهای چت")
+
+
+@app.route("/admin/chat-logs/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_chat_log_delete(rid):
+    database.execute("DELETE FROM chat_logs WHERE id=?", (rid,))
+    return redirect(request.referrer or url_for("admin_chat_logs"))
+
+
+@app.route("/admin/chat-logs/clear", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_chat_logs_clear():
+    database.execute("DELETE FROM chat_logs")
+    flash("تاریخچه گفتگوها پاک شد.", "success")
+    return redirect(url_for("admin_chat_logs"))
+
+
+# ---------- مدیریت اعضای هیئت مدیره ----------
+BOARD_UPLOAD_EXT = {"png", "jpg", "jpeg", "webp"}
+
+
+def _save_member_photo(file_storage, member_id):
+    """ذخیره عکس عضو هیئت مدیره"""
+    if not file_storage or not file_storage.filename:
+        return ""
+    filename = os.path.basename(file_storage.filename)
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in BOARD_UPLOAD_EXT:
+        raise ValueError("عکس باید با فرمت PNG، JPG یا WEBP باشد")
+    data = file_storage.read()
+    if len(data) > 2 * 1024 * 1024:
+        raise ValueError("حجم عکس نباید بیشتر از ۲ مگابایت باشد")
+    safe_name = f"board_{member_id}.{ext}"
+    with open(os.path.join(app.config["UPLOAD_FOLDER"], safe_name), "wb") as fh:
+        fh.write(data)
+    return safe_name
+
+
+@app.route("/admin/board")
+@admin_required
+def admin_board():
+    rows = database.query("SELECT * FROM board_members ORDER BY sort_order, id")
+    return render_template("admin/board.html", rows=rows, page_title="هیئت مدیره")
+
+
+@app.route("/admin/board/new", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_board_new():
+    name = request.form.get("full_name", "").strip()
+    if not name:
+        flash("نام عضو الزامی است.", "error")
+        return redirect(url_for("admin_board"))
+    mx = database.query("SELECT MAX(sort_order) m FROM board_members", one=True)["m"] or 0
+    mid = database.execute(
+        """INSERT INTO board_members (full_name, role, bio, skills, sort_order, is_visible)
+           VALUES (?,?,?,?,?,?)""",
+        (name, request.form.get("role", "عضو هیئت مدیره").strip() or "عضو هیئت مدیره",
+         request.form.get("bio", "").strip(), request.form.get("skills", "").strip(),
+         request.form.get("sort_order", mx + 1, type=int),
+         1 if request.form.get("is_visible", "on") else 0))
+    try:
+        photo = _save_member_photo(request.files.get("photo"), mid)
+        if photo:
+            database.execute("UPDATE board_members SET photo=? WHERE id=?", (photo, mid))
+    except ValueError as err:
+        flash(f"عضو ثبت شد اما عکس ذخیره نشد: {err}", "error")
+    flash("عضو جدید اضافه شد.", "success")
+    return redirect(url_for("admin_board"))
+
+
+@app.route("/admin/board/<int:rid>/edit", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_board_edit(rid):
+    row = database.query("SELECT * FROM board_members WHERE id=?", (rid,), one=True)
+    if not row:
+        abort(404)
+    database.execute(
+        "UPDATE board_members SET full_name=?, role=?, bio=?, skills=?, sort_order=?, is_visible=? WHERE id=?",
+        (request.form.get("full_name", "").strip(),
+         request.form.get("role", "عضو هیئت مدیره").strip(),
+         request.form.get("bio", "").strip(), request.form.get("skills", "").strip(),
+         request.form.get("sort_order", row["sort_order"], type=int),
+         1 if request.form.get("is_visible") else 0, rid))
+    try:
+        photo = _save_member_photo(request.files.get("photo"), rid)
+        if photo:
+            database.execute("UPDATE board_members SET photo=? WHERE id=?", (photo, rid))
+    except ValueError as err:
+        flash(f"اطلاعات ذخیره شد اما عکس ذخیره نشد: {err}", "error")
+    flash("اطلاعات عضو به‌روزرسانی شد.", "success")
+    return redirect(url_for("admin_board"))
+
+
+@app.route("/admin/board/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_board_delete(rid):
+    row = database.query("SELECT * FROM board_members WHERE id=?", (rid,), one=True)
+    if row and row["photo"]:
+        try:
+            os.remove(os.path.join(app.config["UPLOAD_FOLDER"], row["photo"]))
+        except OSError:
+            pass
+    database.execute("DELETE FROM board_members WHERE id=?", (rid,))
+    flash("عضو حذف شد.", "success")
+    return redirect(url_for("admin_board"))
 
 
 # ---------- تنظیمات ----------

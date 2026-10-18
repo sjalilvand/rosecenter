@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_macros.html" import lms_course_card %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>دوره‌های آموزشی آکادمی رز</h1>
+    <p class="lead">دوره‌های تخصصی و عمومی روانشناسی با مدرک معتبر — فیلتر بر اساس وضعیت، دسته‌بندی یا جستجو.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:34px">
+  <div class="container">
+    <!-- تب‌های وضعیت -->
+    <div class="course-tabs">
+      {% for key, label in tabs %}
+      <a href="{{ url_for('courses', tab=key, cat=cat or none, q=q or none) }}"
+         class="course-tab {{ 'active' if tab == key }}">
+        {{ label }} <span class="n">{{ tab_counts.get(key, 0) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+
+    <!-- دسته‌بندی‌ها -->
+    {% if cats %}
+    <div class="cat-chips">
+      <a href="{{ url_for('courses', tab=tab) }}" class="cat-chip {{ 'active' if not cat }}">
+        <span class="ci">📚</span> همه دسته‌ها
+      </a>
+      {% for c in cats %}
+      <a href="{{ url_for('courses', tab=tab, cat=c.slug) }}" class="cat-chip {{ 'active' if cat == c.slug }}">
+        <span class="ci">{{ c.icon }}</span> {{ c.title }}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- جستجو -->
+    <form class="center-search" method="get" action="{{ url_for('courses') }}">
+      <input type="hidden" name="tab" value="{{ tab }}">
+      {% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
+      <input type="text" name="q" value="{{ q }}" placeholder="جستجوی دوره، مدرس یا موضوع…">
+      <button type="submit" class="btn btn-primary">جستجو</button>
+    </form>
+
+    <!-- شبکه دوره‌ها -->
+    {% if courses %}
+    <div class="lms-grid">
+      {% for c in courses %}
+      {{ lms_course_card(c, status_labels) }}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <span class="empty-ic">🔍</span>
+      <h3>دوره‌ای یافت نشد</h3>
+      <p>فیلترها را تغییر دهید یا عبارت دیگری جستجو کنید.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

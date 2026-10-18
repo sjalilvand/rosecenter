@@ -25,10 +25,20 @@
 
 <div class="stat-grid" style="grid-template-columns:repeat(5,1fr)">
   <div class="stat-card"><span class="s-ic">📰</span><div><b>{{ stats.news }}</b><span>خبر منتشرشده</span></div></div>
-  <div class="stat-card"><span class="s-ic">📍</span><div><b>{{ stats.centers }}</b><span>مرکز استانی</span></div></div>
+  <div class="stat-card"><span class="s-ic">📍</span><div><b>{{ stats.centers }}{% if stats.centers_pending %}<span class="badge-new">{{ stats.centers_pending }} در انتظار تأیید</span>{% endif %}</b><span>مرکز / کلینیک</span></div></div>
+  <div class="stat-card"><span class="s-ic">🗺</span><div><b>{{ stats.centers_on_map }}</b><span>مرکز دارای موقعیت نقشه</span></div></div>
   <div class="stat-card"><span class="s-ic">📚</span><div><b>{{ stats.courses }}</b><span>دوره آموزشی</span></div></div>
   <div class="stat-card"><span class="s-ic">👥</span><div><b>{{ stats.users }}</b><span>کاربر ثبت‌نام‌شده</span></div></div>
-  <div class="stat-card"><span class="s-ic">⭐</span><div><b>{{ stats.testimonials }}</b><span>نظر مراجعین</span></div></div>
+</div>
+
+<div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stat-card"><span class="s-ic">💬</span><div><b>{{ stats.forum_topics }}</b><span>تاپیک انجمن</span>
+    <a href="{{ url_for('admin_forum') }}" style="font-size:.75rem">مدیریت انجمن‌ها</a></div></div>
+  <div class="stat-card"><span class="s-ic">🗣</span><div><b>{{ stats.forum_posts }}</b><span>پاسخ انجمن</span></div></div>
+  <div class="stat-card"><span class="s-ic">🤖</span><div><b>{{ stats.chat_docs }}</b><span>مستند پایگاه دانش چت</span>
+    <a href="{{ url_for('admin_chat_docs') }}" style="font-size:.75rem">مدیریت مستندات</a></div></div>
+  <div class="stat-card"><span class="s-ic">💭</span><div><b>{{ stats.chat_questions }}{% if stats.chat_unanswered %}<span class="badge-new">{{ stats.chat_unanswered }} بی‌پاسخ</span>{% endif %}</b><span>سوال پرسیده‌شده از چت</span>
+    <a href="{{ url_for('admin_chat_logs') }}" style="font-size:.75rem">گفتگوهای چت</a></div></div>
 </div>
 
 <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">

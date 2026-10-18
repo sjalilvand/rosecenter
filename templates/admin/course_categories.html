@@ -1,0 +1,68 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>دسته‌بندی دوره‌ها ({{ rows|length }} دسته)</span>
+    <a href="{{ url_for('admin_courses') }}" class="btn btn-outline btn-sm">مدیریت دوره‌ها</a>
+  </div>
+
+  <div class="panel" style="box-shadow:none;border:1px dashed var(--line);margin-bottom:18px">
+    <form method="post" action="{{ url_for('admin_course_category_new') }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="field" style="margin:0;flex:2;min-width:180px">
+        <label>عنوان دسته <span class="req">*</span></label>
+        <input type="text" name="title" required placeholder="مثلاً: کودک و نوجوان">
+      </div>
+      <div class="field" style="margin:0;flex:1;min-width:110px">
+        <label>آیکون</label>
+        <input type="text" name="icon" value="📘" placeholder="🧠">
+      </div>
+      <div class="field" style="margin:0;flex:1;min-width:130px">
+        <label>رنگ</label>
+        <input type="color" name="color" value="#15803d" style="height:44px;border:1.5px solid var(--line);border-radius:10px;padding:4px;width:100%">
+      </div>
+      <button type="submit" class="btn btn-primary">+ افزودن</button>
+    </form>
+  </div>
+
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>آیکون</th><th>عنوان</th><th>نامک</th><th>تعداد دوره</th><th>ترتیب</th><th>نمایش</th><th>عملیات</th></tr></thead>
+      <tbody>
+        {% for c in rows %}
+        <tr>
+          <td style="font-size:1.3rem">{{ c.icon }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_course_category_edit', rid=c.id) }}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <input type="text" name="title" value="{{ c.title }}" style="width:150px">
+              <input type="text" name="icon" value="{{ c.icon }}" style="width:52px;text-align:center">
+              <input type="color" name="color" value="{{ c.color }}" style="height:36px;width:44px;padding:2px;border:1px solid var(--line);border-radius:8px">
+              <input type="number" name="sort_order" value="{{ c.sort_order }}" style="width:70px">
+              <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;cursor:pointer">
+                <input type="checkbox" name="is_visible" {{ 'checked' if c.is_visible }}> نمایش
+              </label>
+              <button class="btn btn-outline btn-sm">ذخیره</button>
+            </form>
+          </td>
+          <td><code style="font-size:.75rem">{{ c.slug }}</code></td>
+          <td>{{ c.course_count }}</td>
+          <td>{{ c.sort_order }}</td>
+          <td>{{ '✅' if c.is_visible else '❌' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_course_category_delete', rid=c.id) }}" data-confirm="دسته حذف شود؟ دوره‌های آن بدون دسته می‌شوند.">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">📚</div>هنوز دسته‌ای ایجاد نشده است.</div>
+  {% endif %}
+</div>
+{% endblock %}

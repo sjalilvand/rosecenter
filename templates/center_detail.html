@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <span class="kind-chip {{ 'clinic' if center.kind == 'کلینیک' }}" style="font-size:.8rem;margin-bottom:10px">{{ center.kind }}</span>
+    <h1>{{ center.clinic_name or ('مرکز ' + center.province) }}</h1>
+    <p class="lead">📍 استان {{ center.province }}{% if center.work_hours %} — ساعات کاری: {{ center.work_hours }}{% endif %}</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:34px">
+  <div class="container">
+    <div class="center-detail">
+      <div>
+        <!-- توانایی‌ها و خدمات -->
+        <div class="cd-card">
+          <h3>توانایی‌ها و خدمات مرکز</h3>
+          {% if caps %}
+          <div class="cap-chips">
+            {% for cap in caps %}
+            <span class="cap-chip">{{ cap }}</span>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p style="color:var(--ink-soft)">توانایی‌های این مرکز به‌زودی تکمیل می‌شود.</p>
+          {% endif %}
+        </div>
+
+        <!-- اطلاعات تماس -->
+        <div class="cd-card">
+          <h3>اطلاعات تماس و نشانی</h3>
+          <dl style="display:flex;flex-direction:column;gap:12px;font-size:.94rem">
+            <div style="display:flex;gap:8px"><b style="min-width:110px">نشانی:</b><span style="color:var(--ink-soft);text-align:justify">{{ center.address or '—' }}</span></div>
+            {% if center.postal_code %}<div style="display:flex;gap:8px"><b style="min-width:110px">کد پستی:</b><span>{{ center.postal_code }}</span></div>{% endif %}
+            {% if center.clinic_phone %}<div style="display:flex;gap:8px"><b style="min-width:110px">تلفن مرکز:</b><span dir="ltr"><a href="tel:{{ center.clinic_phone }}">{{ center.clinic_phone }}</a></span></div>{% endif %}
+            {% if center.manager_name %}<div style="display:flex;gap:8px"><b style="min-width:110px">مدیر مرکز:</b><span>{{ center.manager_name }}</span>{% if center.manager_phone %} — <span dir="ltr">{{ center.manager_phone }}</span>{% endif %}</div>{% endif %}
+            {% if center.exec_name %}<div style="display:flex;gap:8px"><b style="min-width:110px">مسئول اجرایی:</b><span>{{ center.exec_name }}</span>{% if center.exec_phone %} — <span dir="ltr">{{ center.exec_phone }}</span>{% endif %}</div>{% endif %}
+            {% if center.email %}<div style="display:flex;gap:8px"><b style="min-width:110px">ایمیل:</b><span dir="ltr">{{ center.email }}</span></div>{% endif %}
+            {% if center.website %}<div style="display:flex;gap:8px"><b style="min-width:110px">وب‌سایت:</b><span dir="ltr"><a href="{{ center.website }}" target="_blank" rel="noopener">{{ center.website }}</a></span></div>{% endif %}
+            <div style="display:flex;gap:8px"><b style="min-width:110px">ساعات کاری:</b><span>{{ center.work_hours or '—' }}</span></div>
+          </dl>
+        </div>
+
+        <!-- درخواست نوبت -->
+        <div class="cta-strip" style="margin-top:18px;padding:32px 36px">
+          <div>
+            <h2 style="font-size:1.25rem">نوبت مشاوره در {{ center.province }}</h2>
+            <p>هنگام ثبت درخواست، این مرکز را انتخاب کنید.</p>
+          </div>
+          <a href="{{ url_for('consultation') }}" class="btn btn-ghost">درخواست مشاوره</a>
+        </div>
+      </div>
+
+      <div>
+        {% if center.lat and center.lng %}
+        <div class="cd-card">
+          <h3>موقعیت روی نقشه</h3>
+          <div class="cd-mini-map"><div id="centerMap"></div></div>
+        </div>
+        {% endif %}
+
+        {% if near %}
+        <div class="cd-card">
+          <h3>سایر مراکز رز</h3>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            {% for n in near %}
+            <a href="{{ url_for('center_detail', cid=n.id) }}" class="map-item" style="box-shadow:none">
+              <h4 style="font-size:.9rem">
+                <span class="kind-chip {{ 'clinic' if n.kind == 'کلینیک' }}">{{ n.kind }}</span>
+                {{ n.clinic_name or ('مرکز ' + n.province) }}
+              </h4>
+            </a>
+            {% endfor %}
+          </div>
+          <p style="text-align:center;margin-top:16px">
+            <a href="{{ url_for('centers_map') }}" class="btn btn-outline btn-sm">مشاهده نقشه کامل ←</a>
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if center.lat and center.lng %}
+<script>
+(function () {
+  var map = L.map('centerMap').setView([{{ center.lat }}, {{ center.lng }}], 14);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18, attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  L.marker([{{ center.lat }}, {{ center.lng }}]).addTo(map)
+    .bindPopup('<b>{{ (center.clinic_name or center.province) | tojson }}</b>')
+    .openPopup();
+})();
+</script>
+{% endif %}
+{% endblock %}

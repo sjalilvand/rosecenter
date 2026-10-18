@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>اعضای هیئت مدیره</h1>
+    <p class="lead">
+      تیم راهبری مرکز خدمات روانشناسی و مشاوره رز — متخصصانی با سال‌ها تجربه در حوزه سلامت روان،
+      آموزش و مدیریت شبکه‌های خدمات یاورانه.
+    </p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:40px">
+  <div class="container">
+    {% if members %}
+    <div class="board-grid">
+      {% for m in members %}
+      <div class="board-card">
+        <div class="board-avatar">
+          {% if m.photo %}
+          <img src="{{ url_for('admin_upload_file', filename=m.photo) }}" alt="{{ m.full_name }}">
+          {% else %}
+          {{ m.full_name[:1] }}
+          {% endif %}
+        </div>
+        <h3>{{ m.full_name }}</h3>
+        <span class="board-role">{{ m.role }}</span>
+        {% if m.bio %}
+        <p>{{ m.bio[:180] }}{% if m.bio|length > 180 %}…{% endif %}</p>
+        {% endif %}
+        {% if m.skills_list %}
+        <div class="board-skills">
+          {% for s in m.skills_list %}
+          <span>{{ s }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <span class="empty-ic">👥</span>
+      <h3>اطلاعات هیئت مدیره به‌زودی منتشر می‌شود</h3>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

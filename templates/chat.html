@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>🤖 دستیار هوشمند رز</h1>
+    <p class="lead">پاسخ‌گوی سوالات شما درباره خدمات، دوره‌ها، نوبت‌دهی، مراکز و همه بخش‌های سایت — بر پایه مستندات رسمی مجموعه.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:34px">
+  <div class="container" style="max-width:720px">
+    <div class="form-card" style="padding:0;overflow:hidden">
+      <div class="chat-head">
+        <div class="bot-av">🤖</div>
+        <div>
+          <b>دستیار هوشمند رز</b>
+          <small>آنلاین — پاسخ‌گوی سوالات شما</small>
+        </div>
+      </div>
+      <div class="chat-body" id="pageChatBody" style="height:420px">
+        <div class="chat-msg bot">سلام 👋 چه کمکی از دستیار هوشمند رز برمی‌آید؟ درباره خدمات، دوره‌ها، نوبت‌دهی یا مراکز بپرسید.</div>
+      </div>
+      <div class="chat-quick" id="pageChatQuick">
+        <button data-q="چطور نوبت مشاوره بگیرم؟">نوبت مشاوره</button>
+        <button data-q="دوره‌های آموزشی چه هستند؟">دوره‌ها</button>
+        <button data-q="مراکز رز کجا هستند؟">مراکز و نقشه</button>
+        <button data-q="چطور در انجمن فعالیت کنم؟">انجمن‌ها</button>
+        <button data-q="چطور درخواست همکاری ثبت کنم؟">همکاری</button>
+        <button data-q="تبدیل تاریخ شمسی چطور است؟">تبدیل تاریخ</button>
+      </div>
+      <form class="chat-input-row" id="pageChatForm">
+        <input type="text" id="pageChatInput" placeholder="سوال خود را بنویسید…" autocomplete="off">
+        <button type="submit" class="chat-send" aria-label="ارسال"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat-page.js') }}"></script>
+{% endblock %}

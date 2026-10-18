@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>{{ topic.title }}</h1>
+    <nav class="breadcrumb" style="margin-top:8px">
+      <a href="{{ url_for('forum_index') }}">انجمن‌ها</a><span class="sep">/</span>
+      <a href="{{ url_for('forum_category', slug=topic.cat_slug) }}">{{ topic.cat_title }}</a><span class="sep">/</span>
+      <span>{{ topic.title }}</span>
+    </nav>
+    <div style="display:flex;justify-content:center;gap:14px;margin-top:12px;font-size:.82rem;color:var(--ink-soft);flex-wrap:wrap;font-weight:600">
+      <span>✍ {{ topic.author_name }}</span>
+      <span>🗓 {{ topic.created_at | jdate(True) }}</span>
+      <span>👁 {{ topic.views }} بازدید</span>
+      {% if topic.is_pinned %}<span class="pin-badge">📌 سنجاق‌شده</span>{% endif %}
+      {% if topic.is_locked %}<span class="lock-badge">🔒 قفل</span>{% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:34px">
+  <div class="container" style="max-width:880px">
+    <!-- پست اول (تاپیک) -->
+    <div class="post-item op">
+      <div class="p-av">{{ topic.author_name[:1] if topic.author_name else '؟' }}</div>
+      <div style="flex:1;min-width:0">
+        <div class="post-head">
+          <b>{{ topic.author_name }}</b>
+          <span class="op-chip">نویسنده تاپیک</span>
+          <time>{{ topic.created_at | jdate(True) }}</time>
+        </div>
+        <div class="post-body">{{ topic.content }}</div>
+      </div>
+    </div>
+
+    <!-- پاسخ‌ها -->
+    {% if posts %}
+    <h3 style="font-weight:800;font-size:1.05rem;margin:26px 0 14px">{{ posts|length }} پاسخ</h3>
+    {% for p in posts %}
+    <div class="post-item {{ 'op' if loop.last and p.id == posts[-1].id and false }}" {% if loop.last %}id="last-post"{% endif %}>
+      <div class="p-av">{{ p.author_name[:1] if p.author_name else '؟' }}</div>
+      <div style="flex:1;min-width:0">
+        <div class="post-head">
+          <b>{{ p.author_name }}</b>
+          <time>{{ p.created_at | jdate(True) }}</time>
+        </div>
+        <div class="post-body">{{ p.content }}</div>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- فرم پاسخ -->
+    <div style="margin-top:30px">
+      {% if topic.is_locked %}
+      <div class="login-note">🔒 این تاپیک توسط مدیریت قفل شده است و امکان پاسخ جدید وجود ندارد.</div>
+      {% elif cur_user %}
+      <div class="reply-box">
+        <h3>پاسخ به این تاپیک</h3>
+        <form method="post" action="{{ url_for('forum_reply', tid=topic.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <div class="field">
+            <textarea name="content" required placeholder="پاسخ خود را بنویسید…" style="min-height:120px"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">ارسال پاسخ</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="login-note">
+        برای ارسال پاسخ باید وارد حساب کاربری خود شوید.
+        <a href="{{ url_for('login', next=request.path) }}" class="btn btn-primary btn-sm" style="margin-inline-start:10px">ورود</a>
+        <a href="{{ url_for('register') }}" class="btn btn-outline btn-sm" style="margin-inline-start:6px">ثبت‌نام</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

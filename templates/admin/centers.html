@@ -2,25 +2,51 @@
 {% block content %}
 <div class="panel">
   <div class="panel-title">
-    <span>مراکز استانی ({{ rows|length }} مرکز)</span>
+    <span>مراکز و کلینیک‌ها ({{ rows|length }} مورد{% if pending %} — {{ pending }} در انتظار تأیید{% endif %})</span>
     <a href="{{ url_for('admin_centers_new') }}" class="btn btn-primary btn-sm">+ مرکز جدید</a>
   </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <a href="{{ url_for('admin_centers') }}" class="course-tab {{ 'active' if not kind }}">همه</a>
+    <a href="{{ url_for('admin_centers', kind='مرکز استانی') }}" class="course-tab {{ 'active' if kind == 'مرکز استانی' }}">مراکز استانی</a>
+    <a href="{{ url_for('admin_centers', kind='کلینیک') }}" class="course-tab {{ 'active' if kind == 'کلینیک' }}">کلینیک‌ها</a>
+    <form method="get" style="display:flex;gap:8px;flex:1;min-width:200px">
+      <input type="hidden" name="kind" value="{{ kind }}">
+      <input type="text" name="q" value="{{ q }}" placeholder="جستجوی استان یا نام…"
+             style="flex:1;border:1.5px solid var(--line);border-radius:999px;padding:8px 16px">
+      <button class="btn btn-outline btn-sm">جستجو</button>
+    </form>
+  </div>
+
   {% if rows %}
   <div class="table-wrap">
     <table class="admin-table">
-      <thead><tr><th>استان</th><th>تلفن کلینیک</th><th>مدیر</th><th>مسئول اجرایی</th><th>ساعت کاری</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+      <thead><tr><th>نوع</th><th>استان / نام</th><th>تلفن</th><th>مدیر</th><th>موقعیت نقشه</th><th>وضعیت</th><th>عملیات</th></tr></thead>
       <tbody>
         {% for c in rows %}
         <tr>
-          <td><a href="{{ url_for('admin_centers_edit', rid=c.id) }}">{{ c.province }}</a></td>
+          <td><span class="status-chip">{{ c.kind or 'مرکز استانی' }}</span></td>
+          <td>
+            <a href="{{ url_for('admin_centers_edit', rid=c.id) }}"><b>{{ c.clinic_name or ('مرکز ' + c.province) }}</b></a><br>
+            <small style="color:#777">{{ c.province }}</small>
+          </td>
           <td>{{ c.clinic_phone or '—' }}</td>
           <td>{{ c.manager_name or '—' }}</td>
-          <td>{{ c.exec_name or '—' }}</td>
-          <td>{{ c.work_hours or '—' }}</td>
-          <td>{{ '🚧 به‌زودی' if c.is_soon else '✅ فعال' }}</td>
+          <td>{{ '📍 دارد' if c.lat and c.lng else '—' }}</td>
+          <td>
+            {% if not c.is_approved %}<span style="color:#b45309;font-weight:700">⏳ در انتظار تأیید</span>
+            {% elif c.is_soon %}🚧 به‌زودی
+            {% else %}✅ فعال{% endif %}
+          </td>
           <td>
             <div class="actions">
               <a href="{{ url_for('admin_centers_edit', rid=c.id) }}" class="btn btn-outline btn-sm">ویرایش</a>
+              <form method="post" action="{{ url_for('admin_center_approve', rid=c.id) }}" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm {{ 'btn-primary' if not c.is_approved else 'btn-neutral' }}">
+                  {{ 'تأیید و نمایش' if not c.is_approved else 'پنهان کردن' }}
+                </button>
+              </form>
               <form method="post" action="{{ url_for('admin_centers_delete', rid=c.id) }}" data-confirm="این مرکز حذف شود؟" style="display:inline">
                 <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-danger btn-sm">حذف</button>
@@ -33,7 +59,7 @@
     </table>
   </div>
   {% else %}
-  <div class="empty-state"><div class="big">📍</div>مرکزی ثبت نشده است.</div>
+  <div class="empty-state"><div class="big">📍</div>مرکزی یافت نشد.</div>
   {% endif %}
 </div>
 {% endblock %}

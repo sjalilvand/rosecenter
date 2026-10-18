@@ -1,0 +1,51 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel" style="max-width:820px">
+  <div class="panel-title">
+    {{ 'ویرایش مستند چت' if row else 'مستند جدید پایگاه دانش چت' }}
+    <a href="{{ url_for('admin_chat_docs') }}" class="btn btn-outline btn-sm">بازگشت</a>
+  </div>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="field">
+      <label>عنوان مستند <span class="req">*</span></label>
+      <input type="text" name="title" required value="{{ row.title if row else '' }}" placeholder="مثلاً: نوبت‌دهی و رزرو مشاوره">
+    </div>
+    <div class="field">
+      <label>محتوای پاسخ <span class="req">*</span></label>
+      <textarea name="content" rows="6" required placeholder="پاسخی که دستیار هوشمند به کاربر نشان می‌دهد…">{{ row.content if row else '' }}</textarea>
+      <span class="hint">این متن دقیقاً همان چیزی است که در چت نمایش داده می‌شود؛ کوتاه، شفاف و کاربردی بنویسید.</span>
+    </div>
+    <div class="field">
+      <label>کلیدواژه‌ها (با «،» یا «,» جدا کنید)</label>
+      <input type="text" name="keywords" value="{{ row.keywords if row else '' }}" placeholder="نوبت، رزرو، وقت مشاوره، گرفتن وقت">
+      <span class="hint">هر کلیدواژه که در سوال کاربر بیاید، امتیاز تطابق این مستند را بالا می‌برد.</span>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>لینک هدایت (اختیاری)</label>
+        <input type="text" name="link" value="{{ row.link if row else '' }}" dir="ltr" style="text-align:right" placeholder="/consultation/">
+      </div>
+      <div class="field">
+        <label>برچسب لینک</label>
+        <input type="text" name="link_label" value="{{ row.link_label if row else '' }}" placeholder="مثلاً: درخواست مشاوره">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>دسته موضوعی</label>
+        <input type="text" name="category" value="{{ row.category if row else 'عمومی' }}" placeholder="عمومی">
+      </div>
+      <div class="field">
+        <label>اولویت (عدد بالاتر = اولویت بیشتر)</label>
+        <input type="number" name="priority" value="{{ row.priority if row else 0 }}">
+      </div>
+    </div>
+    <div class="checkbox-row" style="margin-bottom:16px">
+      <input type="checkbox" name="is_active" id="active" {{ 'checked' if (row and row.is_active) or not row }}>
+      <label for="active" style="margin:0">فعال (در پاسخ‌گویی چت استفاده شود)</label>
+    </div>
+    <button type="submit" class="btn btn-primary">ذخیره مستند</button>
+  </form>
+</div>
+{% endblock %}

@@ -26,11 +26,26 @@
       <a href="{{ url_for('admin_hr_calls') }}" class="{{ 'active' if 'hr-calls' in request.path }}">
         <span class="a-ic">🤝</span> فراخوان‌های همکاری
       </a>
-      <a href="{{ url_for('admin_courses') }}" class="{{ 'active' if '/admin/courses' in request.path }}">
+      <a href="{{ url_for('admin_courses') }}" class="{{ 'active' if '/admin/courses' in request.path and 'categories' not in request.path }}">
         <span class="a-ic">📚</span> دوره‌های آموزشی
+      </a>
+      <a href="{{ url_for('admin_course_categories') }}" class="{{ 'active' if 'course-categories' in request.path }}">
+        <span class="a-ic">🗂</span> دسته‌بندی دوره‌ها
       </a>
       <a href="{{ url_for('admin_course_regs') }}" class="{{ 'active' if 'course-regs' in request.path }}">
         <span class="a-ic">🎓</span> ثبت‌نام‌های دوره
+      </a>
+      <a href="{{ url_for('admin_forum') }}" class="{{ 'active' if '/admin/forum' in request.path }}">
+        <span class="a-ic">💬</span> انجمن‌ها
+      </a>
+      <a href="{{ url_for('admin_chat_docs') }}" class="{{ 'active' if 'chat-docs' in request.path }}">
+        <span class="a-ic">🤖</span> مستندات چت هوشمند
+      </a>
+      <a href="{{ url_for('admin_chat_logs') }}" class="{{ 'active' if 'chat-logs' in request.path }}">
+        <span class="a-ic">💭</span> گفتگوهای چت
+      </a>
+      <a href="{{ url_for('admin_board') }}" class="{{ 'active' if 'admin/board' in request.path }}">
+        <span class="a-ic">👔</span> هیئت مدیره
       </a>
       <a href="{{ url_for('admin_users') }}" class="{{ 'active' if 'admin/users' in request.path }}">
         <span class="a-ic">👥</span> مدیریت کاربران
@@ -57,7 +72,7 @@
         <span class="a-ic">📰</span> اخبار
       </a>
       <a href="{{ url_for('admin_centers') }}" class="{{ 'active' if 'centers' in request.path }}">
-        <span class="a-ic">📍</span> مراکز استانی
+        <span class="a-ic">📍</span> مراکز و کلینیک‌ها
       </a>
       <a href="{{ url_for('admin_faqs') }}" class="{{ 'active' if 'faqs' in request.path }}">
         <span class="a-ic">❓</span> سوالات متداول
@@ -65,7 +80,7 @@
       <a href="{{ url_for('admin_testimonials') }}" class="{{ 'active' if 'testimonials' in request.path }}">
         <span class="a-ic">⭐</span> نظرات مراجعین
       </a>
-      <a href="{{ url_for('admin_services') }}" class="{{ 'active' if 'services' in request.path }}">
+      <a href="{{ url_for('admin_services') }}" class="{{ 'active' if 'admin/services' in request.path }}">
         <span class="a-ic">🧩</span> خدمات
       </a>
       <a href="{{ url_for('admin_settings') }}" class="{{ 'active' if 'settings' in request.path or 'password' in request.path }}">

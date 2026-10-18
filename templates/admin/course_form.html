@@ -21,12 +21,33 @@
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
       <div class="field" style="margin-bottom:12px">
+        <label>دسته‌بندی</label>
+        <select name="category_id">
+          <option value="">— بدون دسته —</option>
+          {% for c in cats %}
+          <option value="{{ c.id }}" {{ 'selected' if row and row.category_id == c.id }}>{{ c.icon }} {{ c.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>وضعیت برگزاری</label>
+        <select name="status">
+          {% for key, label in status_labels.items() %}
+          <option value="{{ key }}" {{ 'selected' if row and row.status == key }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:12px">
         <label>مدرس</label>
         <input type="text" name="teacher" value="{{ row.teacher if row else '' }}">
       </div>
       <div class="field" style="margin-bottom:12px">
-        <label>قیمت (مثلاً «۲٬۵۰۰٬۰۰۰ تومان» یا «رایگان»)</label>
-        <input type="text" name="price" value="{{ row.price if row else 'رایگان' }}">
+        <label>قیمت (متن نمایشی)</label>
+        <input type="text" name="price" value="{{ row.price if row else 'رایگان' }}" placeholder="مثلاً «۲٬۵۰۰٬۰۰۰ تومان» یا «رایگان»">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>قیمت عددی (تومان — برای محاسبات)</label>
+        <input type="number" name="price_num" min="0" value="{{ row.price_num if row else 0 }}">
       </div>
       <div class="field" style="margin-bottom:12px">
         <label>مدت دوره</label>
@@ -53,14 +74,38 @@
         </select>
       </div>
       <div class="field" style="margin-bottom:12px">
+        <label>امتیاز (۰ تا ۵)</label>
+        <input type="number" name="rating" min="0" max="5" step="0.1" value="{{ row.rating if row else 4.5 }}">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>تعداد رأی</label>
+        <input type="number" name="votes" min="0" value="{{ row.votes if row else 0 }}">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>تعداد دانشجو (برای تب پرمخاطب‌ترین ≥ ۱۰۰)</label>
+        <input type="number" name="students" min="0" value="{{ row.students if row else 0 }}">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>آیکون کارت (ایموجی)</label>
+        <input type="text" name="thumb" value="{{ row.thumb if row else '🎓' }}" placeholder="🎓">
+      </div>
+      <div class="field" style="margin-bottom:12px">
         <label>ترتیب نمایش</label>
         <input type="number" name="sort_order" value="{{ row.sort_order if row else 0 }}">
       </div>
     </div>
-    <div class="field" style="margin-bottom:12px">
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
         <input type="checkbox" name="is_open" {{ 'checked' if (row and row.is_open) or not row }}>
         ثبت‌نام برای این دوره باز است
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" name="is_free" {{ 'checked' if row and row.is_free }}>
+        دوره رایگان است
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" name="is_special" {{ 'checked' if row and row.is_special }}>
+        دوره ویژه است (نشان طلایی)
       </label>
     </div>
     <button type="submit" class="btn btn-primary">ذخیره دوره</button>

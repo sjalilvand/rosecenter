@@ -1,0 +1,88 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="panel">
+  <div class="panel-title">
+    <span>اعضای هیئت مدیره ({{ rows|length }} نفر)</span>
+    <a href="{{ url_for('board') }}" target="_blank" class="btn btn-outline btn-sm">مشاهده صفحه ↗</a>
+  </div>
+
+  <div class="panel" style="box-shadow:none;border:1px dashed var(--line);margin-bottom:18px">
+    <form method="post" action="{{ url_for('admin_board_new') }}" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="field" style="margin:0;flex:2;min-width:170px">
+        <label>نام و نام خانوادگی <span class="req">*</span></label>
+        <input type="text" name="full_name" required placeholder="مثلاً: دکتر سارا محمدی">
+      </div>
+      <div class="field" style="margin:0;flex:2;min-width:170px">
+        <label>سمت</label>
+        <input type="text" name="role" placeholder="مثلاً: رئیس هیئت مدیره">
+      </div>
+      <div class="field" style="margin:0;flex:3;min-width:220px">
+        <label>بیوگرافی کوتاه</label>
+        <input type="text" name="bio" placeholder="سوابق و معرفی کوتاه">
+      </div>
+      <div class="field" style="margin:0;flex:2;min-width:180px">
+        <label>توانایی‌ها (با «،»)</label>
+        <input type="text" name="skills" placeholder="CBT، زوج‌درمانی">
+      </div>
+      <div class="field" style="margin:0;min-width:140px">
+        <label>عکس (≤۲MB)</label>
+        <input type="file" name="photo" accept=".png,.jpg,.jpeg,.webp" style="font-size:.78rem">
+      </div>
+      <button type="submit" class="btn btn-primary">+ افزودن</button>
+    </form>
+  </div>
+
+  {% if rows %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+    {% for m in rows %}
+    <div style="border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+        {% if m.photo %}
+        <img src="{{ url_for('admin_upload_file', filename=m.photo) }}" alt="{{ m.full_name }}"
+             style="width:54px;height:54px;border-radius:50%;object-fit:cover">
+        {% else %}
+        <div style="width:54px;height:54px;border-radius:50%;background:var(--rose-light);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;color:var(--rose-dark)">{{ m.full_name[:1] }}</div>
+        {% endif %}
+        <div>
+          <b>{{ m.full_name }}</b>
+          <div style="font-size:.78rem;color:#777">{{ m.role }} · ترتیب {{ m.sort_order }} · {{ '✅ نمایش' if m.is_visible else '⚪ پنهان' }}</div>
+        </div>
+      </div>
+      <form method="post" action="{{ url_for('admin_board_edit', rid=m.id) }}" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="field" style="margin-bottom:8px">
+          <input type="text" name="full_name" value="{{ m.full_name }}" placeholder="نام">
+        </div>
+        <div class="field" style="margin-bottom:8px">
+          <input type="text" name="role" value="{{ m.role }}" placeholder="سمت">
+        </div>
+        <div class="field" style="margin-bottom:8px">
+          <textarea name="bio" rows="2" placeholder="بیوگرافی" style="min-height:60px">{{ m.bio }}</textarea>
+        </div>
+        <div class="field" style="margin-bottom:8px">
+          <input type="text" name="skills" value="{{ m.skills }}" placeholder="توانایی‌ها (با «،»)">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <input type="number" name="sort_order" value="{{ m.sort_order }}" style="width:80px" title="ترتیب">
+          <input type="file" name="photo" accept=".png,.jpg,.jpeg,.webp" style="font-size:.72rem;flex:1">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:5px;font-size:.8rem;cursor:pointer">
+            <input type="checkbox" name="is_visible" {{ 'checked' if m.is_visible }}> نمایش
+          </label>
+          <button class="btn btn-outline btn-sm">ذخیره</button>
+        </div>
+      </form>
+      <form method="post" action="{{ url_for('admin_board_delete', rid=m.id) }}" data-confirm="این عضو حذف شود؟" style="margin-top:8px">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger btn-sm" style="width:100%">حذف عضو</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="big">👥</div>هنوز عضوی ثبت نشده است.</div>
+  {% endif %}
+</div>
+{% endblock %}

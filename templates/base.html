@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="{% block meta_description %}مرکز خدمات روانشناسی و مشاوره رز — کلینیک‌های زنجیره‌ای روانشناسی و مشاوره راه زندگی (رز سفید): روان‌درمانی، مشاوره، آموزش{% endblock %}">
+<meta name="description" content="{% block meta_description %}مرکز خدمات روانشناسی و مشاوره رز — کلینیک‌های زنجیره‌ای روانشناسی و مشاوره راه زندگی (رز سفید): روان‌درمانی، مشاوره، آموزش، انجمن تخصصی و چت هوشمند پاسخ‌گو{% endblock %}">
 <title>{% if page_title and page_title != 'خانه' %}{{ page_title }} | {% endif %}{{ settings.site_name }}</title>
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lms.css') }}">
 {% block head %}{% endblock %}
 </head>
 <body>
@@ -42,6 +43,21 @@
       <ul>
         <li><a href="{{ url_for('home') }}" class="{{ 'active' if page_title == 'خانه' }}">خانه</a></li>
         <li class="has-dropdown">
+          <a href="{{ url_for('courses') }}" class="{{ 'active' if 'دوره' in page_title|default('') }}">
+            دوره‌ها <svg viewBox="0 0 24 24" class="caret"><path d="M7 10l5 5 5-5z"/></svg>
+          </a>
+          <div class="mega">
+            {% for c in nav_course_categories %}
+            <a href="{{ url_for('courses', cat=c.slug) }}"><span class="mega-ic">{{ c.icon }}</span>{{ c.title }}</a>
+            {% endfor %}
+            <div class="mega-foot">
+              <span>مسیر یادگیری خود را انتخاب کنید</span>
+              <a href="{{ url_for('courses') }}" class="link-all">همه دوره‌ها ←</a>
+            </div>
+          </div>
+        </li>
+        <li><a href="{{ url_for('forum_index') }}" class="{{ 'active' if 'انجمن' in page_title|default('') }}">انجمن‌ها</a></li>
+        <li class="has-dropdown">
           <a href="{{ url_for('services_index') }}" class="{{ 'active' if page_title in ['روان درمانی','مشاوره','آموزش','سایر خدمات','خدمات ما'] }}">خدمات <svg viewBox="0 0 24 24" class="caret"><path d="M7 10l5 5 5-5z"/></svg></a>
           <ul class="dropdown">
             {% for s in nav_services %}
@@ -49,10 +65,16 @@
             {% endfor %}
           </ul>
         </li>
-        <li><a href="{{ url_for('centers') }}" class="{{ 'active' if page_title == 'مراکز استانی' }}">مراکز استانی</a></li>
-        <li><a href="{{ url_for('cooperation') }}" class="{{ 'active' if page_title == 'درخواست همکاری' }}">درخواست همکاری</a></li>
-        <li><a href="{{ url_for('academy') }}" class="{{ 'active' if page_title == 'آکادمی رز' }}">آکادمی رز</a></li>
-        <li><a href="{{ url_for('news_list') }}" class="{{ 'active' if page_title == 'اخبار و اطلاعیه‌ها' }}">اخبار و اطلاعیه‌ها</a></li>
+        <li class="has-dropdown">
+          <a href="{{ url_for('centers_map') }}" class="{{ 'active' if page_title in ['مراکز استانی','نقشه مراکز','ثبت مرکز'] or 'مرکز' in page_title|default('') }}">مراکز <svg viewBox="0 0 24 24" class="caret"><path d="M7 10l5 5 5-5z"/></svg></a>
+          <ul class="dropdown">
+            <li><a href="{{ url_for('centers_map') }}">🗺 نقشه مراکز ایران</a></li>
+            <li><a href="{{ url_for('centers') }}">مراکز استانی</a></li>
+            <li><a href="{{ url_for('center_register') }}">➕ ثبت مرکز / کلینیک جدید</a></li>
+          </ul>
+        </li>
+        <li><a href="{{ url_for('board') }}" class="{{ 'active' if page_title == 'هیئت مدیره' }}">هیئت مدیره</a></li>
+        <li><a href="{{ url_for('news_list') }}" class="{{ 'active' if page_title == 'اخبار و اطلاعیه‌ها' }}">اخبار</a></li>
         <li><a href="{{ url_for('about') }}" class="{{ 'active' if page_title == 'درباره ما' }}">درباره ما</a></li>
         <li><a href="{{ url_for('contact') }}" class="{{ 'active' if page_title == 'تماس با ما' }}">تماس با ما</a></li>
       </ul>
@@ -73,7 +95,7 @@
   <!-- نوار جستجو -->
   <div class="search-bar" id="searchBar" hidden>
     <form action="{{ url_for('search') }}" method="get" class="container search-form">
-      <input type="text" name="q" placeholder="جستجو در خدمات، اخبار، سوالات متداول و مراکز..." autocomplete="off">
+      <input type="text" name="q" placeholder="جستجو در خدمات، دوره‌ها، اخبار، سوالات متداول و مراکز..." autocomplete="off">
       <button type="submit" class="btn btn-primary">جستجو</button>
     </form>
   </div>
@@ -83,13 +105,20 @@
 <div class="mobile-nav" id="mobileNav" hidden>
   <ul>
     <li><a href="{{ url_for('home') }}">خانه</a></li>
+    <li><a href="{{ url_for('courses') }}">دوره‌های آموزشی</a></li>
+    {% for c in nav_course_categories %}
+    <li class="m-sub"><a href="{{ url_for('courses', cat=c.slug) }}">{{ c.icon }} {{ c.title }}</a></li>
+    {% endfor %}
+    <li><a href="{{ url_for('forum_index') }}">انجمن‌ها</a></li>
     <li class="m-group">خدمات</li>
     {% for s in nav_services %}
     <li class="m-sub"><a href="/{{ s.slug }}/">{{ s.title }}</a></li>
     {% endfor %}
+    <li class="m-group">مراکز</li>
+    <li><a href="{{ url_for('centers_map') }}">نقشه مراکز ایران</a></li>
     <li><a href="{{ url_for('centers') }}">مراکز استانی</a></li>
-    <li><a href="{{ url_for('cooperation') }}">درخواست همکاری</a></li>
-    <li><a href="{{ url_for('academy') }}">آکادمی رز</a></li>
+    <li><a href="{{ url_for('center_register') }}">ثبت مرکز / کلینیک</a></li>
+    <li><a href="{{ url_for('board') }}">هیئت مدیره</a></li>
     <li><a href="{{ url_for('news_list') }}">اخبار و اطلاعیه‌ها</a></li>
     <li><a href="{{ url_for('about') }}">درباره ما</a></li>
     <li><a href="{{ url_for('contact') }}">تماس با ما</a></li>
@@ -143,16 +172,17 @@
     </div>
 
     <div class="footer-col">
-      <h4>لینک‌های مفید</h4>
+      <h4>دسترسی سریع</h4>
       <ul>
         <li><a href="{{ url_for('home') }}">صفحه اصلی</a></li>
+        <li><a href="{{ url_for('courses') }}">دوره‌های آموزشی</a></li>
+        <li><a href="{{ url_for('forum_index') }}">انجمن‌های تخصصی</a></li>
+        <li><a href="{{ url_for('centers_map') }}">نقشه مراکز ایران</a></li>
         <li><a href="{{ url_for('centers') }}">مراکز استانی</a></li>
-        <li><a href="{{ url_for('cooperation') }}">درخواست همکاری</a></li>
-        <li><a href="{{ url_for('news_list') }}">اخبار و اطلاعیه‌ها</a></li>
-        <li><a href="{{ url_for('about') }}">درباره ما</a></li>
-        <li><a href="{{ url_for('contact') }}">تماس با ما</a></li>
+        <li><a href="{{ url_for('center_register') }}">ثبت مرکز / کلینیک</a></li>
+        <li><a href="{{ url_for('board') }}">هیئت مدیره</a></li>
+        <li><a href="{{ url_for('cooperation') }}">فراخوان همکاری</a></li>
         <li><a href="{{ url_for('tracking') }}">پیگیری درخواست</a></li>
-        <li><a href="{{ url_for('feedback') }}">پیشنهاد و انتقاد</a></li>
         <li><a href="{{ url_for('jalali_converter') }}">تبدیل تاریخ شمسی</a></li>
       </ul>
     </div>
@@ -164,7 +194,8 @@
         <li><a href="/{{ s.slug }}/">{{ s.title }}</a></li>
         {% endfor %}
         <li><a href="{{ url_for('consultation') }}">رزرو نوبت آنلاین</a></li>
-        <li><a href="{{ settings.academy_url }}" target="_blank" rel="noopener">آکادمی رز</a></li>
+        <li><a href="{{ url_for('news_list') }}">اخبار و مقالات</a></li>
+        <li><a href="{{ url_for('about') }}">درباره ما</a></li>
       </ul>
     </div>
 
@@ -183,7 +214,8 @@
       <p>© تمامی حقوق برای <strong>{{ settings.site_name }}</strong> محفوظ است.</p>
       <p class="footer-links">
         <a href="{{ url_for('consultation') }}">رزرو نوبت</a> ·
-        <a href="{{ url_for('tracking') }}">پیگیری درخواست</a> ·
+        <a href="{{ url_for('courses') }}">دوره‌ها</a> ·
+        <a href="{{ url_for('forum_index') }}">انجمن‌ها</a> ·
         <a href="{{ url_for('feedback') }}">پیشنهاد و انتقاد</a>
       </p>
     </div>
@@ -192,7 +224,39 @@
 
 <button class="scroll-top" id="scrollTop" aria-label="بازگشت به بالا"><svg viewBox="0 0 24 24"><path d="M7.4 15.4L12 10.8l4.6 4.6L18 14l-6-6-6 6z"/></svg></button>
 
+<!-- ================= چت آنلاین هوشمند ================= -->
+<button class="chat-fab" id="chatFab" aria-label="چت هوشمند">
+  <span class="chat-pulse"></span>
+  <svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.9 2 11.7c0 2.7 1.4 5.1 3.7 6.7-.1 1-.5 2.5-1.6 3.6 0 0 2.6-.2 4.6-1.8 1 .3 2.1.5 3.3.5 5.5 0 10-3.9 10-8.7S17.5 3 12 3zM7.5 13a1.4 1.4 0 110-2.8 1.4 1.4 0 010 2.8zm4.5 0a1.4 1.4 0 110-2.8 1.4 1.4 0 010 2.8zm4.5 0a1.4 1.4 0 110-2.8 1.4 1.4 0 010 2.8z"/></svg>
+</button>
+
+<div class="chat-panel" id="chatPanel" role="dialog" aria-label="چت هوشمند مرکز رز">
+  <div class="chat-head">
+    <div class="bot-av">🤖</div>
+    <div>
+      <b>دستیار هوشمند رز</b>
+      <small>آنلاین — پاسخ‌گوی سوالات شما</small>
+    </div>
+    <button class="chat-close" id="chatClose" aria-label="بستن">&times;</button>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="chat-msg bot">سلام 👋 به دستیار هوشمند مرکز رز خوش آمدید.<br>هر سوالی درباره خدمات، دوره‌های آموزشی، نوبت‌دهی، مراکز یا فرآیندهای سایت دارید بپرسید. شما را راهنمایی می‌کنم.</div>
+  </div>
+  <div class="chat-quick" id="chatQuick">
+    <button data-q="چطور نوبت مشاوره بگیرم؟">نوبت مشاوره</button>
+    <button data-q="دوره‌های آموزشی چه هستند؟">دوره‌ها</button>
+    <button data-q="مراکز رز کجا هستند؟">مراکز و نقشه</button>
+    <button data-q="چطور در انجمن فعالیت کنم؟">انجمن‌ها</button>
+    <button data-q="چطور درخواست همکاری ثبت کنم؟">همکاری</button>
+  </div>
+  <form class="chat-input-row" id="chatForm">
+    <input type="text" id="chatInput" placeholder="سوال خود را بنویسید…" autocomplete="off">
+    <button type="submit" class="chat-send" aria-label="ارسال"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+  </form>
+</div>
+
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

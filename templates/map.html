@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>نقشه مراکز و کلینیک‌های رز</h1>
+    <p class="lead">تمام مراکز استانی و کلینیک‌های ثبت‌شده را روی نقشه ایران ببینید؛ با کلیک روی هر نشانگر، اطلاعات کامل مرکز نمایش داده می‌شود.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:34px">
+  <div class="container">
+    <div class="map-filter">
+      <a href="{{ url_for('centers_map') }}" class="course-tab {{ 'active' if not kind }}">همه ({{ centers|length }})</a>
+      <a href="{{ url_for('centers_map', kind='مرکز استانی') }}" class="course-tab {{ 'active' if kind == 'مرکز استانی' }}">مراکز استانی</a>
+      <a href="{{ url_for('centers_map', kind='کلینیک') }}" class="course-tab {{ 'active' if kind == 'کلینیک' }}">کلینیک‌ها</a>
+      <form method="get" action="{{ url_for('centers_map') }}" style="display:flex;gap:8px;flex:1;min-width:220px">
+        <input type="hidden" name="kind" value="{{ kind }}">
+        <input type="text" name="q" value="{{ q }}" placeholder="جستجوی استان، شهر یا توانایی…"
+               style="flex:1;border:1.5px solid var(--line);border-radius:999px;padding:9px 18px;outline:none">
+        <button type="submit" class="btn btn-primary btn-sm">جستجو</button>
+      </form>
+      <a href="{{ url_for('center_register') }}" class="btn btn-lime btn-sm">+ ثبت مرکز / کلینیک</a>
+    </div>
+
+    <div class="map-layout">
+      <div class="map-box">
+        <div id="iranMap"></div>
+        <div class="map-legend">
+          <span class="lg"><span class="lg-dot" style="background:var(--rose)"></span> مرکز استانی</span>
+          <span class="lg"><span class="lg-dot" style="background:var(--gold)"></span> کلینیک</span>
+          <span style="margin-inline-start:auto;font-weight:500">🔊 روی نشانگرها کلیک کنید</span>
+        </div>
+      </div>
+
+      <div class="map-side">
+        {% for c in centers %}
+        <a class="map-item" href="{{ url_for('center_detail', cid=c.id) }}" data-lat="{{ c.lat }}" data-lng="{{ c.lng }}" data-idx="{{ loop.index0 }}">
+          <h4>
+            <span class="kind-chip {{ 'clinic' if c.kind == 'کلینیک' }}">{{ c.kind }}</span>
+            {{ c.clinic_name or ('مرکز ' + c.province) }}
+          </h4>
+          <p>📍 {{ c.province }} — {{ c.address[:70] }}{% if c.address|length > 70 %}…{% endif %}</p>
+          {% if c.capabilities %}
+          <p style="margin-top:5px">✅ {{ c.capabilities.split('،')[0] }}{% if c.capabilities|length > 60 %}…{% endif %}</p>
+          {% endif %}
+        </a>
+        {% else %}
+        <div class="empty-state"><h3>مرکزی برای نمایش یافت نشد</h3></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var centers = [
+    {% for c in centers %}
+    {
+      id: {{ c.id }},
+      lat: {{ c.lat if c.lat is not none else 0 }},
+      lng: {{ c.lng if c.lng is not none else 0 }},
+      name: {{ ((c.clinic_name or ('مرکز ' + c.province)) | tojson) }},
+      kind: {{ (c.kind or 'مرکز استانی') | tojson }},
+      province: {{ (c.province or '') | tojson }},
+      address: {{ (c.address or '') | tojson }},
+      phone: {{ (c.clinic_phone or '') | tojson }},
+      caps: {{ ((c.capabilities or '') | tojson) }}
+    }{{ "," if not loop.last }}
+    {% endfor %}
+  ];
+
+  var map = L.map('iranMap', { scrollWheelZoom: true }).setView([32.5, 54.3], 5);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  var bounds = [];
+  var markers = [];
+  centers.forEach(function (c, i) {
+    if (!c.lat || !c.lng) return;
+    var m = L.marker([c.lat, c.lng]).addTo(map);
+    var html = '<b>' + c.name + '</b><br>' +
+      '<span style="font-size:.8em;color:#666">' + c.kind + ' — ' + c.province + '</span><br>' +
+      '<span style="font-size:.85em">' + c.address + '</span>' +
+      (c.phone ? '<br>☎ ' + c.phone : '') +
+      (c.caps ? '<br><span style="font-size:.8em;color:#15803d">✅ ' + c.caps.split('،').slice(0, 3).join('، ') + '</span>' : '') +
+      '<br><a href="/centers/' + c.id + '/" style="font-weight:bold">جزئیات مرکز ←</a>';
+    m.bindPopup(html);
+    markers.push(m);
+    bounds.push([c.lat, c.lng]);
+  });
+  if (bounds.length) {
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }
+
+  // هاور روی فهرست کنار نقشه → باز شدن پاپ‌آپ نشانگر
+  document.querySelectorAll('.map-item').forEach(function (item) {
+    item.addEventListener('mouseenter', function () {
+      var idx = parseInt(item.getAttribute('data-idx'), 10);
+      if (markers[idx]) {
+        map.flyTo(markers[idx].getLatLng(), 8, { duration: .6 });
+        markers[idx].openPopup();
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}
