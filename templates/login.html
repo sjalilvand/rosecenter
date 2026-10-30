@@ -28,6 +28,14 @@
         </div>
         <button type="submit" class="btn btn-primary btn-block">ورود به حساب</button>
       </form>
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0 4px">
+        <span style="flex:1;height:1px;background:#e5e7eb"></span>
+        <span style="font-size:12px;color:#9ca3af">یا</span>
+        <span style="flex:1;height:1px;background:#e5e7eb"></span>
+      </div>
+      <a href="{{ url_for('rose_hub_sso') }}" class="btn btn-block" style="background:#be185d;color:#fff;text-decoration:none">
+        ورود یکپارچه با رز هاب (SSO)
+      </a>
       <div class="auth-foot">
         <p>حساب کاربری ندارید؟ <a href="{{ url_for('register') }}">ثبت‌نام کنید</a></p>
         <p class="auth-admin">کارمند مرکز هستید؟ <a href="{{ url_for('admin_login') }}">ورود به پنل مدیریت</a></p>

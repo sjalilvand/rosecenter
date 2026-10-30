@@ -19,7 +19,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import database
 import jalali as jdate
-from config import THERAPY_TYPES, REQUEST_STATUSES
+from config import THERAPY_TYPES, REQUEST_STATUSES, ROSE_HUB_SSO
 
 app = Flask(__name__)
 app.config.from_object("config")
@@ -1321,6 +1321,63 @@ def search():
 # احراز هویت کاربران سایت
 # ==================================================================
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+@app.route("/sso/rose")
+def rose_hub_sso():
+    """ورود یکپارچه (SSO) از رز هاب — نسخه ۱٫۰
+    رز هاب کاربر را با ?sso_token=<JWT> به این مسیر برمی‌گرداند.
+    توکن با HS256 و clientSecret اختصاصی سامانه امضا شده است؛
+    پس از اعتبارسنجی، حساب کاربر پیدا/ساخته و نشست سایت برقرار می‌شود.
+    """
+    import jwt  # PyJWT
+
+    token = request.args.get("sso_token", "")
+    if not token:
+        # ورود مستقیم به این مسیر → هدایت به رز هاب برای احراز هویت
+        return redirect(ROSE_HUB_SSO["launch_url"])
+
+    try:
+        payload = jwt.decode(
+            token,
+            ROSE_HUB_SSO["client_secret"],
+            algorithms=["HS256"],
+            audience=ROSE_HUB_SSO["client_id"],
+            issuer=ROSE_HUB_SSO["issuer"],
+            leeway=ROSE_HUB_SSO["clock_leeway"],
+        )
+    except Exception:
+        flash("توکن ورود یکپارچه نامعتبر یا منقضی است؛ دوباره از رز هاب وارد شوید.", "error")
+        return redirect(url_for("login"))
+
+    email = (payload.get("email") or "").strip().lower()
+    full_name = (payload.get("name") or payload.get("sub") or "کاربر رز هاب").strip()
+    if not email:
+        flash("توکن ورود یکپارچه فاقد ایمیل است.", "error")
+        return redirect(url_for("login"))
+
+    u = database.query("SELECT * FROM users WHERE email=?", (email,), one=True)
+    if not u:
+        # ساخت خودکار حساب بر اساس هویت تأییدشده رز هاب (گذرواژه تصادفی غیرقابل حدس)
+        database.execute(
+            "INSERT INTO users (full_name, email, password_hash, is_active) VALUES (?,?,?,1)",
+            (full_name, email, generate_password_hash(secrets.token_hex(32))),
+        )
+        u = database.query("SELECT * FROM users WHERE email=?", (email,), one=True)
+    if not u["is_active"]:
+        flash("حساب کاربری شما غیرفعال است.", "error")
+        return redirect(url_for("login"))
+
+    session.clear()
+    session["uid"] = u["id"]
+    session["user_name"] = u["full_name"]
+    register_session("user", u["full_name"], u["id"])
+    database.execute(
+        "UPDATE users SET last_login_at=datetime('now','localtime') WHERE id=?", (u["id"],)
+    )
+    flash(f"خوش آمدید {u['full_name']} عزیز — ورود یکپارچه با رز هاب.", "success")
+    # با این redirect پارامتر sso_token از نشانی پاک می‌شود
+    return redirect(url_for("panel"))
 
 
 @app.route("/login/", methods=["GET", "POST"])
