@@ -277,6 +277,13 @@ def admin_csrf(f):
 # ==================================================================
 @app.route("/")
 def home():
+    # ورود یکپارچه (SSO) با رز هاب: توکن موقت ?sso_token= که رز هاب به نشانی
+    # سامانه (همین صفحهٔ اصلی) برمی‌گرداند، به مسیر پردازش /sso/rose منتقل
+    # می‌شود تا حساب کاربر پیدا/ساخته شده و نشست برقرار گردد؛ سپس کاربر به
+    # پنل می‌رود و پارامتر توکن از نشانی پاک می‌شود.
+    sso_token = request.args.get("sso_token", "")
+    if sso_token:
+        return redirect(url_for("rose_hub_sso", sso_token=sso_token))
     services = get_visible_services()
     testimonials = database.query("SELECT * FROM testimonials ORDER BY sort_order")
     faqs = database.query("SELECT * FROM faqs ORDER BY sort_order")
