@@ -1375,6 +1375,29 @@ def rose_hub_sso():
         flash("حساب کاربری شما غیرفعال است.", "error")
         return redirect(url_for("login"))
 
+    # فاز ۶۵ — همگام‌سازی مشخصات کامل کاربر از توکن رز هاب: نام و نام
+    # خانوادگی، موبایل، کد ملی، استان، کد استان و کلینک محل خدمت.
+    # مقدار خالی در توکن یعنی در رز هاب ثبت نشده — مقدار محلی پاک نمی‌شود.
+    _nid = (payload.get("nationalId") or "").strip()
+    _mobile = (payload.get("mobile") or "").strip()
+    _prov = (payload.get("province") or "").strip()
+    _prov_code = (payload.get("provinceCode") or "").strip()
+    _clinic = (payload.get("clinic") or "").strip()
+    database.execute(
+        "UPDATE users SET full_name=?, phone=?, national_id=?, province=?,"
+        " province_code=?, clinic=? WHERE id=?",
+        (
+            full_name,
+            _mobile or u["phone"],
+            _nid or u["national_id"],
+            _prov or u["province"],
+            _prov_code or u["province_code"],
+            _clinic or u["clinic"],
+            u["id"],
+        ),
+    )
+    u = database.query("SELECT * FROM users WHERE id=?", (u["id"],), one=True)
+
     session.clear()
     session["uid"] = u["id"]
     session["user_name"] = u["full_name"]

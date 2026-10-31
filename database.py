@@ -253,6 +253,14 @@ def init_db(app):
         )
     """)
 
+    # ---------- ستون‌های پروفایل SSO رز هاب (فاز ۶۵) ----------
+    # انتقال مشخصات کامل کاربر در ورود یکپارچه: کد ملی، استان، کد استان و
+    # کلینک محل خدمت. افزودن امن ستون — روی دیتابیس‌های قدیمی هم اجرا می‌شود.
+    _user_cols = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
+    for _col in ("national_id", "province", "province_code", "clinic"):
+        if _col not in _user_cols:
+            c.execute(f"ALTER TABLE users ADD COLUMN {_col} TEXT NOT NULL DEFAULT ''")
+
     # ---------- بلوک‌های دینامیک صفحه اصلی ----------
     c.execute("""
         CREATE TABLE IF NOT EXISTS home_blocks (

@@ -19,6 +19,13 @@
       <p class="panel-meta">
         تاریخ عضویت: {{ u['created_at']|jdate }}
       </p>
+      {% if u['national_id'] or u['province'] or u['clinic'] %}
+      <hr style="border:none;border-top:1px dashed var(--line);margin:14px 0">
+      <p class="panel-meta" style="margin-bottom:4px">مشخصات پروفایل (از رز هاب):</p>
+      <p class="panel-meta">کد ملی: <b dir="ltr">{{ u['national_id'] or '—' }}</b></p>
+      <p class="panel-meta">استان: <b>{{ u['province'] or '—' }}</b></p>
+      <p class="panel-meta">کلینک محل خدمت: <b>{{ u['clinic'] or '—' }}</b></p>
+      {% endif %}
       <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
       <h4 style="font-weight:800;margin-bottom:12px">ویرایش پروفایل</h4>
       <form method="post" action="{{ url_for('panel_profile') }}">
