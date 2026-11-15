@@ -18,6 +18,11 @@
             max-height:110px; overflow:auto }
   .fa-ref b { color:#475569 }
   .nav-btns { display:flex; gap:8px; justify-content:space-between; margin-top:18px }
+  .mt-suggest { background:#fffbeb !important; border-color:#f59e0b !important }
+  .mt-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:0 0 16px;
+                background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 14px }
+  .mt-status { font-size:.82rem; color:#64748b }
+  .btn[disabled] { opacity:.55; cursor:not-allowed }
 </style>
 
 <div class="panel" style="max-width:960px">
@@ -30,6 +35,15 @@
     آیتم: <b>{{ item[meta.title_col] }}</b>
     <span style="color:#94a3b8">— متن پایه فارسی هر فیلد در کادر خاکستری نمایش داده می‌شود.</span>
   </p>
+
+  <div class="mt-toolbar">
+    <button type="button" id="mtAllBtn" class="btn btn-primary btn-sm">✨ پیشنهاد ترجمه خودکار (هر ۴ زبان)</button>
+    <button type="button" id="mtFillSaveBtn" class="btn btn-outline btn-sm" title="ترجمه ماشینی فیلدهای خالی و ذخیره مستقیم">🤖 ترجمه ماشینی و ذخیره</button>
+    <label style="font-size:.8rem;color:#475569;display:flex;gap:5px;align-items:center">
+      <input type="checkbox" id="mtOverwrite"> بازنویسی فیلدهای پرشده
+    </label>
+    <span id="mtStatus" class="mt-status"></span>
+  </div>
 
   <form method="post">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
@@ -44,6 +58,11 @@
 
     {% for lg in target_langs %}
     <div class="lang-pane {{ 'active' if loop.first }}" id="pane-{{ lg }}">
+      <div style="margin-bottom:14px">
+        <button type="button" class="btn btn-outline btn-sm mt-lang-btn" data-lang="{{ lg }}">
+          ✨ پیشنهاد ترجمه ماشینی {{ locale_meta[lg].flag }} {{ locale_meta[lg].label }}
+        </button>
+      </div>
       {% for f in meta.fields %}
       <div class="tr-field">
         <label>{{ locale_meta[lg].flag }} {{ locale_meta[lg].label }} —
@@ -95,6 +114,98 @@
       b.classList.add('active');
       document.getElementById('pane-' + b.dataset.lang).classList.add('active');
     });
+  });
+})();
+
+/* ---------- پیشنهاد ترجمه خودکار ---------- */
+(function () {
+  var TABLE = {{ table|tojson }}, RID = {{ item.id }}, LANGS = {{ target_langs|tojson }};
+  var CSRF = document.querySelector('input[name="_csrf"]').value;
+  var statusEl = document.getElementById('mtStatus');
+  var busy = false;
+
+  function status(msg) { statusEl.textContent = msg; }
+  function setBusy(b) {
+    busy = b;
+    ['mtAllBtn', 'mtFillSaveBtn'].forEach(function (id) {
+      document.getElementById(id).disabled = b;
+    });
+    document.querySelectorAll('.mt-lang-btn').forEach(function (x) { x.disabled = b; });
+  }
+
+  function emptyFields(lang) {
+    var overwrite = document.getElementById('mtOverwrite').checked;
+    var fields = [];
+    document.querySelectorAll('#pane-' + lang + ' [name^="tr_' + lang + '_"]').forEach(function (el) {
+      var f = el.name.slice(('tr_' + lang + '_').length);
+      if (overwrite || !el.value.trim()) fields.push(f);
+    });
+    return fields;
+  }
+
+  async function suggest(lang) {
+    var fields = emptyFields(lang);
+    if (!fields.length) return { skipped: true, n: 0 };
+    var res = await fetch('/admin/api/mt-suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+      body: JSON.stringify({ table: TABLE, rid: RID, lang: lang, fields: fields })
+    });
+    var j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'خطای نامشخص');
+    var n = 0;
+    Object.keys(j.translations || {}).forEach(function (f) {
+      var el = document.querySelector('[name="tr_' + lang + '_' + f + '"]');
+      if (el) { el.value = j.translations[f]; el.classList.add('mt-suggest'); n++; }
+    });
+    return { skipped: false, n: n, provider: j.provider };
+  }
+
+  document.querySelectorAll('.mt-lang-btn').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      if (busy) return;
+      setBusy(true); status('در حال دریافت ترجمه ماشینی…');
+      try {
+        var r = await suggest(btn.dataset.lang);
+        status(r.skipped ? 'همه فیلدهای این زبان پر شده‌اند (گزینه «بازنویسی» را فعال کنید).'
+                         : '✨ ' + r.n + ' فیلد پیشنهاد شد' + (r.provider ? ' (موتور: ' + r.provider + ')' : '') + ' — بررسی کنید و «ذخیره همه ترجمه‌ها» را بزنید.');
+      } catch (e) { status('⚠️ خطا: ' + e.message); }
+      setBusy(false);
+    });
+  });
+
+  document.getElementById('mtAllBtn').addEventListener('click', async function () {
+    if (busy) return;
+    setBusy(true);
+    var total = 0, providers = {};
+    try {
+      for (var i = 0; i < LANGS.length; i++) {
+        status('ترجمه ماشینی ' + LANGS[i] + ' … (' + (i + 1) + '/' + LANGS.length + ')');
+        var r = await suggest(LANGS[i]);
+        total += r.n;
+        if (r.provider) providers[r.provider] = 1;
+      }
+      var pv = Object.keys(providers).join('، ') || '—';
+      status('✨ ' + total + ' فیلد پیشنهاد شد (موتور: ' + pv + ') — پیشنهادها زرد شده‌اند؛ ویرایش و «ذخیره» کنید.');
+    } catch (e) { status('⚠️ خطا: ' + e.message + ' — ' + total + ' فیلد تا اینجا پیشنهاد شد.'); }
+    setBusy(false);
+  });
+
+  document.getElementById('mtFillSaveBtn').addEventListener('click', async function () {
+    if (busy) return;
+    if (!confirm('ترجمه ماشینی فیلدهای خالی انجام و مستقیماً ذخیره می‌شود (ترجمه‌های دستی تغییر نمی‌کنند). ادامه؟')) return;
+    setBusy(true); status('در حال ترجمه و ذخیره…');
+    try {
+      var res = await fetch('/admin/api/mt-autofill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ table: TABLE, rid: RID })
+      });
+      var j = await res.json();
+      if (!j.ok) throw new Error(j.error || 'خطای نامشخص');
+      status('🤖 ' + j.saved + ' ترجمه ذخیره شد' + (j.failed ? '، ' + j.failed + ' مورد ناموفق' : '') + ' — در حال بازخوانی…');
+      location.reload();
+    } catch (e) { status('⚠️ خطا: ' + e.message); setBusy(false); }
   });
 })();
 </script>

@@ -22,6 +22,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import database
 import content_i18n
+import mt_engine
 import jalali as jdate
 import translations as i18n
 from config import THERAPY_TYPES, REQUEST_STATUSES, ROSE_HUB_SSO, DEFAULT_SETTINGS
@@ -3557,6 +3558,96 @@ def admin_translation_edit(table, rid):
                            prev_id=prev_row["id"] if prev_row else None,
                            next_id=next_row["id"] if next_row else None,
                            page_title="ویرایش ترجمه")
+
+
+# ------------------------------------------------------------------
+# وب‌سرویس داخلی «ترجمه ماشینی» پنل مدیریت
+# ۱) mt-suggest  : پیشنهاد ترجمه ماشینی بدون ذخیره — ادمین ویرایش و ثبت می‌کند
+# ۲) mt-autofill : ترجمه ماشینی فیلدهای خالی یک ردیف و ذخیره مستقیم
+# ------------------------------------------------------------------
+def _mt_valid_csrf():
+    """توکن CSRF برای درخواست‌های AJAX (هدر X-CSRF-Token)"""
+    tok = request.headers.get("X-CSRF-Token", "")
+    return bool(tok) and tok == session.get("_csrf")
+
+
+def _mt_fill_row(table, row, langs, only_empty=True):
+    """ترجمه ماشینی فیلدهای یک ردیف برای زبان‌های هدف؛ خروجی: (filled, failed)"""
+    fields = content_i18n.TRANSLATABLE[table]["fields"]
+    existing = content_i18n.get_all_for(table, row["id"]) if only_empty else {}
+    filled, failed = {}, 0
+    for lg in langs:
+        for f in fields:
+            src = (row[f] or "").strip() if f in row.keys() else ""
+            if not src:
+                continue
+            if only_empty and (existing.get((lg, f)) or "").strip():
+                continue  # ترجمه دستی موجود است — دست نمی‌زنیم
+            tr = mt_engine.translate(src, lg)
+            if tr:
+                content_i18n.set_translation(table, row["id"], lg, f, tr)
+                filled.setdefault(lg, []).append(f)
+            else:
+                failed += 1
+    return filled, failed
+
+
+@app.route("/admin/api/mt-suggest", methods=["POST"])
+@admin_required
+def admin_api_mt_suggest():
+    """پیشنهاد ترجمه ماشینی برای ویرایشگر — ذخیره نمی‌شود"""
+    if not _mt_valid_csrf():
+        return jsonify(ok=False, error="CSRF نامعتبر است"), 400
+    d = request.get_json(silent=True) or {}
+    table, lang = str(d.get("table", "")), str(d.get("lang", ""))
+    if not content_i18n.is_translatable(table) or lang not in content_i18n.TARGET_LANGS:
+        return jsonify(ok=False, error="جدول یا زبان نامعتبر است"), 400
+    row = database.query(f"SELECT * FROM {table} WHERE id=?",
+                         (int(d.get("rid", 0)),), one=True)
+    if not row:
+        return jsonify(ok=False, error="آیتم یافت نشد"), 404
+    fields = content_i18n.TRANSLATABLE[table]["fields"]
+    want = [f for f in fields if f in (d.get("fields") or fields)]
+    out = {}
+    for f in want:
+        src = (row[f] or "").strip() if f in row.keys() else ""
+        if not src:
+            continue
+        tr = mt_engine.translate(src, lang)
+        if tr:
+            out[f] = tr
+    return jsonify(ok=True, lang=lang, translations=out,
+                   provider=mt_engine.last_provider())
+
+
+@app.route("/admin/api/mt-autofill", methods=["POST"])
+@admin_required
+def admin_api_mt_autofill():
+    """ترجمه ماشینی فیلدهای خالی یک ردیف + ذخیره مستقیم (دکمه گروهی)"""
+    if not _mt_valid_csrf():
+        return jsonify(ok=False, error="CSRF نامعتبر است"), 400
+    d = request.get_json(silent=True) or {}
+    table = str(d.get("table", ""))
+    if not content_i18n.is_translatable(table):
+        return jsonify(ok=False, error="جدول نامعتبر است"), 400
+    row = database.query(f"SELECT * FROM {table} WHERE id=?",
+                         (int(d.get("rid", 0)),), one=True)
+    if not row:
+        return jsonify(ok=False, error="آیتم یافت نشد"), 404
+    langs = [l for l in (d.get("langs") or content_i18n.TARGET_LANGS)
+             if l in content_i18n.TARGET_LANGS]
+    filled, failed = _mt_fill_row(table, row, langs)
+    n = sum(len(v) for v in filled.values())
+    return jsonify(ok=True, rid=row["id"], filled=filled, saved=n, failed=failed,
+                   provider=mt_engine.last_provider())
+
+
+@app.route("/admin/api/mt-status", methods=["GET"])
+@admin_required
+def admin_api_mt_status():
+    """وضعیت موتور ترجمه ماشینی برای نمایش در پنل"""
+    return jsonify(ok=True, provider=mt_engine.last_provider(),
+                   fail_streak=mt_engine.fail_streak())
 
 
 # ---------- تنظیمات ----------

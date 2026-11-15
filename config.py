@@ -5,7 +5,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # مسیر فایل دیتابیس SQLite
-DATABASE = os.path.join(BASE_DIR, "rose.db")
+DATABASE = os.environ.get("ROSE_DB", os.path.join(BASE_DIR, "rose.db"))
 
 # کلید امنیتی سشن — در استقرار واقعی از متغیر محیطی خوانده می‌شود
 SECRET_KEY = os.environ.get("SECRET_KEY", "rose-center-secret-change-me-in-production")

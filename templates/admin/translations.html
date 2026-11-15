@@ -18,6 +18,8 @@
   .pill-none  { background:#f1f5f9; color:#94a3b8 }
   .hint { font-size:.82rem; color:#64748b; background:#f8fafc; border:1px dashed #cbd5e1;
           border-radius:10px; padding:10px 14px; margin-bottom:16px; line-height:1.9 }
+  .mt-bar { flex:1; min-width:180px; height:8px; background:#f1f5f9; border-radius:999px; overflow:hidden; display:none }
+  .mt-bar > div { height:100%; width:0; background:var(--rose,#e11d48); transition:width .3s }
 </style>
 
 <div class="panel">
@@ -31,6 +33,13 @@
     بازدیدکنندگان آن زبان محتوای ترجمه‌شده را می‌بینند و وب‌سرویس API هم با پارامتر
     <code dir="ltr">?lang=en|ar|ru|zh</code> همان محتوای ترجمه‌شده را برمی‌گرداند.
     فیلد خالی در هر زبان یعنی «بازگشت به متن فارسی».
+    برای پر کردن سریع، از «ترجمه ماشینی» استفاده کنید و بعد در ویرایشگر اصلاحش کنید.
+  </div>
+
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+    <button type="button" id="mtTableBtn" class="btn btn-primary btn-sm">🤖 ترجمه ماشینی همه ردیف‌های این جدول</button>
+    <span id="mtProg" style="font-size:.82rem;color:#64748b"></span>
+    <div class="mt-bar" id="mtBarWrap"><div id="mtBar"></div></div>
   </div>
 
   <div class="tr-tabs">
@@ -74,6 +83,8 @@
         <td>
           <a href="{{ url_for('admin_translation_edit', table=table, rid=it.id) }}"
              class="btn btn-primary btn-sm">ترجمه ✏️</a>
+          <button type="button" class="btn btn-outline btn-sm mt-row-btn" data-rid="{{ it.id }}"
+                  title="ترجمه ماشینی فیلدهای خالی و ذخیره">🤖</button>
         </td>
       </tr>
       {% endfor %}
@@ -83,4 +94,66 @@
   <p style="color:#64748b;padding:20px 4px">هنوز آیتمی در بخش «{{ meta.label }}» ثبت نشده است.</p>
   {% endif %}
 </div>
+
+<script>
+(function () {
+  var TABLE = {{ table|tojson }};
+  var CSRF = '{{ csrf_token() }}';
+  var prog = document.getElementById('mtProg');
+  var barWrap = document.getElementById('mtBarWrap'), bar = document.getElementById('mtBar');
+  var busy = false;
+
+  function setBusy(b) {
+    busy = b;
+    document.getElementById('mtTableBtn').disabled = b;
+    document.querySelectorAll('.mt-row-btn').forEach(function (x) { x.disabled = b; });
+    barWrap.style.display = b ? 'block' : 'none';
+  }
+
+  async function autofillRow(rid) {
+    var res = await fetch('/admin/api/mt-autofill', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+      body: JSON.stringify({ table: TABLE, rid: rid })
+    });
+    return res.json();
+  }
+
+  document.querySelectorAll('.mt-row-btn').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      if (busy) return;
+      setBusy(true); prog.textContent = 'ردیف #' + btn.dataset.rid + ' …';
+      try {
+        var j = await autofillRow(btn.dataset.rid);
+        if (!j.ok) throw new Error(j.error || 'خطا');
+        prog.textContent = '🤖 ' + j.saved + ' ترجمه ذخیره شد';
+        setTimeout(function () { location.reload(); }, 600);
+      } catch (e) { prog.textContent = '⚠️ ' + e.message; setBusy(false); }
+    });
+  });
+
+  document.getElementById('mtTableBtn').addEventListener('click', async function () {
+    if (busy) return;
+    var rows = Array.prototype.map.call(document.querySelectorAll('.mt-row-btn'), function (b) { return b.dataset.rid; });
+    if (!rows.length) return;
+    if (!confirm('ترجمه ماشینی همه ' + rows.length + ' ردیف این جدول انجام و مستقیماً ذخیره می‌شود (فقط فیلدهای خالی؛ ترجمه‌های موجود دست نمی‌خورند). ادامه؟')) return;
+    setBusy(true);
+    var saved = 0, failed = 0, done = 0;
+    for (var i = 0; i < rows.length; i++) {
+      prog.textContent = 'ردیف ' + (i + 1) + ' از ' + rows.length + ' … (' + saved + ' ترجمه ذخیره شد)';
+      bar.style.width = Math.round((done / rows.length) * 100) + '%';
+      try {
+        var j = await autofillRow(rows[i]);
+        if (j.ok) { saved += j.saved || 0; failed += j.failed || 0; }
+        else failed++;
+      } catch (e) { failed++; }
+      done++;
+    }
+    bar.style.width = '100%';
+    prog.textContent = '✅ تمام شد — ' + saved + ' ترجمه ذخیره شد' + (failed ? '، ' + failed + ' مورد ناموفق' : '') + '؛ برای مرور، وارد ویرایشگر شوید.';
+    setBusy(false);
+    setTimeout(function () { location.reload(); }, 1200);
+  });
+})();
+</script>
 {% endblock %}

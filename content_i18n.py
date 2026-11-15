@@ -163,6 +163,32 @@ def save_from_form(table, row_id, form):
     return saved
 
 
+def set_translation(table, row_id, lang, field, value):
+    """ثبت/به‌روزرسانی مستقیم یک ترجمه (برای درج ماشینی گروهی)؛ مقدار خالی = حذف"""
+    if not is_translatable(table) or lang not in TARGET_LANGS:
+        return False
+    if field not in TRANSLATABLE[table]["fields"]:
+        return False
+    value = (value or "").strip()
+    existing = database.query(
+        "SELECT id FROM translations WHERE table_name=? AND row_id=? AND field=? AND lang=?",
+        (table, int(row_id), field, lang), one=True)
+    if value:
+        if existing:
+            database.execute(
+                "UPDATE translations SET value=?, updated_at=datetime('now','localtime') WHERE id=?",
+                (value, existing["id"]))
+        else:
+            database.execute(
+                "INSERT INTO translations (table_name, row_id, field, lang, value) VALUES (?,?,?,?,?)",
+                (table, int(row_id), field, lang, value))
+        return True
+    if existing:
+        database.execute("DELETE FROM translations WHERE id=?", (existing["id"],))
+        return True
+    return False
+
+
 def delete_row(table, row_id):
     """پاک‌سازی ترجمه‌های یک ردیف هنگام حذف آن"""
     if not is_translatable(table):
