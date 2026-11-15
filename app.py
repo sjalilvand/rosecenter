@@ -21,6 +21,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import database
+import content_i18n
 import jalali as jdate
 import translations as i18n
 from config import THERAPY_TYPES, REQUEST_STATUSES, ROSE_HUB_SSO, DEFAULT_SETTINGS
@@ -278,13 +279,16 @@ def get_settings():
 
 
 def get_visible_services():
-    return database.query("SELECT * FROM services WHERE is_visible=1 ORDER BY menu_order")
+    """خدمات فعال — با ترجمه چندزبانه بر اساس زبان کاربر"""
+    rows = database.query("SELECT * FROM services WHERE is_visible=1 ORDER BY menu_order")
+    return content_i18n.apply("services", rows, get_locale())
 
 
 def get_nav_course_categories():
-    """دسته‌بندی‌های دوره برای منوی مگا"""
-    return database.query(
+    """دسته‌بندی‌های دوره برای منوی مگا — با ترجمه چندزبانه"""
+    rows = database.query(
         "SELECT * FROM course_categories WHERE is_visible=1 ORDER BY sort_order")
+    return content_i18n.apply("course_categories", rows, get_locale())
 
 
 @app.context_processor
@@ -310,8 +314,11 @@ def inject_globals():
     ticker_news = []
     if str(s.get("ticker_enabled", "1")) == "1" and not request.path.startswith("/admin"):
         try:
-            ticker_news = database.query(
-                "SELECT id, slug, title FROM news WHERE published=1 ORDER BY published_at DESC LIMIT 8")
+            ticker_news = content_i18n.apply(
+                "news",
+                database.query(
+                    "SELECT id, slug, title FROM news WHERE published=1 ORDER BY published_at DESC LIMIT 8"),
+                lc)
         except Exception:
             ticker_news = []
     return {
@@ -367,30 +374,39 @@ def home():
     sso_token = request.args.get("sso_token", "")
     if sso_token:
         return redirect(url_for("rose_hub_sso", sso_token=sso_token))
+    lc = get_locale()
     services = get_visible_services()
-    testimonials = database.query("SELECT * FROM testimonials ORDER BY sort_order")
-    faqs = database.query("SELECT * FROM faqs ORDER BY sort_order")
-    centers = database.query("SELECT id, province FROM centers WHERE is_soon=0 ORDER BY sort_order")
-    slides = database.query(
-        "SELECT * FROM slides WHERE is_visible=1 ORDER BY sort_order, id")
+    testimonials = content_i18n.apply(
+        "testimonials", database.query("SELECT * FROM testimonials ORDER BY sort_order"), lc)
+    faqs = content_i18n.apply(
+        "faqs", database.query("SELECT * FROM faqs ORDER BY sort_order"), lc)
+    centers = content_i18n.apply(
+        "centers",
+        database.query("SELECT id, province FROM centers WHERE is_soon=0 ORDER BY sort_order"), lc)
+    slides = content_i18n.apply(
+        "slides",
+        database.query("SELECT * FROM slides WHERE is_visible=1 ORDER BY sort_order, id"), lc)
     # بلوک‌های دینامیک صفحه اصلی (مدیریت از پنل ادمین)
     blocks = _load_home_blocks()
     # بخش‌های دوره‌ها به سبک LMS
-    courses_registration = _course_card_rows(
-        "WHERE c.is_open=1 AND c.status='registration'", (), 8)
-    courses_popular = _course_card_rows(
-        "WHERE c.is_open=1", (), 4, order_by="c.students DESC, c.rating DESC")
-    courses_free = _course_card_rows(
-        "WHERE c.is_open=1 AND c.is_free=1", (), 4)
+    courses_registration = _apply_course_cards(
+        _course_card_rows("WHERE c.is_open=1 AND c.status='registration'", (), 8), lc)
+    courses_popular = _apply_course_cards(
+        _course_card_rows("WHERE c.is_open=1", (), 4, order_by="c.students DESC, c.rating DESC"), lc)
+    courses_free = _apply_course_cards(
+        _course_card_rows("WHERE c.is_open=1 AND c.is_free=1", (), 4), lc)
     course_cats = get_nav_course_categories()
     forum_teaser = database.query(
         """SELECT t.*, fc.title AS cat_title, fc.slug AS cat_slug, fc.icon AS cat_icon,
            (SELECT COUNT(*) FROM forum_posts p WHERE p.topic_id=t.id AND p.is_visible=1) AS replies
            FROM forum_topics t JOIN forum_categories fc ON fc.id=t.category_id
            WHERE t.is_visible=1 ORDER BY t.last_activity_at DESC LIMIT 4""")
-    forum_cats = _forum_categories_with_counts()
-    latest_news = database.query(
-        "SELECT * FROM news WHERE published=1 ORDER BY published_at DESC, id DESC LIMIT 3")
+    forum_cats = content_i18n.apply(
+        "forum_categories", _forum_categories_with_counts(), lc)
+    latest_news = content_i18n.apply(
+        "news",
+        database.query("SELECT * FROM news WHERE published=1 ORDER BY published_at DESC, id DESC LIMIT 3"),
+        lc)
     return render_template("home.html", services=services, testimonials=testimonials,
                            faqs=faqs, centers=centers, blocks=blocks, slides=slides,
                            courses_registration=courses_registration,
@@ -408,6 +424,26 @@ HOME_BLOCK_KINDS = {
     "course":  "دوره آموزشی",
     "service": "خدمت",
 }
+
+
+def _apply_course_cards(rows, locale):
+    """ترجمه کارت‌های دوره + عنوان دسته‌بندی برای کارت‌های LMS"""
+    rows = content_i18n.apply("courses", rows, locale)
+    if locale not in content_i18n.TARGET_LANGS or not rows:
+        return rows
+    cmap = content_i18n.get_map(
+        "course_categories", [r["category_id"] for r in rows if r["category_id"]], locale)
+    if not cmap:
+        return rows
+    out = []
+    for r in rows:
+        d = dict(r)
+        if d.get("category_id"):
+            t = cmap.get((d["category_id"], "title"))
+            if t:
+                d["cat_title"] = t
+        out.append(d)
+    return out
 
 
 def _load_home_blocks():
@@ -435,7 +471,8 @@ def _load_home_blocks():
         elif r["kind"] == "form":
             b.setdefault("link", "")
         out.append(b)
-    return out
+    # ترجمه چندزبانه بلوک‌ها (عنوان/زیرعنوان)
+    return content_i18n.apply("home_blocks", out, get_locale())
 
 
 # فرم‌های قابل انتخاب برای بلوک «فرم / دسترسی سریع»
@@ -458,7 +495,9 @@ def service_page():
     svc = database.query("SELECT * FROM services WHERE slug=? AND is_visible=1", (slug,), one=True)
     if not svc:
         abort(404)
-    faqs = database.query("SELECT * FROM faqs ORDER BY sort_order")
+    svc = content_i18n.apply_one("services", svc, get_locale())
+    faqs = content_i18n.apply(
+        "faqs", database.query("SELECT * FROM faqs ORDER BY sort_order"), get_locale())
     return render_template("service.html", svc=svc, faqs=faqs, page_title=svc["title"])
 
 
@@ -478,7 +517,7 @@ def centers():
         sql += " WHERE province LIKE ? OR address LIKE ?"
         args = (f"%{q}%", f"%{q}%")
     sql += " ORDER BY is_soon, sort_order"
-    rows = database.query(sql, args)
+    rows = content_i18n.apply("centers", database.query(sql, args), get_locale())
     return render_template("centers.html", centers=rows, q=q, page_title="مراکز استانی")
 
 
@@ -610,7 +649,9 @@ def cooperation():
 
 @app.route("/academy/")
 def academy():
-    rows = database.query("SELECT * FROM courses WHERE is_open=1 ORDER BY sort_order, id DESC")
+    rows = _apply_course_cards(
+        database.query("SELECT * FROM courses WHERE is_open=1 ORDER BY sort_order, id DESC"),
+        get_locale())
     regs_count = database.query(
         "SELECT course_id, COUNT(*) AS n FROM course_registrations GROUP BY course_id")
     counts = {r["course_id"]: r["n"] for r in regs_count}
@@ -700,7 +741,7 @@ def courses():
     elif tab == "special":
         where += " AND c.is_special=1"
 
-    rows = _course_card_rows(where, base_args)
+    rows = _apply_course_cards(_course_card_rows(where, base_args), get_locale())
     cats = get_nav_course_categories()
     return render_template("courses.html", courses=rows, tabs=tabs, tab=tab,
                            tab_counts=tab_counts, cats=cats, cat=cat, q=q,
@@ -717,10 +758,14 @@ def course_detail(slug):
            WHERE c.slug=? AND c.is_open=1""", (slug,), one=True)
     if not course:
         abort(404)
-    others = database.query(
-        """SELECT c.*, cc.title AS cat_title FROM courses c
-           LEFT JOIN course_categories cc ON cc.id = c.category_id
-           WHERE c.is_open=1 AND c.id!=? ORDER BY c.sort_order LIMIT 3""", (course["id"],))
+    lc = get_locale()
+    course = _apply_course_cards([course], lc)[0]
+    others = _apply_course_cards(
+        database.query(
+            """SELECT c.*, cc.title AS cat_title FROM courses c
+               LEFT JOIN course_categories cc ON cc.id = c.category_id
+               WHERE c.is_open=1 AND c.id!=? ORDER BY c.sort_order LIMIT 3""", (course["id"],)),
+        lc)
     return render_template("course_detail.html", course=course,
                            status_labels=COURSE_STATUS_LABELS,
                            others=others, page_title=course["title"])
@@ -853,9 +898,13 @@ def _forum_last_activity(category_id):
 
 @app.route("/forum/")
 def forum_index():
-    cats = _forum_categories_with_counts()
-    for c in cats:
-        c["last_at"] = _forum_last_activity(c["id"])
+    lc = get_locale()
+    cats = []
+    for c in _forum_categories_with_counts():
+        d = dict(c)
+        d["last_at"] = _forum_last_activity(d["id"])
+        cats.append(d)
+    cats = content_i18n.apply("forum_categories", cats, lc)
     # آخرین تاپیک‌های فعال برای نمایش در صفحه اول انجمن
     latest = database.query(
         """SELECT t.*, fc.title AS cat_title, fc.slug AS cat_slug, fc.icon AS cat_icon,
@@ -873,8 +922,12 @@ def forum_index():
 
 @app.route("/forum/<slug>/")
 def forum_category(slug):
-    cat = database.query(
-        "SELECT * FROM forum_categories WHERE slug=? AND is_visible=1", (slug,), one=True)
+    lc = get_locale()
+    cat = content_i18n.apply_one(
+        "forum_categories",
+        database.query(
+            "SELECT * FROM forum_categories WHERE slug=? AND is_visible=1", (slug,), one=True),
+        lc)
     if not cat:
         abort(404)
     q = request.args.get("q", "").strip()
@@ -886,7 +939,8 @@ def forum_category(slug):
         f"""SELECT t.*, (SELECT COUNT(*) FROM forum_posts p WHERE p.topic_id=t.id AND p.is_visible=1) AS replies
             FROM forum_topics t {where} ORDER BY t.is_pinned DESC, t.last_activity_at DESC, t.id DESC
             LIMIT 100""", args)
-    cats = _forum_categories_with_counts()
+    cats = content_i18n.apply(
+        "forum_categories", _forum_categories_with_counts(), get_locale())
     return render_template("forum/category.html", cat=cat, topics=topics, cats=cats, q=q,
                            page_title=f"انجمن {cat['title']}")
 
@@ -1347,7 +1401,10 @@ def centers_map():
     if q:
         where += " AND (province LIKE ? OR clinic_name LIKE ? OR address LIKE ? OR capabilities LIKE ?)"
         args += [f"%{q}%"] * 4
-    rows = database.query(f"SELECT * FROM centers {where} ORDER BY sort_order, id", args)
+    rows = content_i18n.apply(
+        "centers",
+        database.query(f"SELECT * FROM centers {where} ORDER BY sort_order, id", args),
+        get_locale())
     return render_template("map.html", centers=rows, kind=kind, q=q,
                            page_title="نقشه مراکز و کلینیک‌ها")
 
@@ -1358,10 +1415,15 @@ def center_detail(cid):
         "SELECT * FROM centers WHERE id=? AND is_approved=1", (cid,), one=True)
     if not center:
         abort(404)
+    lc = get_locale()
+    center = content_i18n.apply_one("centers", center, lc)
     caps = [c.strip() for c in (center["capabilities"] or "").split("،") if c.strip()]
-    near = database.query(
-        """SELECT id, province, clinic_name, kind FROM centers
-           WHERE is_approved=1 AND id!=? ORDER BY sort_order LIMIT 6""", (cid,))
+    near = content_i18n.apply(
+        "centers",
+        database.query(
+            """SELECT id, province, clinic_name, kind FROM centers
+               WHERE is_approved=1 AND id!=? ORDER BY sort_order LIMIT 6""", (cid,)),
+        lc)
     return render_template("center_detail.html", center=center, caps=caps, near=near,
                            page_title=center["clinic_name"] or f"مرکز {center['province']}")
 
@@ -1417,9 +1479,17 @@ def center_register():
 def board():
     rows = database.query(
         "SELECT * FROM board_members WHERE is_visible=1 ORDER BY sort_order, id")
+    members = []
     for r in rows:
-        r["skills_list"] = [s.strip() for s in (r["skills"] or "").split("،") if s.strip()]
-    return render_template("board.html", members=rows, page_title="هیئت مدیره")
+        d = dict(r)
+        d["skills_list"] = [s.strip() for s in (d.get("skills") or "").split("،") if s.strip()]
+        members.append(d)
+    # ترجمه چندزبانه اعضای هیئت مدیره (نام/سمت/بیوگرافی/مهارت‌ها)
+    members = content_i18n.apply("board_members", members, get_locale())
+    for d in members:
+        # اگر مهارت‌ها ترجمه شده‌اند، فهرست را دوباره بساز
+        d["skills_list"] = [s.strip() for s in (d.get("skills") or "").split("،") if s.strip()]
+    return render_template("board.html", members=members, page_title="هیئت مدیره")
 
 
 @app.route("/news/")
@@ -1434,10 +1504,12 @@ def news_list():
     total = database.query(f"SELECT COUNT(*) AS n FROM news {where}", args, one=True)["n"]
     pages = max(1, math.ceil(total / PER_PAGE))
     page = min(page, pages)
-    rows = database.query(
-        f"SELECT * FROM news {where} ORDER BY published_at DESC, id DESC LIMIT ? OFFSET ?",
-        (*args, PER_PAGE, (page - 1) * PER_PAGE),
-    )
+    rows = content_i18n.apply(
+        "news",
+        database.query(
+            f"SELECT * FROM news {where} ORDER BY published_at DESC, id DESC LIMIT ? OFFSET ?",
+            (*args, PER_PAGE, (page - 1) * PER_PAGE)),
+        get_locale())
     return render_template("news.html", news=rows, q=q, page=page, pages=pages,
                            total=total, page_title="اخبار و اطلاعیه‌ها")
 
@@ -1447,13 +1519,17 @@ def news_detail(slug):
     row = database.query("SELECT * FROM news WHERE slug=? AND published=1", (slug,), one=True)
     if not row:
         abort(404)
+    lc = get_locale()
     database.execute("UPDATE news SET views=views+1 WHERE id=?", (row["id"],))
-    related = database.query(
-        "SELECT * FROM news WHERE published=1 AND id!=? ORDER BY published_at DESC LIMIT 3",
-        (row["id"],),
-    )
-    return render_template("news_detail.html", item=row, related=related,
-                           page_title=row["title"])
+    item = content_i18n.apply_one("news", row, lc)
+    related = content_i18n.apply(
+        "news",
+        database.query(
+            "SELECT * FROM news WHERE published=1 AND id!=? ORDER BY published_at DESC LIMIT 3",
+            (row["id"],)),
+        lc)
+    return render_template("news_detail.html", item=item, related=related,
+                           page_title=item["title"])
 
 
 @app.route("/about/")
@@ -1581,21 +1657,30 @@ def feedback():
 @app.route("/search/")
 def search():
     q = request.args.get("q", "").strip()
+    lc = get_locale()
     results = {"services": [], "news": [], "faqs": [], "centers": []}
     if q:
         like = f"%{q}%"
-        results["services"] = database.query(
-            "SELECT slug, title, summary FROM services WHERE is_visible=1 AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)",
-            (like, like, like))
-        results["news"] = database.query(
-            "SELECT slug, title, summary, published_at FROM news WHERE published=1 AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)",
-            (like, like, like))
-        results["faqs"] = database.query(
-            "SELECT id, question, answer FROM faqs WHERE question LIKE ? OR answer LIKE ? LIMIT 10",
-            (like, like))
-        results["centers"] = database.query(
-            "SELECT province, address, clinic_phone FROM centers WHERE province LIKE ? OR address LIKE ?",
-            (like, like))
+        results["services"] = content_i18n.apply(
+            "services",
+            database.query(
+                "SELECT id, slug, title, summary FROM services WHERE is_visible=1 AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)",
+                (like, like, like)), lc)
+        results["news"] = content_i18n.apply(
+            "news",
+            database.query(
+                "SELECT id, slug, title, summary, published_at FROM news WHERE published=1 AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)",
+                (like, like, like)), lc)
+        results["faqs"] = content_i18n.apply(
+            "faqs",
+            database.query(
+                "SELECT id, question, answer FROM faqs WHERE question LIKE ? OR answer LIKE ? LIMIT 10",
+                (like, like)), lc)
+        results["centers"] = content_i18n.apply(
+            "centers",
+            database.query(
+                "SELECT id, province, address, clinic_phone FROM centers WHERE province LIKE ? OR address LIKE ?",
+                (like, like)), lc)
     return render_template("search.html", q=q, results=results, page_title="جستجو")
 
 
@@ -2083,7 +2168,7 @@ def admin_course_new():
             return redirect(url_for("admin_course_new"))
         slug = _slugify_course(title)
         cat_raw = request.form.get("category_id", "").strip()
-        database.execute(
+        cid = database.execute(
             """INSERT INTO courses
             (slug, title, summary, content, teacher, price, duration, capacity,
              start_date, schedule, level, is_open, sort_order,
@@ -2105,10 +2190,11 @@ def admin_course_new():
              1 if request.form.get("is_free") else 0,
              1 if request.form.get("is_special") else 0,
              request.form.get("thumb", "🎓").strip() or "🎓"))
+        content_i18n.save_from_form("courses", cid, request.form)
         flash("دوره جدید ایجاد شد.", "success")
         return redirect(url_for("admin_courses"))
     cats = database.query("SELECT * FROM course_categories ORDER BY sort_order")
-    return render_template("admin/course_form.html", row=None, cats=cats,
+    return render_template("admin/course_form.html", row=None, cats=cats, tr={},
                            status_labels=COURSE_STATUS_LABELS, page_title="دوره جدید")
 
 
@@ -2146,10 +2232,12 @@ def admin_course_edit(rid):
              1 if request.form.get("is_free") else 0,
              1 if request.form.get("is_special") else 0,
              request.form.get("thumb", "🎓").strip() or "🎓", rid))
+        content_i18n.save_from_form("courses", rid, request.form)
         flash("دوره به‌روزرسانی شد.", "success")
         return redirect(url_for("admin_courses"))
     cats = database.query("SELECT * FROM course_categories ORDER BY sort_order")
     return render_template("admin/course_form.html", row=row, cats=cats,
+                           tr=content_i18n.get_all_for("courses", rid),
                            status_labels=COURSE_STATUS_LABELS, page_title="ویرایش دوره")
 
 
@@ -2157,6 +2245,7 @@ def admin_course_edit(rid):
 @admin_required
 @admin_csrf
 def admin_course_delete(rid):
+    content_i18n.delete_row("courses", rid)
     database.execute("DELETE FROM course_registrations WHERE course_id=?", (rid,))
     database.execute("DELETE FROM courses WHERE id=?", (rid,))
     flash("دوره و ثبت‌نام‌های آن حذف شد.", "success")
@@ -2291,14 +2380,15 @@ def admin_news_new():
             flash("عنوان الزامی است.", "error")
             return redirect(request.url)
         slug = f.get("slug", "").strip() or _slugify(title)
-        database.execute(
+        nid = database.execute(
             """INSERT INTO news (title, slug, summary, content, category, published)
             VALUES (?,?,?,?,?,?)""",
             (title, slug, f.get("summary", "").strip(), f.get("content", "").strip(),
              f.get("category", "اخبار"), 1 if f.get("published") else 0))
+        content_i18n.save_from_form("news", nid, f)
         flash("خبر جدید ایجاد شد.", "success")
         return redirect(url_for("admin_news"))
-    return render_template("admin/news_form.html", item=None, page_title="خبر جدید")
+    return render_template("admin/news_form.html", item=None, tr={}, page_title="خبر جدید")
 
 
 @app.route("/admin/news/<int:rid>", methods=["GET", "POST"])
@@ -2320,15 +2410,18 @@ def admin_news_edit(rid):
             WHERE id=?""",
             (title, slug, f.get("summary", "").strip(), f.get("content", "").strip(),
              f.get("category", "اخبار"), 1 if f.get("published") else 0, rid))
+        content_i18n.save_from_form("news", rid, f)
         flash("خبر به‌روزرسانی شد.", "success")
         return redirect(url_for("admin_news"))
-    return render_template("admin/news_form.html", item=row, page_title="ویرایش خبر")
+    return render_template("admin/news_form.html", item=row,
+                           tr=content_i18n.get_all_for("news", rid), page_title="ویرایش خبر")
 
 
 @app.route("/admin/news/<int:rid>/delete", methods=["POST"])
 @admin_required
 @admin_csrf
 def admin_news_delete(rid):
+    content_i18n.delete_row("news", rid)
     database.execute("DELETE FROM news WHERE id=?", (rid,))
     flash("خبر حذف شد.", "success")
     return redirect(url_for("admin_news"))
@@ -2446,6 +2539,7 @@ def admin_center_approve(rid):
 @admin_required
 @admin_csrf
 def admin_centers_delete(rid):
+    content_i18n.delete_row("centers", rid)
     database.execute("DELETE FROM centers WHERE id=?", (rid,))
     flash("مرکز حذف شد.", "success")
     return redirect(url_for("admin_centers"))
@@ -2492,6 +2586,7 @@ def admin_faqs_edit(rid):
 @admin_required
 @admin_csrf
 def admin_faqs_delete(rid):
+    content_i18n.delete_row("faqs", rid)
     database.execute("DELETE FROM faqs WHERE id=?", (rid,))
     flash("سوال حذف شد.", "success")
     return redirect(url_for("admin_faqs"))
@@ -2536,6 +2631,7 @@ def admin_testimonials_edit(rid):
 @admin_required
 @admin_csrf
 def admin_testimonials_delete(rid):
+    content_i18n.delete_row("testimonials", rid)
     database.execute("DELETE FROM testimonials WHERE id=?", (rid,))
     flash("نظر حذف شد.", "success")
     return redirect(url_for("admin_testimonials"))
@@ -2845,6 +2941,7 @@ def admin_block_move(rid):
 @admin_required
 @admin_csrf
 def admin_block_delete(rid):
+    content_i18n.delete_row("home_blocks", rid)
     database.execute("DELETE FROM home_blocks WHERE id=?", (rid,))
     flash("بلوک حذف شد.", "success")
     return redirect(url_for("admin_blocks"))
@@ -2954,6 +3051,7 @@ def admin_course_category_edit(rid):
 @admin_csrf
 def admin_course_category_delete(rid):
     database.execute("UPDATE courses SET category_id=NULL WHERE category_id=?", (rid,))
+    content_i18n.delete_row("course_categories", rid)
     database.execute("DELETE FROM course_categories WHERE id=?", (rid,))
     flash("دسته حذف شد (دوره‌های آن دسته‌بندی خالی شدند).", "success")
     return redirect(url_for("admin_course_categories"))
@@ -3013,6 +3111,7 @@ def admin_forum_cat_edit(rid):
 @admin_required
 @admin_csrf
 def admin_forum_cat_delete(rid):
+    content_i18n.delete_row("forum_categories", rid)
     database.execute("DELETE FROM forum_categories WHERE id=?", (rid,))
     flash("انجمن و تمام تاپیک‌ها/پاسخ‌های آن حذف شد.", "success")
     return redirect(url_for("admin_forum"))
@@ -3248,6 +3347,7 @@ def admin_board_delete(rid):
             os.remove(os.path.join(app.config["UPLOAD_FOLDER"], row["photo"]))
         except OSError:
             pass
+    content_i18n.delete_row("board_members", rid)
     database.execute("DELETE FROM board_members WHERE id=?", (rid,))
     flash("عضو حذف شد.", "success")
     return redirect(url_for("admin_board"))
@@ -3387,9 +3487,76 @@ def admin_slide_delete(rid):
             os.remove(os.path.join(app.config["UPLOAD_FOLDER"], row["image"]))
         except OSError:
             pass
+    content_i18n.delete_row("slides", rid)
     database.execute("DELETE FROM slides WHERE id=?", (rid,))
     flash("اسلاید حذف شد.", "success")
     return redirect(url_for("admin_slides"))
+
+
+# ==================================================================
+# ترجمه چندزبانه محتوای دیتابیس (پنل مدیریت)
+# محتوای فارسی متن پایه است؛ ترجمه‌های EN/AR/RU/ZH در جدول translations
+# ذخیره می‌شوند و در سایت و API روی متن فارسی سوار می‌شوند.
+# ==================================================================
+@app.route("/admin/translations")
+@admin_required
+def admin_translations():
+    table = request.args.get("table", "news").strip()
+    if not content_i18n.is_translatable(table):
+        table = "news"
+    meta = content_i18n.TRANSLATABLE[table]
+    title_col = meta["title_col"]
+    rows = database.query(f"SELECT id, {title_col} AS item_title FROM {table} ORDER BY id")
+    cov = content_i18n.coverage(table)
+    n_fields = len(meta["fields"])
+    items = []
+    for r in rows:
+        per_lang = cov.get(r["id"], {})
+        items.append({
+            "id": r["id"],
+            "title": r["item_title"] or f"#{r['id']}",
+            "counts": {lg: per_lang.get(lg, 0) for lg in content_i18n.TARGET_LANGS},
+            "n_fields": n_fields,
+        })
+    tabs = [
+        {"key": k, "label": m["label"], "count": database.query(
+            f"SELECT COUNT(*) n FROM {k}", one=True)["n"]}
+        for k, m in content_i18n.TRANSLATABLE.items()
+    ]
+    return render_template("admin/translations.html", table=table, meta=meta,
+                           items=items, tabs=tabs,
+                           target_langs=content_i18n.TARGET_LANGS,
+                           locale_meta={l["code"]: l for l in i18n.LOCALES},
+                           page_title="ترجمه محتوا")
+
+
+@app.route("/admin/translations/<table>/<int:rid>", methods=["GET", "POST"])
+@admin_required
+@admin_csrf
+def admin_translation_edit(table, rid):
+    if not content_i18n.is_translatable(table):
+        abort(404)
+    meta = content_i18n.TRANSLATABLE[table]
+    title_col = meta["title_col"]
+    row = database.query(f"SELECT * FROM {table} WHERE id=?", (rid,), one=True)
+    if not row:
+        abort(404)
+    if request.method == "POST":
+        n = content_i18n.save_from_form(table, rid, request.form)
+        flash(f"ترجمه‌های «{row[title_col]}» ذخیره شد ({n} تغییر).", "success")
+        return redirect(url_for("admin_translation_edit", table=table, rid=rid))
+    tr = content_i18n.get_all_for(table, rid)
+    # ناوبری قبلی/بعدی در همان جدول
+    prev_row = database.query(
+        f"SELECT id FROM {table} WHERE id<? ORDER BY id DESC LIMIT 1", (rid,), one=True)
+    next_row = database.query(
+        f"SELECT id FROM {table} WHERE id>? ORDER BY id LIMIT 1", (rid,), one=True)
+    return render_template("admin/translation_edit.html", table=table, meta=meta,
+                           item=dict(row), tr=tr, target_langs=content_i18n.TARGET_LANGS,
+                           locale_meta={l["code"]: l for l in i18n.LOCALES},
+                           prev_id=prev_row["id"] if prev_row else None,
+                           next_id=next_row["id"] if next_row else None,
+                           page_title="ویرایش ترجمه")
 
 
 # ---------- تنظیمات ----------
@@ -3913,20 +4080,23 @@ def admin_newsletter_export():
 # ==================================================================
 @app.route("/api/v1/services")
 def api_v1_services():
-    """فهرست خدمات فعال سایت"""
+    """فهرست خدمات فعال سایت (?lang=en|ar|ru|zh برای محتوای چندزبانه)"""
     key, err = _authenticate_api_key()
     if err:
         return err
-    rows = database.query("SELECT slug, title, subtitle, summary, icon FROM services WHERE is_visible=1 ORDER BY menu_order")
-    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+    lang = i18n.validate(request.args.get("lang", "fa"))
+    rows = database.query("SELECT id, slug, title, subtitle, summary, icon FROM services WHERE is_visible=1 ORDER BY menu_order")
+    rows = content_i18n.apply("services", rows, lang)
+    return jsonify({"ok": True, "lang": lang, "items": [dict(r) for r in rows]})
 
 
 @app.route("/api/v1/centers")
 def api_v1_centers():
-    """فهرست مراکز و کلینیک‌ها با مختصات نقشه"""
+    """فهرست مراکز و کلینیک‌ها با مختصات نقشه (?lang= برای چندزبانه)"""
     key, err = _authenticate_api_key()
     if err:
         return err
+    lang = i18n.validate(request.args.get("lang", "fa"))
     province = request.args.get("province", "").strip()
     where, args = "WHERE is_soon=0", []
     if province:
@@ -3937,15 +4107,17 @@ def api_v1_centers():
                    manager_name, manager_phone, exec_name, exec_phone, work_hours,
                    lat, lng, capabilities
             FROM centers {where} ORDER BY sort_order, id""", args)
-    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+    rows = content_i18n.apply("centers", rows, lang)
+    return jsonify({"ok": True, "lang": lang, "items": [dict(r) for r in rows]})
 
 
 @app.route("/api/v1/courses")
 def api_v1_courses():
-    """فهرست دوره‌های آموزشی (+ فیلتر دسته‌بندی/جستجو/محدودیت)"""
+    """فهرست دوره‌های آموزشی (+ فیلتر دسته‌بندی/جستجو/محدودیت و ?lang=)"""
     key, err = _authenticate_api_key()
     if err:
         return err
+    lang = i18n.validate(request.args.get("lang", "fa"))
     limit = min(max(request.args.get("limit", 30, type=int), 1), 100)
     cat = request.args.get("category", "").strip()
     q = request.args.get("q", "").strip()
@@ -3960,10 +4132,24 @@ def api_v1_courses():
         f"""SELECT c.id, c.slug, c.title, c.summary, c.teacher, c.price, c.duration,
                    c.capacity, c.start_date, c.schedule, c.level, c.status, c.rating,
                    c.votes, c.students, c.price_num, c.is_free, c.is_special, c.thumb,
-                   cc.title AS category
+                   c.category_id, cc.title AS category
             FROM courses c LEFT JOIN course_categories cc ON cc.id = c.category_id
             {where} ORDER BY c.sort_order, c.id DESC LIMIT ?""", (*args, limit))
-    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+    rows = content_i18n.apply("courses", rows, lang)
+    # عنوان دسته‌بندی هم چندزبانه
+    if lang in content_i18n.TARGET_LANGS and rows:
+        cmap = content_i18n.get_map(
+            "course_categories", [r["category_id"] for r in rows if r["category_id"]], lang)
+        out = []
+        for r in rows:
+            d = dict(r)
+            if d.get("category_id"):
+                t = cmap.get((d["category_id"], "title"))
+                if t:
+                    d["category"] = t
+            out.append(d)
+        rows = out
+    return jsonify({"ok": True, "lang": lang, "items": [dict(r) for r in rows]})
 
 
 @app.route("/api/v1/courses/<slug>")
@@ -3971,6 +4157,7 @@ def api_v1_course_detail(slug):
     key, err = _authenticate_api_key()
     if err:
         return err
+    lang = i18n.validate(request.args.get("lang", "fa"))
     row = database.query(
         """SELECT c.id, c.slug, c.title, c.summary, c.content, c.teacher, c.price,
                   c.duration, c.capacity, c.start_date, c.schedule, c.level, c.status,
@@ -3979,20 +4166,23 @@ def api_v1_course_detail(slug):
            WHERE c.slug=?""", (slug,), one=True)
     if not row:
         return _json_error(404, "not_found", "دوره‌ای با این شناسه یافت نشد.")
-    return jsonify({"ok": True, "item": dict(row)})
+    item = dict(content_i18n.apply_one("courses", row, lang))
+    return jsonify({"ok": True, "lang": lang, "item": item})
 
 
 @app.route("/api/v1/news")
 def api_v1_news():
-    """آخرین اخبار و اطلاعیه‌ها"""
+    """آخرین اخبار و اطلاعیه‌ها (?lang=en|ar|ru|zh)"""
     key, err = _authenticate_api_key()
     if err:
         return err
+    lang = i18n.validate(request.args.get("lang", "fa"))
     limit = min(max(request.args.get("limit", 20, type=int), 1), 100)
     rows = database.query(
-        """SELECT slug, title, summary, category, published_at, views
+        """SELECT id, slug, title, summary, category, published_at, views
            FROM news WHERE published=1 ORDER BY published_at DESC LIMIT ?""", (limit,))
-    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+    rows = content_i18n.apply("news", rows, lang)
+    return jsonify({"ok": True, "lang": lang, "items": [dict(r) for r in rows]})
 
 
 @app.route("/api/v1/news/<slug>")
@@ -4000,12 +4190,14 @@ def api_v1_news_detail(slug):
     key, err = _authenticate_api_key()
     if err:
         return err
+    lang = i18n.validate(request.args.get("lang", "fa"))
     row = database.query(
-        "SELECT slug, title, summary, content, category, published_at, views FROM news WHERE slug=? AND published=1",
+        "SELECT id, slug, title, summary, content, category, published_at, views FROM news WHERE slug=? AND published=1",
         (slug,), one=True)
     if not row:
         return _json_error(404, "not_found", "خبری با این شناسه یافت نشد.")
-    return jsonify({"ok": True, "item": dict(row)})
+    item = dict(content_i18n.apply_one("news", row, lang))
+    return jsonify({"ok": True, "lang": lang, "item": item})
 
 
 @app.route("/api/v1/faqs")
@@ -4013,8 +4205,10 @@ def api_v1_faqs():
     key, err = _authenticate_api_key()
     if err:
         return err
-    rows = database.query("SELECT category, question, answer FROM faqs ORDER BY sort_order, id")
-    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+    lang = i18n.validate(request.args.get("lang", "fa"))
+    rows = database.query("SELECT id, category, question, answer FROM faqs ORDER BY sort_order, id")
+    rows = content_i18n.apply("faqs", rows, lang)
+    return jsonify({"ok": True, "lang": lang, "items": [dict(r) for r in rows]})
 
 
 @app.route("/api/v1/bookings", methods=["POST"])

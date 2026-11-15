@@ -1,0 +1,86 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<style>
+  .tr-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px }
+  .tr-tabs a { padding:7px 14px; border-radius:8px; font-size:.85rem; text-decoration:none;
+               background:#f1f5f9; color:#334155; border:1px solid #e2e8f0 }
+  .tr-tabs a.active { background:var(--rose,#e11d48); color:#fff; border-color:var(--rose,#e11d48) }
+  .tr-tabs a .cnt { opacity:.75; font-size:.75rem }
+  table.tr-table { width:100%; border-collapse:collapse; font-size:.88rem }
+  table.tr-table th, table.tr-table td { padding:9px 10px; border-bottom:1px solid #eef2f7; text-align:right }
+  table.tr-table th { background:#f8fafc; font-weight:600; color:#475569; white-space:nowrap }
+  .tr-item-title { max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .lang-cell { display:flex; gap:6px; justify-content:flex-start }
+  .pill { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px;
+          font-size:.75rem; font-weight:600; white-space:nowrap }
+  .pill-done  { background:#dcfce7; color:#15803d }
+  .pill-part  { background:#fef9c3; color:#a16207 }
+  .pill-none  { background:#f1f5f9; color:#94a3b8 }
+  .hint { font-size:.82rem; color:#64748b; background:#f8fafc; border:1px dashed #cbd5e1;
+          border-radius:10px; padding:10px 14px; margin-bottom:16px; line-height:1.9 }
+</style>
+
+<div class="panel">
+  <div class="panel-title">
+    🌐 ترجمه محتوای دیتابیس (۵ زبان)
+    <a href="{{ url_for('home') }}" target="_blank" class="btn btn-outline btn-sm">مشاهده سایت ↗</a>
+  </div>
+
+  <div class="hint">
+    متن فارسی هر آیتم، <b>متن پایه</b> است و همیشه نمایش داده می‌شود. با پر کردن ترجمه هر زبان،
+    بازدیدکنندگان آن زبان محتوای ترجمه‌شده را می‌بینند و وب‌سرویس API هم با پارامتر
+    <code dir="ltr">?lang=en|ar|ru|zh</code> همان محتوای ترجمه‌شده را برمی‌گرداند.
+    فیلد خالی در هر زبان یعنی «بازگشت به متن فارسی».
+  </div>
+
+  <div class="tr-tabs">
+    {% for tb in tabs %}
+    <a href="{{ url_for('admin_translations') }}?table={{ tb.key }}"
+       class="{{ 'active' if tb.key == table }}">
+      {{ tb.label }} <span class="cnt">({{ tb.count }})</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if items %}
+  <table class="tr-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>عنوان (متن پایه فارسی)</th>
+        {% for lg in target_langs %}
+        <th>{{ locale_meta[lg].flag }} {{ locale_meta[lg].label }}</th>
+        {% endfor %}
+        <th>عملیات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td>{{ it.id }}</td>
+        <td><div class="tr-item-title" title="{{ it.title }}">{{ it.title }}</div></td>
+        {% for lg in target_langs %}
+        <td>
+          {% set c = it.counts[lg] %}
+          {% if c >= it.n_fields %}
+            <span class="pill pill-done">کامل</span>
+          {% elif c > 0 %}
+            <span class="pill pill-part">{{ c }}/{{ it.n_fields }}</span>
+          {% else %}
+            <span class="pill pill-none">—</span>
+          {% endif %}
+        </td>
+        {% endfor %}
+        <td>
+          <a href="{{ url_for('admin_translation_edit', table=table, rid=it.id) }}"
+             class="btn btn-primary btn-sm">ترجمه ✏️</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:#64748b;padding:20px 4px">هنوز آیتمی در بخش «{{ meta.label }}» ثبت نشده است.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -80,6 +80,9 @@
       <a href="{{ url_for('admin_news') }}" class="{{ 'active' if 'news' in request.path }}">
         <span class="a-ic">📰</span> اخبار
       </a>
+      <a href="{{ url_for('admin_translations') }}" class="{{ 'active' if 'translations' in request.path }}">
+        <span class="a-ic">🌐</span> ترجمه محتوا (۵ زبان)
+      </a>
       <a href="{{ url_for('admin_centers') }}" class="{{ 'active' if 'centers' in request.path }}">
         <span class="a-ic">📍</span> مراکز و کلینیک‌ها
       </a>

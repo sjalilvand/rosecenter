@@ -1,5 +1,20 @@
 {% extends "admin/base_admin.html" %}
 {% block content %}
+<style>
+  .lang-tabs { display:flex; flex-wrap:wrap; gap:6px; border-bottom:2px solid #e2e8f0; margin-bottom:0 }
+  .lang-tabs button { padding:9px 16px; border:none; background:none; cursor:pointer; font-size:.88rem;
+                      font-family:inherit; color:#64748b; border-radius:10px 10px 0 0 }
+  .lang-tabs button.active { color:#e11d48; font-weight:700; background:#fff5f7;
+                             border-bottom:2px solid #e11d48; margin-bottom:-2px }
+  .lang-pane { display:none; padding:16px 2px }
+  .lang-pane.active { display:block }
+  .tr-box { border:1px solid #e2e8f0; border-radius:10px; padding:12px; margin-bottom:12px; background:#fafbfc }
+  .tr-box label { display:block; font-size:.82rem; font-weight:600; color:#334155; margin-bottom:5px }
+  .tr-box input, .tr-box textarea { width:100%; border:1px solid #dbe2ea; border-radius:8px;
+                                    padding:8px 10px; font-family:inherit; font-size:.88rem }
+  .tr-box textarea { min-height:80px; resize:vertical }
+</style>
+
 <div class="panel" style="max-width:820px">
   <div class="panel-title">
     {{ 'ویرایش خبر' if item else 'ایجاد خبر جدید' }}
@@ -37,7 +52,59 @@
       <input type="checkbox" name="published" id="pub" {{ 'checked' if item and item.published }}>
       <label for="pub" style="margin:0">انتشار (در صورت علامت‌نزدن به‌صورت پیش‌نویس ذخیره می‌شود)</label>
     </div>
+
+    {% if item %}
+    <div style="border-top:1px dashed #cbd5e1;padding-top:14px;margin-top:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <strong style="font-size:.92rem">🌐 ترجمه چندزبانه (EN / AR / RU / ZH)</strong>
+        <a href="{{ url_for('admin_translation_edit', table='news', rid=item.id) }}"
+           class="btn btn-outline btn-sm" style="font-size:.78rem">ویرایشگر کامل ترجمه ↗</a>
+      </div>
+      <div class="lang-tabs" id="langTabs">
+        <button type="button" data-lang="en" class="active">🇬🇧 English (EN)</button>
+        <button type="button" data-lang="ar">🇸🇦 العربية (ع)</button>
+        <button type="button" data-lang="ru">🇷🇺 Русский (RU)</button>
+        <button type="button" data-lang="zh">🇨🇳 中文 (ZH)</button>
+      </div>
+      {% set langs = [('en', 'English'), ('ar', 'العربية'), ('ru', 'Русский'), ('zh', '中文')] %}
+      {% for lg, lname in langs %}
+      <div class="lang-pane {{ 'active' if loop.first }}" id="pane-{{ lg }}">
+        <div class="tr-box">
+          <label>عنوان {{ lname }}</label>
+          <input type="text" name="tr_{{ lg }}_title" value="{{ tr.get((lg, 'title'), '') }}">
+        </div>
+        <div class="tr-box">
+          <label>خلاصه {{ lname }}</label>
+          <textarea name="tr_{{ lg }}_summary">{{ tr.get((lg, 'summary'), '') }}</textarea>
+        </div>
+        <div class="tr-box">
+          <label>متن کامل {{ lname }}</label>
+          <textarea name="tr_{{ lg }}_content" style="min-height:130px">{{ tr.get((lg, 'content'), '') }}</textarea>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="font-size:.8rem;color:#94a3b8">💡 پس از ذخیره خبر، می‌توانید ترجمه چندزبانه را همین‌جا یا از بخش «ترجمه محتوا» اضافه کنید.</p>
+    {% endif %}
+
     <button type="submit" class="btn btn-primary">ذخیره</button>
   </form>
 </div>
+
+{% if item %}
+<script>
+(function () {
+  var tabs = document.querySelectorAll('#langTabs button');
+  tabs.forEach(function (b) {
+    b.addEventListener('click', function () {
+      tabs.forEach(function (x) { x.classList.remove('active'); });
+      document.querySelectorAll('.lang-pane').forEach(function (p) { p.classList.remove('active'); });
+      b.classList.add('active');
+      document.getElementById('pane-' + b.dataset.lang).classList.add('active');
+    });
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

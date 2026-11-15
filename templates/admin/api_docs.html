@@ -63,25 +63,30 @@ X-API-Key: rc_xxxx...
     "map": { "lat": 35.7626, "lng": 51.4737 },
     "service_types": [...], "statuses": [...] }</pre>
 
-  <h3 class="api-h3">۹) خدمات، مراکز، دوره‌ها، اخبار و سوالات متداول</h3>
-  <pre class="api-code" dir="ltr">GET /api/v1/services
-→ { "ok": true, "items": [ { "slug", "title", "subtitle", "summary", "icon" } ] }
+  <h3 class="api-h3">۹) خدمات، مراکز، دوره‌ها، اخبار و سوالات متداول (چندزبانه)</h3>
+  <pre class="api-code" dir="ltr">GET /api/v1/services?lang=fa
+→ { "ok": true, "lang": "fa", "items": [ { "slug", "title", "subtitle", "summary", "icon" } ] }
 
-GET /api/v1/centers?province=تهران
-→ { "ok": true, "items": [ { "province", "clinic_name", "kind", "address", "clinic_phone",
+GET /api/v1/centers?province=تهران&lang=en
+→ { "ok": true, "lang": "en", "items": [ { "province", "clinic_name", "kind", "address", "clinic_phone",
                              "manager_name", "work_hours", "lat", "lng", "capabilities" } ] }
 
-GET /api/v1/courses?limit=30&category=&q=
-GET /api/v1/courses/&lt;slug&gt;
+GET /api/v1/courses?limit=30&category=&q=&lang=ru
+GET /api/v1/courses/&lt;slug&gt;?lang=ar
 → { "ok": true, "items": [ { "title", "teacher", "price", "duration", "capacity",
                              "start_date", "level", "status", "rating", "students", ... } ] }
 
-GET /api/v1/news?limit=20
-GET /api/v1/news/&lt;slug&gt;
+GET /api/v1/news?limit=20&lang=zh
+GET /api/v1/news/&lt;slug&gt;?lang=en
 → { "ok": true, "items": [ { "slug", "title", "summary", "category", "published_at", "views" } ] }
 
-GET /api/v1/faqs
-→ { "ok": true, "items": [ { "category", "question", "answer" } ] }</pre>
+GET /api/v1/faqs?lang=ar
+→ { "ok": true, "items": [ { "category", "question", "answer" } ] }
+
+# چندزبانه: پارامتر اختیاری lang روی همه اندپوینت‌های محتوایی بالا
+# مقادیر: fa (پیش‌فرض) | en | ar | ru | zh
+# اگر ترجمه‌ای ثبت نشده باشد، همان متن پایه فارسی برگردانده می‌شود.
+# ترجمه‌ها از پنل ادمین ← بخش «ترجمه محتوا» ثبت می‌شوند.</pre>
 
   <h3 class="api-h3">۱۰) ثبت نوبت کامل از اپ (با تاریخ و ساعت پیشنهادی)</h3>
   <pre class="api-code" dir="ltr">POST /api/v1/bookings

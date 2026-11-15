@@ -470,6 +470,25 @@ def init_db(app):
     # جلوگیری از تکرار استان در اجراهای دوباره seed_data
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_centers_province ON centers(province)")
 
+    # ---------- ترجمه چندزبانه محتوای دیتابیس ----------
+    # هر ترجمه به یک جدول + ردیف + فیلد مشخص با یک زبان وصل است.
+    # فارسی متن پایه است و در ستون‌های خود جدول‌ها ذخیره می‌شود؛
+    # زبان‌های en / ar / ru / zh اینجا نگهداری می‌شوند.
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS translations (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            table_name TEXT NOT NULL,
+            row_id     INTEGER NOT NULL,
+            field      TEXT NOT NULL,
+            lang       TEXT NOT NULL,
+            value      TEXT NOT NULL DEFAULT '',
+            updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+    c.execute("""CREATE UNIQUE INDEX IF NOT EXISTS idx_translations_uniq
+                 ON translations(table_name, row_id, field, lang)""")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_translations_lang ON translations(lang)")
+
     # ---------- مشترکان خبرنامه ----------
     c.execute("""
         CREATE TABLE IF NOT EXISTS newsletter_subscribers (

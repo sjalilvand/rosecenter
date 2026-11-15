@@ -1,0 +1,101 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<style>
+  .lang-tabs { display:flex; flex-wrap:wrap; gap:6px; border-bottom:2px solid #e2e8f0; margin-bottom:0 }
+  .lang-tabs button { padding:9px 18px; border:none; background:none; cursor:pointer; font-size:.9rem;
+                      font-family:inherit; color:#64748b; border-radius:10px 10px 0 0 }
+  .lang-tabs button.active { color:#e11d48; font-weight:700; background:#fff5f7;
+                             border-bottom:2px solid #e11d48; margin-bottom:-2px }
+  .lang-pane { display:none; padding:18px 2px }
+  .lang-pane.active { display:block }
+  .tr-field { margin-bottom:16px }
+  .tr-field label { display:block; font-size:.85rem; font-weight:600; color:#334155; margin-bottom:6px }
+  .tr-field input, .tr-field textarea { width:100%; border:1px solid #dbe2ea; border-radius:10px;
+                                        padding:9px 12px; font-family:inherit; font-size:.9rem }
+  .tr-field textarea { min-height:110px; resize:vertical }
+  .fa-ref { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 12px;
+            font-size:.82rem; color:#64748b; margin-bottom:6px; white-space:pre-wrap;
+            max-height:110px; overflow:auto }
+  .fa-ref b { color:#475569 }
+  .nav-btns { display:flex; gap:8px; justify-content:space-between; margin-top:18px }
+</style>
+
+<div class="panel" style="max-width:960px">
+  <div class="panel-title">
+    🌐 ویرایش ترجمه — {{ meta.label }} #{{ item.id }}
+    <a href="{{ url_for('admin_translations') }}?table={{ table }}" class="btn btn-outline btn-sm">بازگشت به فهرست</a>
+  </div>
+
+  <p style="font-size:.9rem;color:#475569;margin:0 0 14px">
+    آیتم: <b>{{ item[meta.title_col] }}</b>
+    <span style="color:#94a3b8">— متن پایه فارسی هر فیلد در کادر خاکستری نمایش داده می‌شود.</span>
+  </p>
+
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    <div class="lang-tabs" id="langTabs">
+      {% for lg in target_langs %}
+      <button type="button" data-lang="{{ lg }}" class="{{ 'active' if loop.first }}">
+        {{ locale_meta[lg].flag }} {{ locale_meta[lg].label }} ({{ locale_meta[lg].short }})
+      </button>
+      {% endfor %}
+    </div>
+
+    {% for lg in target_langs %}
+    <div class="lang-pane {{ 'active' if loop.first }}" id="pane-{{ lg }}">
+      {% for f in meta.fields %}
+      <div class="tr-field">
+        <label>{{ locale_meta[lg].flag }} {{ locale_meta[lg].label }} —
+               {{ {'title':'عنوان','subtitle':'زیرعنوان','summary':'خلاصه','content':'متن کامل','teacher':'مدرس',
+                   'question':'پرسش','answer':'پاسخ','name':'نام','text':'متن','button_label':'متن دکمه',
+                   'full_name':'نام و نام خانوادگی','role':'سمت','bio':'بیوگرافی','province':'استان',
+                   'clinic_name':'نام کلینیک / مرکز','address':'نشانی','work_hours':'ساعات کاری',
+                   'description':'توضیحات'}[f] }}</label>
+        <div class="fa-ref" dir="rtl"><b>متن پایه فارسی:</b> {{ item[f] or '—' }}</div>
+        {% if f in ('content', 'answer', 'bio', 'summary', 'address', 'description') %}
+        <textarea name="tr_{{ lg }}_{{ f }}"
+                  placeholder="ترجمه {{ locale_meta[lg].label }} را بنویسید… (خالی = نمایش متن فارسی)">{{ tr.get((lg, f), '') }}</textarea>
+        {% else %}
+        <input type="text" name="tr_{{ lg }}_{{ f }}" value="{{ tr.get((lg, f), '') }}"
+               placeholder="ترجمه {{ locale_meta[lg].label }}… (خالی = نمایش متن فارسی)">
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
+      <button type="submit" class="btn btn-primary">💾 ذخیره همه ترجمه‌ها</button>
+      <span style="font-size:.8rem;color:#94a3b8">فیلد خالی در هر زبان یعنی بازگشت به متن فارسی پایه.</span>
+    </div>
+  </form>
+
+  <div class="nav-btns">
+    {% if prev_id %}
+    <a href="{{ url_for('admin_translation_edit', table=table, rid=prev_id) }}" class="btn btn-outline btn-sm">
+      → آیتم قبلی (#{{ prev_id }})
+    </a>
+    {% else %}<span></span>{% endif %}
+    {% if next_id %}
+    <a href="{{ url_for('admin_translation_edit', table=table, rid=next_id) }}" class="btn btn-outline btn-sm">
+      آیتم بعدی (#{{ next_id }}) ←
+    </a>
+    {% else %}<span></span>{% endif %}
+  </div>
+</div>
+
+<script>
+(function () {
+  var tabs = document.querySelectorAll('#langTabs button');
+  tabs.forEach(function (b) {
+    b.addEventListener('click', function () {
+      tabs.forEach(function (x) { x.classList.remove('active'); });
+      document.querySelectorAll('.lang-pane').forEach(function (p) { p.classList.remove('active'); });
+      b.classList.add('active');
+      document.getElementById('pane-' + b.dataset.lang).classList.add('active');
+    });
+  });
+})();
+</script>
+{% endblock %}
