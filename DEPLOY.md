@@ -91,3 +91,39 @@ python seed_translations.py --dry-run # فقط گزارش بدون تغییر
 ```
 
 اسکریپت بر اساس «متن فارسی» ردیف را پیدا می‌کند (مستقل از id) و روی همه ردیف‌های منطبق (محتوای تکراری) اعمال می‌شود.
+
+## ۴) استقرار روی همین ویندوز (C:\rosecenter) — بدون نیاز به SSH
+
+اگر برنامه روی خودِ ویندوز اجرا می‌شود (پورت 8083 باز است ولی پورت 22 بسته)، به scp/ssh نیازی نیست؛ همه‌چیز محلی است:
+
+### به‌روزرسانی کامل با یک دستور
+
+```powershell
+cd C:\rosecenter
+powershell -ExecutionPolicy Bypass -File tools\update_windows.ps1
+```
+
+این اسکریپت: `git pull` → نصب نیازمندی‌ها در venv → درج ترجمه‌ها (`seed_translations.py --auto`) → توقف پروسه‌ی پورت 8083 و اجرای دوباره‌ی برنامه → بررسی سلامت با `/api/health`.
+
+فقط ری‌استارت (بدون آپدیت): `powershell -ExecutionPolicy Bypass -File tools\restart_windows.ps1`
+
+### مدیریت رمز ادمین
+
+```powershell
+cd C:\rosecenter
+.\venv\Scripts\python.exe tools\reset_admin.py --list                          # فهرست مدیرها
+.\venv\Scripts\python.exe tools\reset_admin.py -u admin -p "رمز-جدید-قوی"      # بازنشانی رمز admin
+.\venv\Scripts\python.exe tools\reset_admin.py -u admin                        # رمز تصادفی قوی می‌سازد و چاپ می‌کند
+.\venv\Scripts\python.exe tools\reset_admin.py -u admin -p "رمز" --check-only  # تست صحت رمز بدون تغییر
+.\venv\Scripts\python.exe tools\reset_admin.py -u manager2 -p "رمز" --create   # ساخت مدیر جدید
+```
+
+### ورود به پنل ادمین
+
+نشانی پنل (لینکی در صفحات سایت نیست؛ مستقیم باز کنید):
+
+- روی همان سرور: `http://127.0.0.1:8083/admin/login`
+- از بیرون: `http://130.185.73.157:8083/admin/login`
+
+اگر روزی به SSH از بیرون نیاز شد، در ویندوز «OpenSSH Server» را از Optional Features نصب و سرویس `sshd` را Start کنید — ولی برای همین گردش‌کار آپدیت، لازم نیست.
+
