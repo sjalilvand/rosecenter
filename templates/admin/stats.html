@@ -1,0 +1,138 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="a-card">
+  <h2 style="font-weight:800;margin-bottom:6px">📊 آمار بازدید سایت</h2>
+  <p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:18px">
+    تحلیل کامل ترافیک سایت — منتقل‌شده از سامانه uastemdad: بازدید امروز/هفته/ماه/کل، کاربران یکتا و آنلاین،
+    نمودار روند، صفحات پربازدید، مرورگرها، سیستم‌عامل‌ها، دستگاه‌ها و موقعیت جغرافیایی بازدیدکنندگان.
+  </p>
+
+  <!-- کارت‌های آماری -->
+  <div class="stat-cards">
+    <div class="stat-card"><b>{{ n_loc(stats.today) }}</b><span>بازدید امروز</span></div>
+    <div class="stat-card"><b>{{ n_loc(stats.week) }}</b><span>هفته اخیر</span></div>
+    <div class="stat-card"><b>{{ n_loc(stats.month) }}</b><span>۳۰ روز اخیر</span></div>
+    <div class="stat-card"><b>{{ n_loc(stats.total) }}</b><span>بازدید کل</span></div>
+    <div class="stat-card"><b>{{ n_loc(stats.unique) }}</b><span>بازدیدکننده یکتا</span></div>
+    <div class="stat-card"><b>🟢 {{ n_loc(stats.online) }}</b><span>آنلاین (۵ دقیقه اخیر)</span></div>
+    <div class="stat-card"><b>{{ n_loc(stats.avg_per_visitor) }}</b><span>میانگین بازدید هر کاربر</span></div>
+    {% if stats.uptime_days %}
+    <div class="stat-card"><b>{{ n_loc(stats.uptime_days) }}</b><span>روز از اولین ثبت بازدید</span></div>
+    {% endif %}
+  </div>
+
+  <!-- نمودار روند ۱۴ روزه (SVG سمت سرور) -->
+  <h3 style="font-weight:800;margin:10px 0 4px">📈 روند بازدید ۱۴ روز اخیر</h3>
+  <div class="trend-chart-wrap">
+    <svg width="100%" height="180" viewBox="0 0 840 180" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="min-width:640px">
+      {% for pt in trend %}
+      {% set bw = 52 %}{% set gap = 8 %}{% set x = loop.index0 * (bw + gap) %}
+      {% set h = (pt.count / max_trend * 130) | round(0, 'floor') %}
+      <rect class="trend-bar" x="{{ x }}" y="{{ 150 - h }}" width="{{ bw }}" height="{{ [h, 2] | max }}" rx="4">
+        <title>{{ pt.day }}: {{ pt.count }}</title>
+      </rect>
+      <text class="trend-label" x="{{ x + bw / 2 }}" y="168" text-anchor="middle">{{ pt.day }}</text>
+      <text class="trend-label" x="{{ x + bw / 2 }}" y="{{ 144 - h }}" text-anchor="middle">{{ pt.count }}</text>
+      {% endfor %}
+    </svg>
+  </div>
+
+  <!-- تحلیل‌ها -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:8px">
+    <div class="a-card" style="margin:0">
+      <h3 style="font-weight:700;margin-bottom:8px">📄 صفحات پربازدید</h3>
+      <table class="mini-table" style="width:100%">
+        <tr><th>صفحه</th><th>بازدید</th></tr>
+        {% for r in top_pages %}
+        <tr><td dir="ltr" style="text-align:right">{{ r.path[:36] }}</td><td>{{ n_loc(r.n) }}</td></tr>
+        {% else %}
+        <tr><td colspan="2">داده‌ای ثبت نشده است</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="a-card" style="margin:0">
+      <h3 style="font-weight:700;margin-bottom:8px">🌐 مرورگرها</h3>
+      <table class="mini-table" style="width:100%">
+        <tr><th>مرورگر</th><th>بازدید</th></tr>
+        {% for r in browsers %}
+        <tr><td>{{ r.browser }}</td><td>{{ n_loc(r.n) }}</td></tr>
+        {% else %}
+        <tr><td colspan="2">داده‌ای ثبت نشده است</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="a-card" style="margin:0">
+      <h3 style="font-weight:700;margin-bottom:8px">💻 سیستم‌عامل‌ها</h3>
+      <table class="mini-table" style="width:100%">
+        <tr><th>سیستم‌عامل</th><th>بازدید</th></tr>
+        {% for r in oses %}
+        <tr><td>{{ r.os }}</td><td>{{ n_loc(r.n) }}</td></tr>
+        {% else %}
+        <tr><td colspan="2">داده‌ای ثبت نشده است</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="a-card" style="margin:0">
+      <h3 style="font-weight:700;margin-bottom:8px">📱 دستگاه‌ها</h3>
+      <table class="mini-table" style="width:100%">
+        <tr><th>دستگاه</th><th>بازدید</th></tr>
+        {% for r in devices %}
+        <tr><td>{{ r.device }}</td><td>{{ n_loc(r.n) }}</td></tr>
+        {% else %}
+        <tr><td colspan="2">داده‌ای ثبت نشده است</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="a-card" style="margin:0">
+      <h3 style="font-weight:700;margin-bottom:8px">🌍 کشورها</h3>
+      <table class="mini-table" style="width:100%">
+        <tr><th>کشور</th><th>بازدید</th></tr>
+        {% for r in countries %}
+        <tr><td>{{ r.country }}</td><td>{{ n_loc(r.n) }}</td></tr>
+        {% else %}
+        <tr><td colspan="2">داده‌ای ثبت نشده است</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="a-card" style="margin:0">
+      <h3 style="font-weight:700;margin-bottom:8px">🏙 شهرها</h3>
+      <table class="mini-table" style="width:100%">
+        <tr><th>شهر</th><th>بازدید</th></tr>
+        {% for r in cities %}
+        <tr><td>{{ r.city }}</td><td>{{ n_loc(r.n) }}</td></tr>
+        {% else %}
+        <tr><td colspan="2">داده‌ای ثبت نشده است</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="a-card">
+  <h3 style="font-weight:800;margin-bottom:10px">🕐 آخرین بازدیدها (۴۰ مورد اخیر)</h3>
+  <div style="overflow-x:auto">
+    <table class="mini-table" style="width:100%;min-width:760px">
+      <tr>
+        <th>زمان</th><th>صفحه</th><th>IP</th><th>موقعیت</th>
+        <th>مرورگر</th><th>سیستم‌عامل</th><th>دستگاه</th><th>منبع ورود</th>
+      </tr>
+      {% for r in recent %}
+      <tr>
+        <td style="white-space:nowrap">{{ r.created_at[5:16] }}</td>
+        <td dir="ltr" style="text-align:right">{{ r.path[:34] }}</td>
+        <td dir="ltr" style="text-align:right">{{ r.ip or '—' }}</td>
+        <td>{{ (r.country or '—') }}{% if r.city %} / {{ r.city }}{% endif %}</td>
+        <td>{{ r.browser }}</td>
+        <td>{{ r.os }}</td>
+        <td>{{ r.device }}</td>
+        <td>{{ r.referrer or 'مستقیم' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:var(--ink-soft);padding:20px">
+        هنوز بازیدی ثبت نشده است — پس از بازدید کاربران از سایت، آمار اینجا نمایش داده می‌شود.
+      </td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

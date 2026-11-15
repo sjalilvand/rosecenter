@@ -3,9 +3,9 @@
 <section class="err-wrap">
   <div class="container">
     <div class="code404">۴۰۴</div>
-    <h1>صفحه مورد نظر یافت نشد!</h1>
-    <p>متأسفانه صفحه‌ای که به دنبال آن هستید وجود ندارد یا جابه‌جا شده است.</p>
-    <a href="{{ url_for('home') }}" class="btn btn-primary">بازگشت به صفحه اصلی</a>
+    <h1>{{ t('err.404_t') }}</h1>
+    <p>{{ t('err.404_desc') }}</p>
+    <a href="{{ url_for('home') }}" class="btn btn-primary">{{ t('err.home') }}</a>
   </div>
 </section>
 {% endblock %}

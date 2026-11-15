@@ -20,6 +20,12 @@
       <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.path == '/admin/' }}">
         <span class="a-ic">🏠</span> داشبورد
       </a>
+      <a href="{{ url_for('admin_stats') }}" class="{{ 'active' if 'stats' in request.path }}">
+        <span class="a-ic">📊</span> آمار بازدید
+      </a>
+      <a href="{{ url_for('admin_newsletter') }}" class="{{ 'active' if 'newsletter' in request.path }}">
+        <span class="a-ic">✉️</span> خبرنامه
+      </a>
       <a href="{{ url_for('admin_bookings') }}" class="{{ 'active' if 'bookings' in request.path and 'course' not in request.path }}">
         <span class="a-ic">📅</span> درخواست‌های نوبت
       </a>

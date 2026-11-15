@@ -15,7 +15,7 @@
         <h2>{{ s.title }}</h2>
         {% if s.subtitle %}<p>{{ s.subtitle }}</p>{% endif %}
         {% if s.link %}
-        <a href="{{ s.link }}" class="btn btn-light">{{ s.button_label or 'مشاهده بیشتر' }}</a>
+        <a href="{{ s.link }}" class="btn btn-light">{{ s.button_label or t('common.view') }}</a>
         {% endif %}
       </div>
     </div>
@@ -40,8 +40,8 @@
         دستیار هوشمند پاسخ‌گو — همه در یک مجموعه در سراسر کشور.
       </p>
       <div class="hero-actions">
-        <a href="{{ url_for('courses') }}" class="btn btn-primary">شروع یادگیری</a>
-        <a href="{{ url_for('consultation') }}" class="btn btn-outline">درخواست مشاوره</a>
+        <a href="{{ url_for('courses') }}" class="btn btn-primary">{{ t('home.courses_t') }} ←</a>
+        <a href="{{ url_for('consultation') }}" class="btn btn-outline">{{ t('nav.consult') }}</a>
       </div>
       <div class="hero-stats">
         <div class="hero-stat"><b>+۳۰</b><span>مرکز فعال در سراسر کشور</span></div>
@@ -114,7 +114,7 @@
       {% endfor %}
     </div>
     <p style="text-align:center;margin-top:30px">
-      <a href="{{ url_for('courses', tab='registration') }}" class="btn btn-outline">مشاهده همه دوره‌های در حال ثبت‌نام ←</a>
+      <a href="{{ url_for('courses', tab='registration') }}" class="btn btn-outline">{{ t('crs.tab_open') }} ←</a>
     </p>
   </div>
 </section>
@@ -166,7 +166,7 @@
     </div>
     {% endif %}
     <p style="text-align:center;margin-top:30px">
-      <a href="{{ url_for('forum_index') }}" class="btn btn-primary">ورود به انجمن‌ها ←</a>
+      <a href="{{ url_for('forum_index') }}" class="btn btn-primary">{{ t('nav.forums') }} ←</a>
     </p>
   </div>
 </section>
@@ -189,7 +189,7 @@
         </div>
         <h3>{{ s.title }}</h3>
         <p>{{ s.summary[:150] }}{% if s.summary|length > 150 %}…{% endif %}</p>
-        <a href="/{{ s.slug }}/" class="link-more">اطلاعات بیشتر</a>
+        <a href="/{{ s.slug }}/" class="link-more">{{ t('home.about_more') }}</a>
       </div>
       {% endfor %}
     </div>
@@ -269,8 +269,8 @@
         <div class="about-point">مشاوره تلفنی و آنلاین</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <a href="{{ url_for('about') }}" class="btn btn-primary">درباره ما</a>
-        <a href="{{ url_for('board') }}" class="btn btn-outline">هیئت مدیره</a>
+        <a href="{{ url_for('about') }}" class="btn btn-primary">{{ t('nav.about') }}</a>
+        <a href="{{ url_for('board') }}" class="btn btn-outline">{{ t('nav.board') }}</a>
       </div>
     </div>
   </div>
@@ -281,7 +281,7 @@
   <div class="container booking-wrap">
     <div class="booking-side">
       <span class="tag">روان‌درمانی</span>
-      <h2>درمان مشکلات عمیق روان‌شناختی</h2>
+      <h2>{{ t('home.consult_t') }}</h2>
       <p>
         فرآیند روان درمانی به افرادی که در موقعیت‌های مختلف قرار دارند، کمک می‌کند تا تصمیمات آگاهانه‌تری
         بگیرند و مسیر رشد و توسعه فردی خود را با اطمینان بیشتری طی کنند. شما به کدام نوع روان درمانی نیاز دارید؟
@@ -293,11 +293,11 @@
       </div>
     </div>
     <div class="form-card">
-      <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:18px">دریافت نوبت</h3>
+      <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:18px">🗓 {{ t('home.consult_t') }}</h3>
       <form action="{{ url_for('consultation') }}" method="post">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <div class="field">
-          <label>نوع درمان <span class="req">*</span></label>
+          <label>{{ t('book.service_type') }} <span class="req">*</span></label>
           <div class="radio-grid">
             {% for t in THERAPY_TYPES %}
             <label class="radio-pill">
@@ -309,25 +309,36 @@
         </div>
         <div class="form-row">
           <div class="field">
-            <label for="bk_name">نام و نام خانوادگی <span class="req">*</span></label>
+            <label for="bk_name">{{ t('book.full_name') }} <span class="req">*</span></label>
             <input type="text" id="bk_name" name="full_name" required placeholder="مثلاً: سارا محمدی">
           </div>
           <div class="field">
-            <label for="bk_phone">شماره تماس <span class="req">*</span></label>
-            <input type="tel" id="bk_phone" name="phone" required placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" style="text-align:right">
+            <label for="bk_phone">{{ t('book.phone') }} <span class="req">*</span></label>
+            <input type="tel" id="bk_phone" name="phone" required placeholder="09123456789" dir="ltr" style="text-align:{{ 'left' if page_dir == 'ltr' else 'right' }}">
           </div>
         </div>
         <div class="field">
-          <label for="bk_center">مرکز مورد نظر (اختیاری)</label>
+          <label for="bk_center">{{ t('book.center') }} ({{ t('common.optional') }})</label>
           <select id="bk_center" name="center">
-            <option value="">انتخاب کنید…</option>
+            <option value="">{{ t('book.center_any') }}</option>
             {% for c in centers %}
             <option value="{{ c.province }}">{{ c.province }}</option>
             {% endfor %}
           </select>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">ثبت درخواست نوبت</button>
+        <button type="submit" class="btn btn-primary btn-block">🗓 {{ t('book.submit') }}</button>
       </form>
+    </div>
+  </div>
+</section>
+
+<!-- نصب اپلیکیشن (PWA) — منتقل‌شده از uastemdad -->
+<section class="section" style="padding-top:0">
+  <div class="container">
+    <div class="app-install-box">
+      <span style="font-size:2.2rem">📱</span>
+      <p><b>{{ t('home.app_t') }} —</b> {{ t('home.app_desc') }}</p>
+      <a href="{{ url_for('app_install_page') }}" class="btn btn-light">⬇️ {{ t('home.app_cta') }}</a>
     </div>
   </div>
 </section>
@@ -363,7 +374,7 @@
       <p>پاسخ پرتکرارترین پرسش‌های شما درباره خدمات، درمان‌ها و فرآیندهای مرکز رز؛ یا از <a href="#" onclick="document.getElementById('chatFab').click();return false" style="font-weight:800">دستیار هوشمند</a> بپرسید.</p>
     </div>
     <div class="faq-cats">
-      <button class="tag faq-cat active" data-cat="all">همه</button>
+      <button class="tag faq-cat active" data-cat="all">{{ t('news.all') }}</button>
       {% set cats = [] %}
       {% for f in faqs %}{% if f.category not in cats %}{% set _ = cats.append(f.category) %}{% endif %}{% endfor %}
       {% for c in cats %}
@@ -389,7 +400,7 @@
         <h2>قدم اول را همین امروز بردارید</h2>
         <p>درخواست مشاوره خود را ثبت کنید تا کارشناسان ما در اسرع وقت با شما تماس بگیرند.</p>
       </div>
-      <a href="{{ url_for('consultation') }}" class="btn btn-ghost">درخواست مشاوره</a>
+      <a href="{{ url_for('consultation') }}" class="btn btn-ghost">{{ t('nav.consult') }}</a>
     </div>
   </div>
 </section>

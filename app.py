@@ -8,18 +8,22 @@ import secrets
 import string
 import math
 import re
+import json
 import datetime
+import urllib.request
+import urllib.parse
 from functools import wraps
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    session, flash, abort, g, jsonify, send_from_directory,
+    session, flash, abort, g, jsonify, send_from_directory, Response,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import database
 import jalali as jdate
-from config import THERAPY_TYPES, REQUEST_STATUSES, ROSE_HUB_SSO
+import translations as i18n
+from config import THERAPY_TYPES, REQUEST_STATUSES, ROSE_HUB_SSO, DEFAULT_SETTINGS
 
 app = Flask(__name__)
 app.config.from_object("config")
@@ -42,6 +46,16 @@ def _ensure_db():
     database.get_db()
 
 
+def _ensure_settings():
+    """درج تنظیمات پیش‌فرض جدید در استقرارهای قدیمی بدون اجرای دوباره seed"""
+    try:
+        for k, v in DEFAULT_SETTINGS.items():
+            database.execute(
+                "INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (k, v))
+    except Exception:
+        pass
+
+
 def _touch_session():
     """ردیابی سشن‌ها: بروزرسانی آخرین حضور + ابطال سشن‌های خروج‌کرده توسط ادمین"""
     sid = session.get("sid")
@@ -60,8 +74,44 @@ def _touch_session():
 
 
 app.before_request(_ensure_db)
+app.before_request(_ensure_settings)
 app.before_request(_touch_session)
 app.teardown_appcontext(database.close_db)
+
+# ------------------------------------------------------------------
+# سیستم چندزبانه (فارسی / انگلیسی / عربی / روسی / چینی)
+# زبان فعال در کوکی rose_locale ذخیره می‌شود و prefs.js آن را با
+# localStorage همگام نگه می‌دارد. fa و ar راست‌به‌چپ هستند.
+# ------------------------------------------------------------------
+LOCALE_COOKIE = "rose_locale"
+
+
+def get_locale():
+    return i18n.validate(request.cookies.get(LOCALE_COOKIE, i18n.DEFAULT_LOCALE))
+
+
+def set_locale_cookie(resp, locale):
+    resp.set_cookie(LOCALE_COOKIE, locale, max_age=31536000,
+                    samesite="Lax", httponly=False)
+    return resp
+
+
+@app.route("/set-locale/<lc>")
+def set_locale(lc):
+    """تغییر زبان سایت و بازگشت به صفحه قبلی"""
+    lc = i18n.validate(lc)
+    nxt = request.args.get("next") or request.referrer or url_for("home")
+    # فقط مسیرهای داخلی سایت مجازند
+    if not str(nxt).startswith("/") and ("request.host_url" not in nxt):
+        try:
+            host = request.host_url
+            if not str(nxt).startswith(host):
+                nxt = url_for("home")
+        except Exception:
+            nxt = url_for("home")
+    resp = redirect(nxt)
+    return set_locale_cookie(resp, lc)
+
 
 PER_PAGE = 9  # تعداد اخبار در هر صفحه
 
@@ -240,13 +290,46 @@ def get_nav_course_categories():
 @app.context_processor
 def inject_globals():
     u = current_user()
+    lc = get_locale()
+    s = get_settings()
+    # شمارنده بازدید پاورقی (منتقل‌شده از uastemdad)
+    stats_footer = {"today": 0, "total": 0, "online": 0}
+    if str(s.get("stats_enabled", "1")) == "1":
+        try:
+            stats_footer["today"] = database.query(
+                "SELECT COUNT(*) n FROM visits WHERE date(created_at)=date('now','localtime')",
+                one=True)["n"]
+            stats_footer["total"] = database.query(
+                "SELECT COUNT(*) n FROM visits", one=True)["n"]
+            stats_footer["online"] = database.query(
+                """SELECT COUNT(DISTINCT visitor_id) n FROM visits
+                   WHERE created_at >= datetime('now','localtime', ?)""",
+                (f"-{ONLINE_WINDOW} seconds",), one=True)["n"]
+        except Exception:
+            pass
+    ticker_news = []
+    if str(s.get("ticker_enabled", "1")) == "1" and not request.path.startswith("/admin"):
+        try:
+            ticker_news = database.query(
+                "SELECT id, slug, title FROM news WHERE published=1 ORDER BY published_at DESC LIMIT 8")
+        except Exception:
+            ticker_news = []
     return {
-        "settings": get_settings(),
+        "settings": s,
         "nav_services": get_visible_services(),
         "nav_course_categories": get_nav_course_categories(),
         "REQUEST_STATUSES": REQUEST_STATUSES,
         "today_jalali_fa": jdate.today_jalali_fa(),
         "cur_user": u,
+        # چندزبانه
+        "t": lambda key, fallback="": i18n.t(key, lc, fallback),
+        "locale": lc,
+        "page_dir": i18n.dir_for(lc),
+        "SUPPORTED_LOCALES": i18n.LOCALES,
+        "n_loc": lambda v: i18n.to_digits(v, lc),
+        # آمار پاورقی + نوار خبری
+        "footer_stats": stats_footer,
+        "ticker_news": ticker_news,
     }
 
 
@@ -926,6 +1009,163 @@ CHAT_INTENTS = [
      []),
 ]
 
+# ------------------------------------------------------------------
+# چت هوشمند چندزبانه (منتقل‌شده از uastemdad و توسعه‌یافته)
+# برای هر زبان: کلیدواژه‌های تشخیص + پاسخ بومی + لینک‌های هدایت
+# ------------------------------------------------------------------
+CHAT_FALLBACK_LOCALIZED = {
+    "fa": CHAT_FALLBACK,
+    "en": "I couldn't find an exact answer in my knowledge base. 🙏\n"
+          "Try rephrasing your question or send it via the Contact page so our experts can answer it.",
+    "ar": "لم أجد إجابة دقيقة في قاعدة المعرفة. 🙏\n"
+          "أعد صياغة سؤالك أو أرسله عبر صفحة «اتصل بنا» ليجيب عنه خبراؤنا.",
+    "ru": "Точного ответа в моей базе знаний не нашлось. 🙏\n"
+          "Переформулируйте вопрос или отправьте его через страницу «Контакты» — ответят наши специалисты.",
+    "zh": "很抱歉，知识库中没有找到确切的答案。🙏\n请换个方式提问，或通过「联系我们」页面提交，我们的专家会为您解答。",
+}
+
+CHAT_INTENTS_LOCALIZED = {
+    "en": [
+        (["appointment", "book", "booking", "counseling", "consultation", "session"],
+         "To book a counseling appointment, fill out the “Counseling Request” form; our experts will call you shortly. 📅",
+         [{"label": "Book appointment", "url": "/consultation/"}, {"label": "Centers", "url": "/centers/"}]),
+        (["track", "tracking", "status", "follow up", "followup"],
+         "To follow up your requests (appointment, partnership, course registration), enter the tracking code on the Track Request page. 🔎",
+         [{"label": "Track request", "url": "/tracking/"}]),
+        (["course", "courses", "training", "workshop", "webinar", "class"],
+         "Browse Rose Academy courses on the Courses page; filter by category or status (open, running, free). 🎓",
+         [{"label": "All courses", "url": "/courses/"}, {"label": "Open for registration", "url": "/courses/?tab=registration"}]),
+        (["forum", "community", "topic", "discussion"],
+         "In Rose specialized forums you can create topics, reply to discussions and share experiences (account required). 💬",
+         [{"label": "Forums", "url": "/forum/"}, {"label": "Sign in", "url": "/login/"}]),
+        (["partnership", "collaboration", "open a center", "clinic setup"],
+         "The partnership call includes your full profile, documents and property details; we will contact you after review. 🤝",
+         [{"label": "Partnership call", "url": "/cooperation/"}]),
+        (["date", "convert", "calendar", "jalali", "gregorian"],
+         "Use the site's Jalali ↔ Gregorian date converter; an API is also available for other systems. 📅",
+         [{"label": "Date converter", "url": "/jalali/"}]),
+        (["map", "location", "where", "nearest", "address of center"],
+         "See all Rose centers and clinics on the map of Iran; click a marker for contact info and capabilities. 🗺",
+         [{"label": "Centers map", "url": "/map/"}]),
+        (["contact", "phone", "email", "call", "number"],
+         "Contact channels: phone, email and contact form. Send your message through any of them. ✉️",
+         [{"label": "Contact us", "url": "/contact/"}, {"label": "Feedback", "url": "/feedback/"}]),
+        (["price", "cost", "fee", "tuition", "how much"],
+         "Each course's price is shown on the Courses page and course details. Counseling fees depend on the service type and center; request an appointment for exact info. 💰",
+         [{"label": "Courses & prices", "url": "/courses/"}]),
+        (["hello", "hi", "hey", "greetings", "salam"],
+         "Hello! 😊 Welcome. I am the Rose Center smart assistant; ask me anything about services, courses, appointments or centers.",
+         []),
+    ],
+    "ar": [
+        (["موعد", "حجز", "استشارة", "جلسة", "مشورة"],
+         "لحجز موعد استشارة، املأ نموذج «طلب الاستشارة»؛ سيتصل بك خبراؤنا قريباً. 📅",
+         [{"label": "حجز موعد", "url": "/consultation/"}, {"label": "المراكز", "url": "/centers/"}]),
+        (["تتبع", "متابعة", "حالة", "رمز التتبع"],
+         "لمتابعة طلباتك (موعد، تعاون، تسجيل دورة) أدخل رمز التتبع في صفحة «تتبع الطلب». 🔎",
+         [{"label": "تتبع الطلب", "url": "/tracking/"}]),
+        (["دورة", "دورات", "تدريب", "ورشة", "ندوة", "كورس"],
+         "تصفح دورات أكاديمية روز في صفحة الدورات؛ صف حسب الفئة أو الحالة (مفتوح، جارٍ، مجاني). 🎓",
+         [{"label": "جميع الدورات", "url": "/courses/"}]),
+        (["منتدى", "منتديات", "نقاش", "مجتمع"],
+         "في منتديات روز المتخصصة يمكنك إنشاء مواضيع والرد على النقاشات وتبادل الخبرات (يتطلب حساباً). 💬",
+         [{"label": "المنتديات", "url": "/forum/"}, {"label": "تسجيل الدخول", "url": "/login/"}]),
+        (["تعاون", "شراكة", "فتح مركز", "تأسيس عيادة"],
+         "تشمل دعوة التعاون بياناتك الكاملة ووثائقك وتفاصيل العقار؛ سنتصل بك بعد المراجعة. 🤝",
+         [{"label": "دعوة التعاون", "url": "/cooperation/"}]),
+        (["تاريخ", "تحويل", "تقويم", "جلالي", "ميلادي"],
+         "استخدم محول التاريخ الجلالي ↔ الميلادي في الموقع؛ وتتوفر واجهة API للأنظمة الأخرى. 📅",
+         [{"label": "تحويل التاريخ", "url": "/jalali/"}]),
+        (["خريطة", "موقع", "أين", "أقرب", "عنوان المركز"],
+         "شاهد جميع مراكز وعيادات روز على خريطة إيران؛ انقر على العلامة لمعلومات الاتصال والتخصصات. 🗺",
+         [{"label": "خريطة المراكز", "url": "/map/"}]),
+        (["اتصال", "هاتف", "بريد", "رقم", "تواصل"],
+         "قنوات الاتصال: الهاتف والبريد الإلكتروني ونموذج الاتصال. أرسل رسالتك عبر أي منها. ✉️",
+         [{"label": "اتصل بنا", "url": "/contact/"}, {"label": "الاقتراحات", "url": "/feedback/"}]),
+        (["سعر", "تكلفة", "رسوم", "كم", "أسعار"],
+         "سعر كل دورة معروض في صفحة الدورات وتفاصيلها. رسوم الاستشارة تعتمد على نوع الخدمة والمركز؛ اطلب موعداً لمعرفة التفاصيل. 💰",
+         [{"label": "الدورات والأسعار", "url": "/courses/"}]),
+        (["مرحبا", "سلام", "أهلا", "هلا", "السلام عليكم"],
+         "مرحباً! 😊 أهلاً بك. أنا المساعد الذكي لمركز روز؛ اسألني عن الخدمات والدورات والمواعيد والمراكز.",
+         []),
+    ],
+    "ru": [
+        (["запись", "приём", "прием", "консультация", "бронь", "забронировать"],
+         "Чтобы записаться на консультацию, заполните форму «Заявка на консультацию»; наши специалисты скоро позвонят вам. 📅",
+         [{"label": "Запись на приём", "url": "/consultation/"}, {"label": "Центры", "url": "/centers/"}]),
+        (["отследить", "статус", "код отслеживания", "заявка"],
+         "Чтобы отследить заявки (приём, сотрудничество, запись на курс), введите код на странице «Отследить заявку». 🔎",
+         [{"label": "Отследить заявку", "url": "/tracking/"}]),
+        (["курс", "курсы", "обучение", "тренинг", "вебинар", "занятия"],
+         "Смотрите курсы академии «Роза» на странице курсов; фильтруйте по категории и статусу (открыта запись, идут, бесплатные). 🎓",
+         [{"label": "Все курсы", "url": "/courses/"}]),
+        (["форум", "сообщество", "тема", "обсуждение"],
+         "На форумах «Роза» вы можете создавать темы, отвечать в обсуждениях и делиться опытом (нужен аккаунт). 💬",
+         [{"label": "Форумы", "url": "/forum/"}, {"label": "Войти", "url": "/login/"}]),
+        (["сотрудничество", "партнёрство", "открыть центр", "клиника"],
+         "Заявка на сотрудничество включает ваши данные, документы и сведения о помещении; мы свяжемся с вами после проверки. 🤝",
+         [{"label": "Сотрудничество", "url": "/cooperation/"}]),
+        (["дата", "конвертер", "календарь", "джалали", "григорианский"],
+         "Используйте конвертер дат джалали ↔ григорианский; для других систем есть API. 📅",
+         [{"label": "Конвертер дат", "url": "/jalali/"}]),
+        (["карта", "расположение", "где", "ближайший", "адрес центра"],
+         "Смотрите все центры и клиники «Роза» на карте Ирана; нажмите на маркер для контактов и направлений. 🗺",
+         [{"label": "Карта центров", "url": "/map/"}]),
+        (["контакт", "телефон", "почта", "номер", "связаться"],
+         "Каналы связи: телефон, электронная почта и форма контакта. Отправьте сообщение любым из них. ✉️",
+         [{"label": "Контакты", "url": "/contact/"}, {"label": "Отзывы", "url": "/feedback/"}]),
+        (["цена", "стоимость", "сколько", "тариф", "оплата"],
+         "Цена каждого курса указана на странице курсов и в деталях курса. Стоимость консультаций зависит от услуги и центра; оформите заявку для уточнения. 💰",
+         [{"label": "Курсы и цены", "url": "/courses/"}]),
+        (["привет", "здравствуйте", "добрый", "салют", "хай"],
+         "Здравствуйте! 😊 Добро пожаловать. Я умный помощник центра «Роза»; спрашивайте об услугах, курсах, записи и центрах.",
+         []),
+    ],
+    "zh": [
+        (["预约", "挂号", "咨询", "预订", "约见"],
+         "如需预约咨询，请填写「咨询申请」表单；我们的专家会尽快与您联系。📅",
+         [{"label": "预约咨询", "url": "/consultation/"}, {"label": "中心列表", "url": "/centers/"}]),
+        (["查询", "跟踪", "进度", "状态", "跟踪码"],
+         "如需查询申请进度（预约、合作、课程报名），请在「进度查询」页面输入跟踪码。🔎",
+         [{"label": "进度查询", "url": "/tracking/"}]),
+        (["课程", "培训", "讲座", "网课", "学习"],
+         "请在课程页面浏览玫瑰学院的课程；可按分类或状态（报名中、进行中、免费）筛选。🎓",
+         [{"label": "全部课程", "url": "/courses/"}]),
+        (["论坛", "社区", "帖子", "讨论"],
+         "在玫瑰专业论坛中，您可以发帖、参与讨论并分享经验（需登录账户）。💬",
+         [{"label": "专业论坛", "url": "/forum/"}, {"label": "登录", "url": "/login/"}]),
+        (["合作", "加盟", "开设中心", "开办诊所"],
+         "合作邀请需要提交您的完整资料、证件和场地信息；审核通过后我们会与您联系。🤝",
+         [{"label": "合作邀请", "url": "/cooperation/"}]),
+        (["日期", "转换", "历法", "伊朗历", "公历"],
+         "请使用本站的伊朗历↔公历日期转换工具；其他系统也可调用相关 API。📅",
+         [{"label": "日期转换", "url": "/jalali/"}]),
+        (["地图", "位置", "在哪里", "最近", "中心地址"],
+         "在伊朗地图上查看玫瑰的所有中心和诊所；点击标记即可查看联系方式和专业方向。🗺",
+         [{"label": "中心地图", "url": "/map/"}]),
+        (["联系", "电话", "邮箱", "号码", "客服"],
+         "联系方式：电话、电子邮箱和联系表单。请任选一种方式给我们留言。✉️",
+         [{"label": "联系我们", "url": "/contact/"}, {"label": "意见反馈", "url": "/feedback/"}]),
+        (["价格", "费用", "多少钱", "收费", "学费"],
+         "每门课程的价格在课程页面和课程详情中均有标注。咨询费用取决于服务类型和中心；请提交预约申请以了解详情。💰",
+         [{"label": "课程与价格", "url": "/courses/"}]),
+        (["你好", "您好", "嗨", "哈喽", "早上好"],
+         "您好！😊 欢迎您。我是玫瑰中心的智能助手；关于服务、课程、预约或中心，欢迎随时提问。",
+         []),
+    ],
+}
+
+# پاسخ‌های مقدمه‌ای وقتی مستند پایگاه دانش (فارسی) برای زبان غیرفارسی پیدا می‌شود
+CHAT_DOC_INTRO_LOCALIZED = {
+    "en": "Matched from our Persian knowledge base:\n\n",
+    "ar": "من قاعدة المعرفة الفارسية للمراكز:\n\n",
+    "ru": "Из базы знаний центра (на фарси):\n\n",
+    "zh": "来自本中心波斯语知识库的匹配内容：\n\n",
+}
+
+# کلیدواژه‌های فارسی پایگاه دانش برای تشخیص موضوع در همهٔ زبان‌ها
+CHAT_LANG_HINT = {"fa": "fa", "en": "en", "ar": "ar", "ru": "ru", "zh": "zh"}
+
 PERSIAN_STOPWORDS = {
     "از", "به", "با", "در", "که", "را", "و", "این", "آن", "برای", "است", "هست", "می",
     "چگونه", "چطور", "چه", "کجا", "کی", "چی", "چیست", "میخواهم", "می‌خواهم", "درباره",
@@ -981,13 +1221,28 @@ def _chat_score(question, doc):
     return score + (doc["priority"] or 0) * 0.5
 
 
-def smart_chat_answer(question):
-    """موتور پاسخ‌گویی هوشمند: برمی‌گرداند (answer, links, matched_title, score, answered)"""
+def smart_chat_answer(question, locale="fa"):
+    """موتور پاسخ‌گویی هوشمند چندزبانه: برمی‌گرداند (answer, links, matched_title, score, answered)"""
     q = (question or "").strip()
     if not q:
-        return CHAT_FALLBACK, [], "", 0.0, False
+        return CHAT_FALLBACK_LOCALIZED.get(locale, CHAT_FALLBACK), [], "", 0.0, False
 
-    # ۱) قواعد هدایت
+    q_l = q.lower()
+
+    # ۰) قواعد هدایتِ زبان فعال (پاسخ بومی به زبان کاربر)
+    if locale != "fa":
+        best_loc = None
+        for keys, answer, links in CHAT_INTENTS_LOCALIZED.get(locale, []):
+            for k in keys:
+                k_l = k.lower()
+                if k_l and (k_l in q_l or all(w in q_l for w in k_l.split() if w)):
+                    if not best_loc or len(k_l) > best_loc[0]:
+                        best_loc = (len(k_l), answer, links)
+                    break
+        if best_loc:
+            return best_loc[1], best_loc[2], f"intent:{locale}", 2.0, True
+
+    # ۱) قواعد هدایت فارسی (برای همهٔ زبان‌ها — کلیدواژه‌های فارسی هم پوشش داده می‌شوند)
     q_norm = _normalize_fa(q)
     best_intent = None
     for keys, answer, links in CHAT_INTENTS:
@@ -1012,14 +1267,25 @@ def smart_chat_answer(question):
             links.append({"label": best_doc["link_label"] or "مشاهده", "url": best_doc["link"]})
         database.execute(
             "UPDATE chat_documents SET hit_count=hit_count+1 WHERE id=?", (best_doc["id"],))
-        return (f"{best_doc['content']}", links, best_doc["title"], best_score, True)
-    if best_intent:
-        return best_intent[1], best_intent[2], "قاعده هدایت: " + q_norm[:60], 2.0, True
+        body = best_doc["content"]
+        if locale != "fa":
+            body = CHAT_DOC_INTRO_LOCALIZED.get(locale, "") + body
+        return (body, links, best_doc["title"], best_score, True)
+    if best_intent and (locale == "fa" or not best_doc or best_score < 1.2):
+        answer = best_intent[1]
+        if locale != "fa":
+            # ترجمهٔ سادهٔ مسیر در پاسخ فارسی برای زبان‌های دیگر ارسال نمی‌شود؛
+            # به‌جای آن پاسخ بومی زبان اگر موجود بود ارجح است و در غیر این‌صورت فارسی
+            pass
+        return answer, best_intent[2], "قاعده هدایت: " + q_norm[:60], 2.0, True
     if best_doc and best_score >= 1.2:
         links = []
         if best_doc["link"]:
             links.append({"label": best_doc["link_label"] or "مشاهده", "url": best_doc["link"]})
-        return best_doc["content"], links, best_doc["title"], best_score, True
+        body = best_doc["content"]
+        if locale != "fa":
+            body = CHAT_DOC_INTRO_LOCALIZED.get(locale, "") + body
+        return body, links, best_doc["title"], best_score, True
     # ۳) پاسخ پیش‌فرض با پیشنهاد
     suggestions = [
         {"label": "درخواست مشاوره", "url": "/consultation/"},
@@ -1028,7 +1294,7 @@ def smart_chat_answer(question):
         {"label": "نقشه مراکز", "url": "/map/"},
         {"label": "تماس با ما", "url": "/contact/"},
     ]
-    return CHAT_FALLBACK, [], "", best_score, False
+    return CHAT_FALLBACK_LOCALIZED.get(locale, CHAT_FALLBACK), [], "", best_score, False
 
 
 @app.route("/chat/")
@@ -1038,15 +1304,16 @@ def chat_page():
 
 @app.route("/chat/api/", methods=["POST"])
 def chat_api():
-    """API چت هوشمند — دریافت سوال و برگرداندن پاسخ + لینک‌های هدایت"""
+    """API چت هوشمند — دریافت سوال و برگرداندن پاسخ + لینک‌های هدایت (چندزبانه)"""
     payload = request.get_json(silent=True) or request.form.to_dict()
     question = str(payload.get("message", "")).strip()
     session_key = str(payload.get("session_key", ""))[:64]
+    lc = i18n.validate(str(payload.get("locale", "") or get_locale()))
     if not question:
         return jsonify({"ok": False, "error": "سوال خالی است"}), 400
     if len(question) > 500:
         question = question[:500]
-    answer, links, matched, score, answered = smart_chat_answer(question)
+    answer, links, matched, score, answered = smart_chat_answer(question, lc)
     try:
         database.execute(
             """INSERT INTO chat_logs (session_key, user_id, question, answer, matched_doc, score, is_answered)
@@ -1222,23 +1489,31 @@ def consultation():
             abort(400)
         f = request.form
         name = f.get("full_name", "").strip()
-        phone = f.get("phone", "").strip()
+        phone = jdate.en_digits(f.get("phone", "")).strip()
         service_type = f.get("service_type", "").strip()
         if not name or not phone or not service_type:
-            flash("لطفاً نام، شماره تماس و نوع درمان را انتخاب کنید.", "error")
+            flash(i18n.t("book.desc_err", get_locale(),
+                         "لطفاً نام، شماره تماس و نوع درمان را انتخاب کنید."), "error")
             return redirect(url_for("consultation"))
         code = gen_tracking_code("RC")
         database.execute(
-            """INSERT INTO bookings (tracking_code, full_name, phone, service_type, center, note, source, user_id)
-            VALUES (?,?,?,?,?,?, 'وب‌سایت', ?)""",
+            """INSERT INTO bookings (tracking_code, full_name, phone, service_type, center, note, source, user_id,
+                                     preferred_date, preferred_time, lang)
+            VALUES (?,?,?,?,?,?, 'وب‌سایت', ?, ?, ?, ?)""",
             (code, name, phone, service_type, f.get("center", "").strip(), f.get("note", "").strip(),
-             session.get("uid")),
+             session.get("uid"),
+             f.get("preferred_date", "").strip()[:30],
+             f.get("preferred_time", "").strip()[:30],
+             get_locale()),
         )
-        flash(f"درخواست نوبت شما با موفقیت ثبت شد. کد پیگیری شما: {code}", "success")
         session["last_code"] = code
+        session["last_booking_ok"] = True
         return redirect(url_for("consultation"))
     centers = database.query("SELECT province FROM centers WHERE is_soon=0 ORDER BY sort_order")
-    return render_template("consultation.html", centers=centers, page_title="درخواست مشاوره")
+    last_code = session.pop("last_code", None) if session.get("last_booking_ok") else None
+    session.pop("last_booking_ok", None)
+    return render_template("consultation.html", centers=centers, last_code=last_code,
+                           page_title=i18n.t("book.t", get_locale()))
 
 
 @app.route("/tracking/", methods=["GET", "POST"])
@@ -3232,10 +3507,13 @@ def api_v1_create_consultation():
     code = gen_tracking_code("RC")
     booking_id = database.execute(
         """INSERT INTO bookings (tracking_code, full_name, phone, service_type, center, note,
-                                 source, user_id, api_key_id)
-           VALUES (?,?,?,?,?,?, 'API', NULL, ?)""",
+                                 source, user_id, api_key_id, preferred_date, preferred_time, lang)
+           VALUES (?,?,?,?,?,?, 'API', NULL, ?,?,?,?)""",
         (code, full_name, phone, service_type,
-         _field("center"), _field("note"), key["id"]))
+         _field("center"), _field("note"), key["id"],
+         _field("preferred_date", "date")[:30],
+         _field("preferred_time", "time")[:30],
+         i18n.validate(str(payload.get("lang", "fa")))))
     return jsonify({
         "ok": True,
         "message": "درخواست مشاوره با موفقیت ثبت شد.",
@@ -3303,6 +3581,562 @@ def api_v1_meta_services():
         "service_types": THERAPY_TYPES,
         "statuses": REQUEST_STATUSES,
         "centers": [r["province"] for r in centers],
+    })
+
+
+# ==================================================================
+# امکانات منتقل‌شده از uastemdad
+#   آمار بازدید، خبرنامه، PWA (مانیفست + سرویس‌ورکر + صفحه اپ + QR)
+#   و پروکسی جست‌وجوی جغرافیایی نقشه
+# ==================================================================
+def _extract_track_ip():
+    fwd = request.headers.get("X-Forwarded-For", "")
+    if fwd:
+        first = fwd.split(",")[0].strip()
+        if first:
+            return first
+    return request.headers.get("X-Real-IP", "") or request.remote_addr or ""
+
+
+def _is_private_ip(ip):
+    if not ip or ip == "::1":
+        return True
+    return (ip.startswith("127.") or ip.startswith("10.") or
+            ip.startswith("192.168.") or ip.startswith("169.254.") or
+            ip.startswith("172.16.") or ip.startswith("172.17.") or
+            ip.startswith("172.18.") or ip.startswith("172.19.") or
+            ip.startswith("172.2") or ip.startswith("172.30.") or
+            ip.startswith("172.31.") or ip.startswith("fc") or
+            ip.startswith("fd") or ip.startswith("fe80"))
+
+
+_GEO_CACHE = {}
+_GEO_TTL = 24 * 3600
+
+
+def _geo_lookup(ip):
+    """کشور/شهر از سرویس رایگان ip-api (با مهلت کوتاه و کش روزانه)"""
+    if not ip or _is_private_ip(ip):
+        return {"country": "شبکه محلی", "city": ""}
+    hit = _GEO_CACHE.get(ip)
+    if hit and (datetime.datetime.now() - hit["at"]).total_seconds() < _GEO_TTL:
+        return {"country": hit["country"], "city": hit["city"]}
+    try:
+        url = ("http://ip-api.com/json/" + urllib.parse.quote(ip, safe="")
+               + "?fields=status,country,city&lang=fa")
+        req = urllib.request.Request(url, headers={"User-Agent": "rosecenter-stats/1.0"})
+        with urllib.request.urlopen(req, timeout=2.5) as r:
+            data = json.loads(r.read().decode("utf-8", "ignore"))
+        out = ({"country": data.get("country") or "", "city": data.get("city") or ""}
+               if data.get("status") == "success" else {"country": "", "city": ""})
+    except Exception:
+        out = {"country": "", "city": ""}
+    _GEO_CACHE[ip] = {**out, "at": datetime.datetime.now()}
+    if len(_GEO_CACHE) > 5000:
+        first = next(iter(_GEO_CACHE), None)
+        if first:
+            _GEO_CACHE.pop(first, None)
+    return out
+
+
+def _parse_ua(ua):
+    """تشخیص مرورگر/سیستم‌عامل/دستگاه از User-Agent"""
+    s = ua or ""
+    browser = "دیگر"
+    if re.search(r"edg/", s, re.I):
+        browser = "Edge"
+    elif re.search(r"samsungbrowser", s, re.I):
+        browser = "Samsung Internet"
+    elif re.search(r"chrome|crios", s, re.I):
+        browser = "Chrome"
+    elif re.search(r"firefox|fxios", s, re.I):
+        browser = "Firefox"
+    elif re.search(r"safari", s, re.I):
+        browser = "Safari"
+    elif re.search(r"bot|crawler|spider|curl|wget|headless", s, re.I):
+        browser = "ربات"
+
+    os_name = "دیگر"
+    if re.search(r"windows nt", s, re.I):
+        os_name = "Windows"
+    elif re.search(r"android", s, re.I):
+        os_name = "Android"
+    elif re.search(r"iphone|ipad|ipod", s, re.I):
+        os_name = "iOS"
+    elif re.search(r"mac os x|macintosh", s, re.I):
+        os_name = "macOS"
+    elif re.search(r"linux", s, re.I):
+        os_name = "Linux"
+
+    device = ("mobile" if re.search(r"mobile|android|iphone", s, re.I)
+              else "tablet" if re.search(r"ipad|tablet", s, re.I) else "desktop")
+    return browser, os_name, device
+
+
+@app.route("/api/track", methods=["POST"])
+def api_track():
+    """ثبت بازدید صفحه (بدون احراز هویت — مثل /api/track در uastemdad)"""
+    try:
+        payload = request.get_json(silent=True) or {}
+        path = str(payload.get("path", "/"))[:300]
+        if path.startswith("/admin") or path.startswith("/api"):
+            return jsonify({"ok": True})
+        ua = request.headers.get("User-Agent", "")
+        browser, os_name, device = _parse_ua(ua)
+        if browser == "ربات":
+            return jsonify({"ok": True})
+        visitor_id = str(payload.get("visitorId", "anonymous"))[:80]
+        referrer_raw = str(payload.get("referrer", ""))[:300]
+        referrer = ""
+        try:
+            if referrer_raw:
+                host0 = urllib.parse.urlparse(referrer_raw).hostname or ""
+                if host0 and host0 != request.host:
+                    referrer = host0
+        except Exception:
+            referrer = ""
+        ip = _extract_track_ip()
+        geo = _geo_lookup(ip)
+        database.execute(
+            """INSERT INTO visits (visitor_id, path, title, browser, os, device, referrer, ip, country, city)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (visitor_id, path[:200], str(payload.get("title", ""))[:200],
+             browser, os_name, device, referrer, ip[:60],
+             geo["country"][:60], geo["city"][:60]))
+        return jsonify({"ok": True})
+    except Exception:
+        return jsonify({"ok": False}), 200
+
+
+@app.route("/api/geocode")
+def api_geocode():
+    """پروکسی جست‌وجوی آدرس با Nominatim برای مسیریابی نقشه"""
+    q = (request.args.get("q", "") or "").strip()
+    if len(q) < 3:
+        return jsonify({"results": []})
+    try:
+        url = ("https://nominatim.openstreetmap.org/search?format=json&limit=5&accept-language=fa&q="
+               + urllib.parse.quote(q))
+        req = urllib.request.Request(url, headers={"User-Agent": "rosecenter-map/1.0"})
+        with urllib.request.urlopen(req, timeout=4) as r:
+            data = json.loads(r.read().decode("utf-8", "ignore"))
+        results = [{"lat": float(d["lat"]), "lng": float(d["lon"]), "label": d.get("display_name", "")}
+                   for d in data[:5]]
+        return jsonify({"results": results})
+    except Exception:
+        return jsonify({"results": []})
+
+
+@app.route("/newsletter/subscribe", methods=["POST"])
+def newsletter_subscribe():
+    """عضویت در خبرنامه (AJAX از پاورقی — مثل uastemdad)"""
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    email = str(payload.get("email", "")).strip().lower()
+    name = str(payload.get("name", "")).strip()[:80]
+    if not email or "@" not in email or "." not in email.split("@")[-1] or len(email) > 120:
+        return jsonify({"ok": False, "message": i18n.t("foot.sub_err", get_locale())}), 400
+    try:
+        database.execute(
+            "INSERT OR IGNORE INTO newsletter_subscribers (email, name) VALUES (?,?)", (email, name))
+        return jsonify({"ok": True, "message": i18n.t("foot.sub_ok", get_locale())})
+    except Exception:
+        return jsonify({"ok": False, "message": i18n.t("foot.sub_err", get_locale())}), 500
+
+
+@app.route("/manifest.webmanifest")
+def webmanifest():
+    """مانیفست PWA — سایت به‌عنوان اپلیکیشن نصب‌شدنی"""
+    s = get_settings()
+    site_name = s.get("site_name", "مرکز رز")
+    return app.response_class(
+        json.dumps({
+            "name": site_name,
+            "short_name": "مرکز رز",
+            "description": s.get("site_tagline", ""),
+            "lang": "fa",
+            "dir": "rtl",
+            "start_url": "/",
+            "scope": "/",
+            "display": "standalone",
+            "orientation": "portrait",
+            "background_color": "#ffffff",
+            "theme_color": "#c2185b",
+            "icons": [
+                {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+                {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+                {"src": "/static/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+            ],
+        }, ensure_ascii=False),
+        mimetype="application/manifest+json")
+
+
+@app.route("/sw.js")
+def service_worker():
+    """سرویس‌ورکر PWA — کش آفلاین استاتیک + شبکه اول برای صفحه‌ها"""
+    return send_from_directory(app.static_folder, "sw.js",
+                               mimetype="application/javascript")
+
+
+@app.route("/offline.html")
+def offline_page():
+    return send_from_directory(app.static_folder, "offline.html", mimetype="text/html")
+
+
+@app.route("/app/")
+def app_install_page():
+    """صفحه نصب اپلیکیشن (PWA) با کد QR — مثل /app در uastemdad"""
+    site_url = request.host_url.rstrip("/")
+    return render_template("app.html", page_title=i18n.t("app.t", get_locale()),
+                           site_url=site_url)
+
+
+@app.route("/qr.svg")
+def qr_svg():
+    """تولید کد QR برداری برای نشانی سایت (صفحه نصب اپ)"""
+    try:
+        import qrcode
+        import qrcode.image.svg as qsvg
+        url = (request.args.get("url", "") or request.host_url.rstrip("/"))[:500]
+        img = qrcode.make(url, image_factory=qsvg.SvgPathImage, box_size=14, border=2)
+        import io
+        buf = io.BytesIO()
+        img.save(buf)
+        return app.response_class(buf.getvalue(), mimetype="image/svg+xml")
+    except Exception:
+        # اگر کتابخانه qrcode نبود، یک SVG ساده خالی برگردانده می‌شود
+        return app.response_class(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="#f8f9fa"/></svg>',
+            mimetype="image/svg+xml")
+
+
+@app.route("/admin/stats")
+@admin_required
+def admin_stats():
+    """آمار بازدید کامل — مثل صفحه stats پنل uastemdad"""
+    def one(sql, args=()):
+        return database.query(sql, args, one=True)
+
+    stats = {
+        "today": one("SELECT COUNT(*) n FROM visits WHERE date(created_at)=date('now','localtime')")["n"],
+        "week": one("SELECT COUNT(*) n FROM visits WHERE created_at >= datetime('now','localtime','-7 days')")["n"],
+        "month": one("SELECT COUNT(*) n FROM visits WHERE created_at >= datetime('now','localtime','-30 days')")["n"],
+        "total": one("SELECT COUNT(*) n FROM visits")["n"],
+        "unique": one("SELECT COUNT(DISTINCT visitor_id) n FROM visits")["n"],
+        "online": one(
+            "SELECT COUNT(DISTINCT visitor_id) n FROM visits WHERE created_at >= datetime('now','localtime', ?)",
+            (f"-{ONLINE_WINDOW} seconds",))["n"],
+    }
+    stats["avg_per_visitor"] = round(stats["total"] / stats["unique"], 1) if stats["unique"] else 0
+
+    # روند ۱۴ روزه (نمودار SVG سمت سرور)
+    trend_rows = database.query(
+        """SELECT date(created_at) d, COUNT(*) n FROM visits
+           WHERE created_at >= datetime('now','localtime','-13 days')
+           GROUP BY date(created_at) ORDER BY d""")
+    trend_map = {r["d"]: r["n"] for r in trend_rows}
+    trend = []
+    for i in range(13, -1, -1):
+        d = (datetime.datetime.now() - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+        trend.append({"day": d[5:], "count": trend_map.get(d, 0)})
+    max_trend = max((t["count"] for t in trend), default=0) or 1
+
+    top_pages = database.query(
+        "SELECT path, COUNT(*) n FROM visits GROUP BY path ORDER BY n DESC LIMIT 10")
+    browsers = database.query(
+        "SELECT browser, COUNT(*) n FROM visits GROUP BY browser ORDER BY n DESC LIMIT 8")
+    oses = database.query(
+        "SELECT os, COUNT(*) n FROM visits GROUP BY os ORDER BY n DESC LIMIT 8")
+    devices = database.query(
+        "SELECT device, COUNT(*) n FROM visits GROUP BY device ORDER BY n DESC")
+    countries = database.query(
+        "SELECT country, COUNT(*) n FROM visits WHERE country != '' GROUP BY country ORDER BY n DESC LIMIT 10")
+    cities = database.query(
+        "SELECT city, COUNT(*) n FROM visits WHERE city != '' GROUP BY city ORDER BY n DESC LIMIT 10")
+    recent = database.query(
+        """SELECT visitor_id, path, title, browser, os, device, referrer, ip, country, city, created_at
+           FROM visits ORDER BY id DESC LIMIT 40""")
+
+    # مدت کارکرد سرور (از قدیمی‌ترین بازدید ثبت‌شده)
+    first = one("SELECT MIN(created_at) m FROM visits")["m"]
+    stats["uptime_days"] = ""
+    if first:
+        try:
+            d0 = datetime.datetime.strptime(first[:19], "%Y-%m-%d %H:%M:%S")
+            stats["uptime_days"] = str((datetime.datetime.now() - d0).days)
+        except ValueError:
+            pass
+    return render_template("admin/stats.html", stats=stats, trend=trend,
+                           max_trend=max_trend, top_pages=top_pages, browsers=browsers,
+                           oses=oses, devices=devices, countries=countries,
+                           cities=cities, recent=recent, page_title="آمار بازدید")
+
+
+@app.route("/admin/newsletter")
+@admin_required
+def admin_newsletter():
+    subs = database.query("SELECT * FROM newsletter_subscribers ORDER BY id DESC")
+    return render_template("admin/newsletter.html", subs=subs, page_title="خبرنامه")
+
+
+@app.route("/admin/newsletter/<int:rid>/toggle", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_newsletter_toggle(rid):
+    database.execute(
+        "UPDATE newsletter_subscribers SET is_active = 1 - is_active WHERE id=?", (rid,))
+    flash("وضعیت مشترک تغییر کرد.", "success")
+    return redirect(url_for("admin_newsletter"))
+
+
+@app.route("/admin/newsletter/<int:rid>/delete", methods=["POST"])
+@admin_required
+@admin_csrf
+def admin_newsletter_delete(rid):
+    database.execute("DELETE FROM newsletter_subscribers WHERE id=?", (rid,))
+    flash("مشترک حذف شد.", "success")
+    return redirect(url_for("admin_newsletter"))
+
+
+@app.route("/admin/newsletter/export.csv")
+@admin_required
+def admin_newsletter_export():
+    rows = database.query("SELECT email, name, is_active, created_at FROM newsletter_subscribers ORDER BY id")
+    lines = ["email,name,is_active,created_at"]
+    lines += [f"{r['email']},{r['name']},{r['is_active']},{r['created_at']}" for r in rows]
+    return Response("\n".join(lines), mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=newsletter.csv"})
+
+
+# ==================================================================
+# وب‌سرویس REST API v1 برای اپلیکیشن‌ها (مثل اپ special-spoon)
+# احراز هویت: هدر X-API-Key یا Authorization: Bearer <key>
+# ==================================================================
+@app.route("/api/v1/services")
+def api_v1_services():
+    """فهرست خدمات فعال سایت"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    rows = database.query("SELECT slug, title, subtitle, summary, icon FROM services WHERE is_visible=1 ORDER BY menu_order")
+    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+
+
+@app.route("/api/v1/centers")
+def api_v1_centers():
+    """فهرست مراکز و کلینیک‌ها با مختصات نقشه"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    province = request.args.get("province", "").strip()
+    where, args = "WHERE is_soon=0", []
+    if province:
+        where += " AND province LIKE ?"
+        args.append(f"%{province}%")
+    rows = database.query(
+        f"""SELECT id, province, clinic_name, kind, address, postal_code, clinic_phone,
+                   manager_name, manager_phone, exec_name, exec_phone, work_hours,
+                   lat, lng, capabilities
+            FROM centers {where} ORDER BY sort_order, id""", args)
+    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+
+
+@app.route("/api/v1/courses")
+def api_v1_courses():
+    """فهرست دوره‌های آموزشی (+ فیلتر دسته‌بندی/جستجو/محدودیت)"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    limit = min(max(request.args.get("limit", 30, type=int), 1), 100)
+    cat = request.args.get("category", "").strip()
+    q = request.args.get("q", "").strip()
+    where, args = "WHERE c.is_open IN (0,1)", []
+    if cat:
+        where += " AND cc.slug=?"
+        args.append(cat)
+    if q:
+        where += " AND (c.title LIKE ? OR c.teacher LIKE ? OR c.summary LIKE ?)"
+        args += [f"%{q}%"] * 3
+    rows = database.query(
+        f"""SELECT c.id, c.slug, c.title, c.summary, c.teacher, c.price, c.duration,
+                   c.capacity, c.start_date, c.schedule, c.level, c.status, c.rating,
+                   c.votes, c.students, c.price_num, c.is_free, c.is_special, c.thumb,
+                   cc.title AS category
+            FROM courses c LEFT JOIN course_categories cc ON cc.id = c.category_id
+            {where} ORDER BY c.sort_order, c.id DESC LIMIT ?""", (*args, limit))
+    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+
+
+@app.route("/api/v1/courses/<slug>")
+def api_v1_course_detail(slug):
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    row = database.query(
+        """SELECT c.id, c.slug, c.title, c.summary, c.content, c.teacher, c.price,
+                  c.duration, c.capacity, c.start_date, c.schedule, c.level, c.status,
+                  cc.title AS category
+           FROM courses c LEFT JOIN course_categories cc ON cc.id = c.category_id
+           WHERE c.slug=?""", (slug,), one=True)
+    if not row:
+        return _json_error(404, "not_found", "دوره‌ای با این شناسه یافت نشد.")
+    return jsonify({"ok": True, "item": dict(row)})
+
+
+@app.route("/api/v1/news")
+def api_v1_news():
+    """آخرین اخبار و اطلاعیه‌ها"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    limit = min(max(request.args.get("limit", 20, type=int), 1), 100)
+    rows = database.query(
+        """SELECT slug, title, summary, category, published_at, views
+           FROM news WHERE published=1 ORDER BY published_at DESC LIMIT ?""", (limit,))
+    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+
+
+@app.route("/api/v1/news/<slug>")
+def api_v1_news_detail(slug):
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    row = database.query(
+        "SELECT slug, title, summary, content, category, published_at, views FROM news WHERE slug=? AND published=1",
+        (slug,), one=True)
+    if not row:
+        return _json_error(404, "not_found", "خبری با این شناسه یافت نشد.")
+    return jsonify({"ok": True, "item": dict(row)})
+
+
+@app.route("/api/v1/faqs")
+def api_v1_faqs():
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    rows = database.query("SELECT category, question, answer FROM faqs ORDER BY sort_order, id")
+    return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+
+
+@app.route("/api/v1/bookings", methods=["POST"])
+def api_v1_create_booking():
+    """ثبت نوبت از اپلیکیشن (نسخه کامل با تاریخ و ساعت پیشنهادی)"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    if not payload:
+        return _json_error(400, "empty_body",
+                           "بدنه درخواست خالی است. داده‌ها را به‌صورت JSON ارسال کنید.")
+
+    def _field(*names):
+        for n in names:
+            v = payload.get(n)
+            if v is not None and str(v).strip():
+                return str(v).strip()
+        return ""
+
+    full_name = _field("full_name", "name", "fullName")
+    phone = jdate.en_digits(_field("phone", "mobile", "tel"))
+    service_type = _field("service_type", "serviceType", "service")
+
+    if not full_name:
+        return _json_error(400, "missing_full_name", "فیلد full_name الزامی است.")
+    if not phone or not phone.isdigit() or not (10 <= len(phone) <= 11):
+        return _json_error(400, "invalid_phone", "شماره تماس معتبر نیست (مثال: 09123456789).")
+    if not service_type:
+        return _json_error(400, "missing_service_type",
+                           f"فیلد service_type الزامی است. مقادیر مجاز: {THERAPY_TYPES}")
+    if service_type not in THERAPY_TYPES:
+        return _json_error(400, "invalid_service_type",
+                           f"service_type نامعتبر است. مقادیر مجاز: {THERAPY_TYPES}")
+
+    code = gen_tracking_code("RC")
+    booking_id = database.execute(
+        """INSERT INTO bookings (tracking_code, full_name, phone, service_type, center, note,
+                                 source, user_id, api_key_id, preferred_date, preferred_time, lang)
+           VALUES (?,?,?,?,?,?, 'API', NULL, ?,?,?,?)""",
+        (code, full_name, phone, service_type,
+         _field("center"), _field("note"), key["id"],
+         _field("preferred_date", "date")[:30],
+         _field("preferred_time", "time")[:30],
+         i18n.validate(str(payload.get("lang", "fa")))))
+    return jsonify({
+        "ok": True,
+        "message": "درخواست نوبت با موفقیت ثبت شد.",
+        "booking_id": booking_id,
+        "tracking_code": code,
+        "status": "در انتظار بررسی",
+    }), 201
+
+
+@app.route("/api/v1/bookings/<tracking_code>")
+def api_v1_get_booking(tracking_code):
+    """استعلام وضعیت نوبت با کد پیگیری (برای اپ)"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    row = database.query(
+        """SELECT tracking_code, full_name, phone, service_type, center, note, status,
+                  admin_note, preferred_date, preferred_time, source, created_at
+           FROM bookings WHERE tracking_code=?""",
+        (tracking_code.strip().upper(),), one=True)
+    if not row:
+        return _json_error(404, "not_found", "درخواستی با این کد پیگیری یافت نشد.")
+    return jsonify({"ok": True, "item": dict(row)})
+
+
+@app.route("/api/v1/chat", methods=["POST"])
+def api_v1_chat():
+    """چت هوشمند چندزبانه برای اپلیکیشن"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    payload = request.get_json(silent=True) or {}
+    question = str(payload.get("message", "")).strip()
+    lc = i18n.validate(str(payload.get("locale", "fa")))
+    if not question:
+        return _json_error(400, "missing_message", "فیلد message الزامی است.")
+    if len(question) > 500:
+        question = question[:500]
+    answer, links, matched, score, answered = smart_chat_answer(question, lc)
+    try:
+        database.execute(
+            """INSERT INTO chat_logs (session_key, user_id, question, answer, matched_doc, score, is_answered)
+               VALUES (?,?,?,?,?,?,?)""",
+            (str(payload.get("session_key", ""))[:64], None, question, answer[:1000],
+             matched, score, 1 if answered else 0))
+    except Exception:
+        pass
+    return jsonify({"ok": True, "answer": answer, "links": links, "answered": answered})
+
+
+@app.route("/api/v1/site")
+def api_v1_site():
+    """اطلاعات عمومی سایت برای اپلیکیشن (نام، تماس، شبکه‌ها، مختصات نقشه)"""
+    key, err = _authenticate_api_key()
+    if err:
+        return err
+    s = get_settings()
+    try:
+        map_lat = float(s.get("map_lat", "35.7626") or 35.7626)
+        map_lng = float(s.get("map_lng", "51.4737") or 51.4737)
+    except ValueError:
+        map_lat, map_lng = 35.7626, 51.4737
+    return jsonify({
+        "ok": True,
+        "site_name": s.get("site_name", ""),
+        "tagline": s.get("site_tagline", ""),
+        "phones": [s.get("phone1", ""), s.get("phone2", "")],
+        "email": s.get("email", ""),
+        "address": s.get("address", ""),
+        "instagram": s.get("instagram", ""),
+        "telegram": s.get("telegram", ""),
+        "whatsapp": s.get("whatsapp", ""),
+        "linkedin": s.get("linkedin", ""),
+        "academy_url": s.get("academy_url", ""),
+        "map": {"lat": map_lat, "lng": map_lng},
+        "service_types": THERAPY_TYPES,
+        "statuses": REQUEST_STATUSES,
     })
 
 

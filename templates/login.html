@@ -2,9 +2,9 @@
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>ورود به حساب کاربری</h1>
-    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>ورود</span></nav>
-    <p class="lead">برای دسترسی به پنل کاربری، پیگیری درخواست‌ها و ثبت‌نام سریع در دوره‌ها وارد شوید.</p>
+    <h1>{{ t('au.login_t') }}</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>{{ t('nav.login') }}</span></nav>
+    <p class="lead">{{ t('au.login_desc') }}</p>
   </div>
 </section>
 
@@ -19,14 +19,14 @@
       <form method="post" action="{{ url_for('login') }}{% if request.args.get('next') %}?next={{ request.args.get('next')|urlencode }}{% endif %}">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <div class="field">
-          <label for="lg_email">ایمیل <span class="req">*</span></label>
+          <label for="lg_email">{{ t('au.email') }} <span class="req">*</span></label>
           <input type="email" id="lg_email" name="email" required placeholder="you@example.com" dir="ltr" style="text-align:right" autofocus>
         </div>
         <div class="field">
-          <label for="lg_pass">گذرواژه <span class="req">*</span></label>
+          <label for="lg_pass">{{ t('au.password') }} <span class="req">*</span></label>
           <input type="password" id="lg_pass" name="password" required placeholder="••••••••">
         </div>
-        <button type="submit" class="btn btn-primary btn-block">ورود به حساب</button>
+        <button type="submit" class="btn btn-primary btn-block">{{ t('au.login_btn') }}</button>
       </form>
       <div style="display:flex;align-items:center;gap:10px;margin:14px 0 4px">
         <span style="flex:1;height:1px;background:#e5e7eb"></span>

@@ -1,13 +1,36 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="{{ locale }}" dir="{{ page_dir }}" data-font="vazir" data-size="md" data-bg="default" data-theme="{{ settings.default_theme or 'rose' }}" data-contrast="normal" data-links="off" data-motion="on" data-lines="normal" data-dark="off">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="{% block meta_description %}مرکز خدمات روانشناسی و مشاوره رز — کلینیک‌های زنجیره‌ای روانشناسی و مشاوره راه زندگی (رز سفید): روان‌درمانی، مشاوره، آموزش، انجمن تخصصی و چت هوشمند پاسخ‌گو{% endblock %}">
+<meta name="description" content="{% block meta_description %}{{ settings.site_name }} — {{ settings.site_tagline }}{% endblock %}">
 <title>{% if page_title and page_title != 'خانه' %}{{ page_title }} | {% endif %}{{ settings.site_name }}</title>
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#c2185b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/lms.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/prefs.css') }}">
+<script>
+/* اسکریپت ضدپرش (FOUT) — اعمال تنظیمات ذخیره‌شده قبل از رندر */
+(function(){try{
+var raw=localStorage.getItem("rose_prefs_v1");
+var p=raw?JSON.parse(raw):{};
+var d=document.documentElement;
+if(p.font)d.dataset.font=p.font;
+if(p.size)d.dataset.size=p.size;
+if(p.bg)d.dataset.bg=p.bg;
+if(p.theme)d.dataset.theme=p.theme;
+if(p.contrast)d.dataset.contrast=p.contrast;
+if(p.links)d.dataset.links=p.links;
+if(p.motion)d.dataset.motion=p.motion;
+if(p.lines)d.dataset.lines=p.lines;
+if(p.dark)d.dataset.dark=p.dark;
+}catch(e){}})();
+</script>
 {% block head %}{% endblock %}
 </head>
 <body>
@@ -16,14 +39,28 @@
 <div class="topbar">
   <div class="container topbar-inner">
     <div class="topbar-contact">
-      <span class="topbar-item" title="امروز به شمسی">🗓 {{ today_jalali_fa }}</span>
+      <span class="topbar-item" title="{{ t('top.today') }} — شمسی">🗓 {{ today_jalali_fa }}</span>
       <a href="tel:{{ settings.phone1 }}" class="topbar-item"><svg viewBox="0 0 24 24" class="ic"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg><span>{{ settings.phone1 }}</span></a>
       <a href="mailto:{{ settings.email }}" class="topbar-item"><svg viewBox="0 0 24 24" class="ic"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg><span>{{ settings.email }}</span></a>
     </div>
     <div class="topbar-social">
-      <a href="{{ settings.instagram }}" target="_blank" rel="noopener" aria-label="اینستاگرام"><svg viewBox="0 0 24 24" class="ic"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.5.4 1.2.4 2.3.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.5.2-1.2.4-2.3.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.5-.4-1.2-.4-2.3-.1-1.3-.1-1.6-.1-4.8s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.3.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.5-.2 1.2-.4 2.3-.4C8.4 2.2 8.8 2.2 12 2.2zm0 2.2c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2.1.4-.5.2-.9.4-1.2.8-.4.4-.6.7-.8 1.2-.2.4-.3 1-.4 2.1C2.7 10.2 2.7 10.6 2.7 12s0 1.8.1 2.9c.1 1.1.2 1.7.4 2.1.2.5.4.9.8 1.2.4.4.7.6 1.2.8.4.2 1 .3 2.1.4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4.5-.2.9-.4 1.2-.8.4-.4.6-.7.8-1.2.2-.4.3-1 .4-2.1.1-1.2.1-1.6.1-2.9s0-1.8-.1-2.9c-.1-1.1-.2-1.7-.4-2.1-.2-.5-.4-.9-.8-1.2-.4-.4-.7-.6-1.2-.8-.4-.2-1-.3-2.1-.4-1.2-.1-1.6-.1-4.7-.1zm0 3.7a6 6 0 110 12 6 6 0 010-12zm0 9.8a3.9 3.9 0 100-7.8 3.9 3.9 0 000 7.8zm6.2-11.5a1.4 1.4 0 11-2.8 0 1.4 1.4 0 012.8 0z"/></svg></a>
-      <a href="{{ settings.telegram }}" target="_blank" rel="noopener" aria-label="تلگرام"><svg viewBox="0 0 24 24" class="ic"><path d="M21.9 4.6l-3.1 14.7c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.2.2-.5.4-.9.4l.3-4.7L18.2 7c.4-.3-.1-.5-.5-.2L7.3 13.4l-4.6-1.4c-1-.3-1-1 .2-1.5l17.9-6.9c.8-.3 1.6.2 1.1 1.4z"/></svg></a>
-      <a href="{{ settings.whatsapp }}" target="_blank" rel="noopener" aria-label="واتساپ"><svg viewBox="0 0 24 24" class="ic"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.5 14.2c-.2.7-1.3 1.3-1.9 1.4-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.7-.6-2.9-1.3-4.8-4.2-5-4.4-.1-.2-1.2-1.6-1.2-3s.8-2.1 1-2.4c.3-.3.6-.4.8-.4h.6c.2 0 .4 0 .6.5s.8 1.9.8 2c.1.1.1.3 0 .5-.3.6-.7.9-.5 1.3.7 1.2 1.6 2 2.8 2.6.3.2.5.1.7-.1s.8-1 1-1.3c.2-.3.4-.2.7-.1s1.8.9 2.1 1c.3.2.5.3.6.4 0 .1 0 .6-.2 1.1z"/></svg></a>
+      <!-- سوییچ زبان (فارسی / English / العربية / Русский / 中文) -->
+      <div class="locale-switch" style="position:relative">
+        <button class="topbar-item" id="localeBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:inherit" aria-haspopup="true" aria-expanded="false">
+          🌐 <span style="font-weight:600">{% for L in SUPPORTED_LOCALES %}{% if L.code == locale %}{{ L.label }}{% endif %}{% endfor %}</span> ▾
+        </button>
+        <div class="locale-menu" id="localeMenu" style="display:none;position:absolute;top:calc(100% + 6px);inset-inline-end:0;background:var(--bg);border:1.5px solid var(--line);border-radius:10px;box-shadow:var(--shadow);min-width:150px;z-index:900;padding:6px">
+          {% for L in SUPPORTED_LOCALES %}
+          <a href="/set-locale/{{ L.code }}" data-locale="{{ L.code }}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:.85rem;{% if L.code == locale %}background:var(--rose-softer);font-weight:700;{% endif %}">
+            <span>{{ L.flag }}</span><span>{{ L.label }}</span>
+            {% if L.code == locale %}<span style="margin-inline-start:auto">✓</span>{% endif %}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      <a href="{{ settings.instagram }}" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" class="ic"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.5.4 1.2.4 2.3.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.5.2-1.2.4-2.3.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.5-.4-1.2-.4-2.3-.1-1.3-.1-1.6-.1-4.8s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.3.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.5-.2 1.2-.4 2.3-.4C8.4 2.2 8.8 2.2 12 2.2zm0 2.2c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2.1.4-.5.2-.9.4-1.2.8-.4.4-.6.7-.8 1.2-.2.4-.3 1-.4 2.1C2.7 10.2 2.7 10.6 2.7 12s0 1.8.1 2.9c.1 1.1.2 1.7.4 2.1.2.5.4.9.8 1.2.4.4.7.6 1.2.8.4.2 1 .3 2.1.4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4.5-.2.9-.4 1.2-.8.4-.4.6-.7.8-1.2.2-.4.3-1 .4-2.1.1-1.2.1-1.6.1-2.9s0-1.8-.1-2.9c-.1-1.1-.2-1.7-.4-2.1-.2-.5-.4-.9-.8-1.2-.4-.4-.7-.6-1.2-.8-.4-.2-1-.3-2.1-.4-1.2-.1-1.6-.1-4.7-.1zm0 3.7a6 6 0 110 12 6 6 0 010-12zm0 9.8a3.9 3.9 0 100-7.8 3.9 3.9 0 000 7.8zm6.2-11.5a1.4 1.4 0 11-2.8 0 1.4 1.4 0 012.8 0z"/></svg></a>
+      <a href="{{ settings.telegram }}" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24" class="ic"><path d="M21.9 4.6l-3.1 14.7c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.2.2-.5.4-.9.4l.3-4.7L18.2 7c.4-.3-.1-.5-.5-.2L7.3 13.4l-4.6-1.4c-1-.3-1-1 .2-1.5l17.9-6.9c.8-.3 1.6.2 1.1 1.4z"/></svg></a>
+      <a href="{{ settings.whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" class="ic"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.5 14.2c-.2.7-1.3 1.3-1.9 1.4-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.7-.6-2.9-1.3-4.8-4.2-5-4.4-.1-.2-1.2-1.6-1.2-3s.8-2.1 1-2.4c.3-.3.6-.4.8-.4h.6c.2 0 .4 0 .6.5s.8 1.9.8 2c.1.1.1.3 0 .5-.3.6-.7.9-.5 1.3.7 1.2 1.6 2 2.8 2.6.3.2.5.1.7-.1s.8-1 1-1.3c.2-.3.4-.2.7-.1s1.8.9 2.1 1c.3.2.5.3.6.4 0 .1 0 .6-.2 1.1z"/></svg></a>
     </div>
   </div>
 </div>
@@ -32,33 +69,33 @@
 <header class="site-header" id="siteHeader">
   <div class="container header-inner">
     <a href="{{ url_for('home') }}" class="brand">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="لوگوی مرکز رز" class="brand-logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ settings.site_name }}" class="brand-logo">
       <span class="brand-text">
         <strong>مرکز رز</strong>
-        <small>روانشناسی و مشاوره</small>
+        <small>{{ settings.site_tagline }}</small>
       </span>
     </a>
 
-    <nav class="main-nav" id="mainNav" aria-label="منوی اصلی">
+    <nav class="main-nav" id="mainNav" aria-label="{{ t('nav.menu') }}">
       <ul>
-        <li><a href="{{ url_for('home') }}" class="{{ 'active' if page_title == 'خانه' }}">خانه</a></li>
+        <li><a href="{{ url_for('home') }}" class="{{ 'active' if page_title == 'خانه' }}">{{ t('nav.home') }}</a></li>
         <li class="has-dropdown">
           <a href="{{ url_for('courses') }}" class="{{ 'active' if 'دوره' in page_title|default('') }}">
-            دوره‌ها <svg viewBox="0 0 24 24" class="caret"><path d="M7 10l5 5 5-5z"/></svg>
+            {{ t('nav.courses') }} <svg viewBox="0 0 24 24" class="caret"><path d="M7 10l5 5 5-5z"/></svg>
           </a>
           <div class="mega">
             {% for c in nav_course_categories %}
             <a href="{{ url_for('courses', cat=c.slug) }}"><span class="mega-ic">{{ c.icon }}</span>{{ c.title }}</a>
             {% endfor %}
             <div class="mega-foot">
-              <span>مسیر یادگیری خود را انتخاب کنید</span>
-              <a href="{{ url_for('courses') }}" class="link-all">همه دوره‌ها ←</a>
+              <span>{{ t('nav.choose_path') }}</span>
+              <a href="{{ url_for('courses') }}" class="link-all">{{ t('nav.all_courses') }} ←</a>
             </div>
           </div>
         </li>
-        <li><a href="{{ url_for('forum_index') }}" class="{{ 'active' if 'انجمن' in page_title|default('') }}">انجمن‌ها</a></li>
+        <li><a href="{{ url_for('forum_index') }}" class="{{ 'active' if 'انجمن' in page_title|default('') }}">{{ t('nav.forums') }}</a></li>
         <li class="has-dropdown">
-          <a href="{{ url_for('services_index') }}" class="{{ 'active' if page_title in ['روان درمانی','مشاوره','آموزش','سایر خدمات','خدمات ما'] }}">خدمات <svg viewBox="0 0 24 24" class="caret"><path d="M7 10l5 5 5-5z"/></svg></a>
+          <a href="{{ url_for('services_index') }}" class="{{ 'active' if page_title in ['روان درمانی','مشاوره','آموزش','سایر خدمات','خدمات ما'] }}">{{ t('nav.services') }} <svg viewBox="0 0 24 24" class="caret"><path d="M7 10l5 5 5-5z"/></svg></a>
           <ul class="dropdown">
             {% for s in nav_services %}
             <li><a href="/{{ s.slug }}/">{{ s.title }}</a></li>
@@ -66,73 +103,92 @@
           </ul>
         </li>
         <li class="has-dropdown">
-          <a href="{{ url_for('centers_map') }}" class="{{ 'active' if page_title in ['مراکز استانی','نقشه مراکز','ثبت مرکز'] or 'مرکز' in page_title|default('') }}">مراکز <svg viewBox="0 0 24 24" class="caret"><path d="M7 10l5 5 5-5z"/></svg></a>
+          <a href="{{ url_for('centers_map') }}" class="{{ 'active' if page_title in ['مراکز استانی','نقشه مراکز','ثبت مرکز'] or 'مرکز' in page_title|default('') }}">{{ t('nav.centers') }} <svg viewBox="0 0 24 24" class="caret"><path d="M7 10l5 5 5-5z"/></svg></a>
           <ul class="dropdown">
-            <li><a href="{{ url_for('centers_map') }}">🗺 نقشه مراکز ایران</a></li>
-            <li><a href="{{ url_for('centers') }}">مراکز استانی</a></li>
-            <li><a href="{{ url_for('center_register') }}">➕ ثبت مرکز / کلینیک جدید</a></li>
+            <li><a href="{{ url_for('centers_map') }}">🗺 {{ t('nav.centers_map') }}</a></li>
+            <li><a href="{{ url_for('centers') }}">{{ t('nav.provincial') }}</a></li>
+            <li><a href="{{ url_for('center_register') }}">➕ {{ t('nav.register_center') }}</a></li>
           </ul>
         </li>
-        <li><a href="{{ url_for('board') }}" class="{{ 'active' if page_title == 'هیئت مدیره' }}">هیئت مدیره</a></li>
-        <li><a href="{{ url_for('news_list') }}" class="{{ 'active' if page_title == 'اخبار و اطلاعیه‌ها' }}">اخبار</a></li>
-        <li><a href="{{ url_for('about') }}" class="{{ 'active' if page_title == 'درباره ما' }}">درباره ما</a></li>
-        <li><a href="{{ url_for('contact') }}" class="{{ 'active' if page_title == 'تماس با ما' }}">تماس با ما</a></li>
+        <li><a href="{{ url_for('board') }}" class="{{ 'active' if page_title == 'هیئت مدیره' }}">{{ t('nav.board') }}</a></li>
+        <li><a href="{{ url_for('news_list') }}" class="{{ 'active' if page_title == 'اخبار و اطلاعیه‌ها' }}">{{ t('nav.news') }}</a></li>
+        <li><a href="{{ url_for('about') }}" class="{{ 'active' if page_title == 'درباره ما' }}">{{ t('nav.about') }}</a></li>
+        <li><a href="{{ url_for('contact') }}" class="{{ 'active' if page_title == 'تماس با ما' }}">{{ t('nav.contact') }}</a></li>
       </ul>
     </nav>
 
     <div class="header-actions">
-      <button class="icon-btn" id="searchToggle" aria-label="جستجو"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 101-1l.3.3v.8l4.3 4.3-1.4 1.4L15.5 14zm-5 0a4.5 4.5 0 110-9 4.5 4.5 0 010 9z"/></svg></button>
+      <button class="icon-btn" id="searchToggle" aria-label="{{ t('nav.search') }}"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 101-1l.3.3v.8l4.3 4.3-1.4 1.4L15.5 14zm-5 0a4.5 4.5 0 110-9 4.5 4.5 0 010 9z"/></svg></button>
+      <a href="{{ url_for('app_install_page') }}" class="icon-btn" aria-label="{{ t('nav.install_app') }}" title="{{ t('nav.install_app') }}"><svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14zm-4.2-5.9l-1.3-1.3-1.4 1.4 2.7 2.7 4.4-4.4-1.4-1.4-3 3z"/></svg></a>
       {% if cur_user %}
       <a href="{{ url_for('panel') }}" class="btn btn-outline btn-user">👤 {{ cur_user['full_name'].split()[0] }}</a>
       {% else %}
-      <a href="{{ url_for('login') }}" class="btn btn-outline btn-user">ورود</a>
+      <a href="{{ url_for('login') }}" class="btn btn-outline btn-user">{{ t('nav.login') }}</a>
       {% endif %}
-      <a href="{{ url_for('consultation') }}" class="btn btn-primary btn-cta">درخواست مشاوره</a>
-      <button class="icon-btn burger" id="navToggle" aria-label="منو"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg></button>
+      <a href="{{ url_for('consultation') }}" class="btn btn-primary btn-cta">📅 {{ t('nav.consult') }}</a>
+      <button class="icon-btn burger" id="navToggle" aria-label="{{ t('nav.menu') }}"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg></button>
     </div>
   </div>
 
   <!-- نوار جستجو -->
   <div class="search-bar" id="searchBar" hidden>
     <form action="{{ url_for('search') }}" method="get" class="container search-form">
-      <input type="text" name="q" placeholder="جستجو در خدمات، دوره‌ها، اخبار، سوالات متداول و مراکز..." autocomplete="off">
-      <button type="submit" class="btn btn-primary">جستجو</button>
+      <input type="text" name="q" placeholder="{{ t('search.ph') }}" autocomplete="off">
+      <button type="submit" class="btn btn-primary">{{ t('search.btn') }}</button>
     </form>
   </div>
 </header>
 
+<!-- نوار خبری متحرک (منتقل‌شده از uastemdad) -->
+{% if ticker_news %}
+<div class="news-ticker" id="newsTicker" style="--ticker-speed: {{ settings.ticker_speed or 45 }}s">
+  <div class="ticker-label">📣 {{ t('news.t') }}</div>
+  <div class="ticker-wrap">
+    <div class="ticker-track">
+      {% for n in ticker_news %}
+      <a href="{{ url_for('news_detail', slug=n.slug) }}">{{ n.title }}</a>
+      {% endfor %}
+      {% for n in ticker_news %}
+      <a href="{{ url_for('news_detail', slug=n.slug) }}">{{ n.title }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- منوی موبایل -->
 <div class="mobile-nav" id="mobileNav" hidden>
   <ul>
-    <li><a href="{{ url_for('home') }}">خانه</a></li>
-    <li><a href="{{ url_for('courses') }}">دوره‌های آموزشی</a></li>
+    <li><a href="{{ url_for('home') }}">{{ t('nav.home') }}</a></li>
+    <li><a href="{{ url_for('courses') }}">{{ t('nav.courses') }}</a></li>
     {% for c in nav_course_categories %}
     <li class="m-sub"><a href="{{ url_for('courses', cat=c.slug) }}">{{ c.icon }} {{ c.title }}</a></li>
     {% endfor %}
-    <li><a href="{{ url_for('forum_index') }}">انجمن‌ها</a></li>
-    <li class="m-group">خدمات</li>
+    <li><a href="{{ url_for('forum_index') }}">{{ t('nav.forums') }}</a></li>
+    <li class="m-group">{{ t('nav.services') }}</li>
     {% for s in nav_services %}
     <li class="m-sub"><a href="/{{ s.slug }}/">{{ s.title }}</a></li>
     {% endfor %}
-    <li class="m-group">مراکز</li>
-    <li><a href="{{ url_for('centers_map') }}">نقشه مراکز ایران</a></li>
-    <li><a href="{{ url_for('centers') }}">مراکز استانی</a></li>
-    <li><a href="{{ url_for('center_register') }}">ثبت مرکز / کلینیک</a></li>
-    <li><a href="{{ url_for('board') }}">هیئت مدیره</a></li>
-    <li><a href="{{ url_for('news_list') }}">اخبار و اطلاعیه‌ها</a></li>
-    <li><a href="{{ url_for('about') }}">درباره ما</a></li>
-    <li><a href="{{ url_for('contact') }}">تماس با ما</a></li>
-    <li><a href="{{ url_for('feedback') }}">پیشنهاد و انتقاد</a></li>
-    <li><a href="{{ url_for('tracking') }}">پیگیری درخواست</a></li>
+    <li class="m-group">{{ t('nav.centers') }}</li>
+    <li><a href="{{ url_for('centers_map') }}">{{ t('nav.centers_map') }}</a></li>
+    <li><a href="{{ url_for('centers') }}">{{ t('nav.provincial') }}</a></li>
+    <li><a href="{{ url_for('center_register') }}">{{ t('nav.register_center') }}</a></li>
+    <li><a href="{{ url_for('board') }}">{{ t('nav.board') }}</a></li>
+    <li><a href="{{ url_for('news_list') }}">{{ t('nav.news') }}</a></li>
+    <li><a href="{{ url_for('about') }}">{{ t('nav.about') }}</a></li>
+    <li><a href="{{ url_for('contact') }}">{{ t('nav.contact') }}</a></li>
+    <li><a href="{{ url_for('feedback') }}">{{ t('nav.feedback') }}</a></li>
+    <li><a href="{{ url_for('tracking') }}">{{ t('nav.tracking') }}</a></li>
+    <li><a href="{{ url_for('app_install_page') }}">📱 {{ t('nav.install_app') }}</a></li>
     {% if cur_user %}
-    <li><a href="{{ url_for('panel') }}">👤 پنل کاربری ({{ cur_user['full_name'] }})</a></li>
-    <li><a href="{{ url_for('logout') }}">خروج از حساب</a></li>
+    <li><a href="{{ url_for('panel') }}">👤 {{ t('nav.panel') }} ({{ cur_user['full_name'] }})</a></li>
+    <li><a href="{{ url_for('logout') }}">{{ t('nav.logout') }}</a></li>
     {% else %}
-    <li><a href="{{ url_for('login') }}">ورود به حساب کاربری</a></li>
-    <li><a href="{{ url_for('register') }}">ثبت‌نام در سایت</a></li>
+    <li><a href="{{ url_for('login') }}">{{ t('nav.login') }}</a></li>
+    <li><a href="{{ url_for('register') }}">{{ t('nav.register') }}</a></li>
     {% endif %}
   </ul>
-  <a href="{{ url_for('consultation') }}" class="btn btn-primary btn-block">درخواست مشاوره</a>
+  <a href="{{ url_for('consultation') }}" class="btn btn-primary btn-block">📅 {{ t('nav.consult') }}</a>
 </div>
 <div class="overlay" id="navOverlay" hidden></div>
 
@@ -160,104 +216,210 @@
   <div class="container footer-grid">
     <div class="footer-col footer-about">
       <div class="brand brand-light">
-        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="لوگوی مرکز رز" class="brand-logo">
-        <span class="brand-text"><strong>مرکز خدمات روانشناسی و مشاوره رز</strong></span>
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ settings.site_name }}" class="brand-logo">
+        <span class="brand-text"><strong>{{ settings.site_name }}</strong></span>
       </div>
       <p>{{ settings.footer_text }}</p>
       <div class="footer-social">
-        <a href="{{ settings.instagram }}" target="_blank" rel="noopener" aria-label="اینستاگرام"><svg viewBox="0 0 24 24"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.5.4 1.2.4 2.3.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.5.2-1.2.4-2.3.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.5-.4-1.2-.4-2.3-.1-1.3-.1-1.6-.1-4.8s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.3.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.5-.2 1.2-.4 2.3-.4C8.4 2.2 8.8 2.2 12 2.2zm0 2.2c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2.1.4-.5.2-.9.4-1.2.8-.4.4-.6.7-.8 1.2-.2.4-.3 1-.4 2.1C2.7 10.2 2.7 10.6 2.7 12s0 1.8.1 2.9c.1 1.1.2 1.7.4 2.1.2.5.4.9.8 1.2.4.4.7.6 1.2.8.4.2 1 .3 2.1.4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4.5-.2.9-.4 1.2-.8.4-.4.6-.7.8-1.2.2-.4.3-1 .4-2.1.1-1.2.1-1.6.1-2.9s0-1.8-.1-2.9c-.1-1.1-.2-1.7-.4-2.1-.2-.5-.4-.9-.8-1.2-.4-.4-.7-.6-1.2-.8-.4-.2-1-.3-2.1-.4-1.2-.1-1.6-.1-4.7-.1zm0 3.7a6 6 0 110 12 6 6 0 010-12zm0 9.8a3.9 3.9 0 100-7.8 3.9 3.9 0 000 7.8zm6.2-11.5a1.4 1.4 0 11-2.8 0 1.4 1.4 0 012.8 0z"/></svg></a>
-        <a href="{{ settings.telegram }}" target="_blank" rel="noopener" aria-label="تلگرام"><svg viewBox="0 0 24 24"><path d="M21.9 4.6l-3.1 14.7c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.2.2-.5.4-.9.4l.3-4.7L18.2 7c.4-.3-.1-.5-.5-.2L7.3 13.4l-4.6-1.4c-1-.3-1-1 .2-1.5l17.9-6.9c.8-.3 1.6.2 1.1 1.4z"/></svg></a>
-        <a href="{{ settings.linkedin }}" target="_blank" rel="noopener" aria-label="لینکدین"><svg viewBox="0 0 24 24"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14zM8.3 18.4v-7.7H5.8v7.7h2.5zM7 9.6a1.4 1.4 0 100-2.9 1.4 1.4 0 000 2.9zm11.4 8.8v-4.2c0-2.3-1.2-3.4-2.9-3.4-1.3 0-1.9.7-2.3 1.3v-1.1h-2.5v7.7h2.5v-4.3c0-1.1.2-2.2 1.6-2.2 1.4 0 1.4 1.3 1.4 2.3v4.2h2.2z"/></svg></a>
+        <a href="{{ settings.instagram }}" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.5.4 1.2.4 2.3.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.5.2-1.2.4-2.3.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.5-.4-1.2-.4-2.3-.1-1.3-.1-1.6-.1-4.8s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.3.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.5-.2 1.2-.4 2.3-.4C8.4 2.2 8.8 2.2 12 2.2zm0 2.2c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2.1.4-.5.2-.9.4-1.2.8-.4.4-.6.7-.8 1.2-.2.4-.3 1-.4 2.1C2.7 10.2 2.7 10.6 2.7 12s0 1.8.1 2.9c.1 1.1.2 1.7.4 2.1.2.5.4.9.8 1.2.4.4.7.6 1.2.8.4.2 1 .3 2.1.4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4.5-.2.9-.4 1.2-.8.4-.4.6-.7.8-1.2.2-.4.3-1 .4-2.1.1-1.2.1-1.6.1-2.9s0-1.8-.1-2.9c-.1-1.1-.2-1.7-.4-2.1-.2-.5-.4-.9-.8-1.2-.4-.4-.7-.6-1.2-.8-.4-.2-1-.3-2.1-.4-1.2-.1-1.6-.1-4.7-.1zm0 3.7a6 6 0 110 12 6 6 0 010-12zm0 9.8a3.9 3.9 0 100-7.8 3.9 3.9 0 000 7.8zm6.2-11.5a1.4 1.4 0 11-2.8 0 1.4 1.4 0 012.8 0z"/></svg></a>
+        <a href="{{ settings.telegram }}" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24"><path d="M21.9 4.6l-3.1 14.7c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.2.2-.5.4-.9.4l.3-4.7L18.2 7c.4-.3-.1-.5-.5-.2L7.3 13.4l-4.6-1.4c-1-.3-1-1 .2-1.5l17.9-6.9c.8-.3 1.6.2 1.1 1.4z"/></svg></a>
+        <a href="{{ settings.linkedin }}" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14zM8.3 18.4v-7.7H5.8v7.7h2.5zM7 9.6a1.4 1.4 0 100-2.9 1.4 1.4 0 000 2.9zm11.4 8.8v-4.2c0-2.3-1.2-3.4-2.9-3.4-1.3 0-1.9.7-2.3 1.3v-1.1h-2.5v7.7h2.5v-4.3c0-1.1.2-2.2 1.6-2.2 1.4 0 1.4 1.3 1.4 2.3v4.2h2.2z"/></svg></a>
+        <a href="{{ url_for('app_install_page') }}" aria-label="{{ t('nav.install_app') }}" title="{{ t('nav.install_app') }}">📱</a>
       </div>
+      <!-- خبرنامه (منتقل‌شده از uastemdad) -->
+      {% if settings.newsletter_enabled == '1' %}
+      <div class="newsletter-box">
+        <h4>✉️ {{ t('foot.newsletter_t') }}</h4>
+        <p>{{ t('foot.newsletter_desc') }}</p>
+        <form class="newsletter-form" id="newsletterForm">
+          <input type="text" name="name" placeholder="{{ t('foot.name_ph') }}" autocomplete="off">
+          <input type="email" name="email" placeholder="{{ t('foot.email_ph') }}" required autocomplete="off">
+          <button type="submit">{{ t('foot.subscribe') }}</button>
+        </form>
+        <div class="newsletter-msg" id="newsletterMsg"></div>
+      </div>
+      {% endif %}
     </div>
 
     <div class="footer-col">
-      <h4>دسترسی سریع</h4>
+      <h4>{{ t('foot.quick') }}</h4>
       <ul>
-        <li><a href="{{ url_for('home') }}">صفحه اصلی</a></li>
-        <li><a href="{{ url_for('courses') }}">دوره‌های آموزشی</a></li>
-        <li><a href="{{ url_for('forum_index') }}">انجمن‌های تخصصی</a></li>
-        <li><a href="{{ url_for('centers_map') }}">نقشه مراکز ایران</a></li>
-        <li><a href="{{ url_for('centers') }}">مراکز استانی</a></li>
-        <li><a href="{{ url_for('center_register') }}">ثبت مرکز / کلینیک</a></li>
-        <li><a href="{{ url_for('board') }}">هیئت مدیره</a></li>
-        <li><a href="{{ url_for('cooperation') }}">فراخوان همکاری</a></li>
-        <li><a href="{{ url_for('tracking') }}">پیگیری درخواست</a></li>
-        <li><a href="{{ url_for('jalali_converter') }}">تبدیل تاریخ شمسی</a></li>
+        <li><a href="{{ url_for('home') }}">{{ t('nav.home') }}</a></li>
+        <li><a href="{{ url_for('courses') }}">{{ t('nav.courses') }}</a></li>
+        <li><a href="{{ url_for('forum_index') }}">{{ t('nav.forums') }}</a></li>
+        <li><a href="{{ url_for('centers_map') }}">{{ t('nav.centers_map') }}</a></li>
+        <li><a href="{{ url_for('centers') }}">{{ t('nav.provincial') }}</a></li>
+        <li><a href="{{ url_for('center_register') }}">{{ t('nav.register_center') }}</a></li>
+        <li><a href="{{ url_for('board') }}">{{ t('nav.board') }}</a></li>
+        <li><a href="{{ url_for('cooperation') }}">{{ t('nav.cooperation') }}</a></li>
+        <li><a href="{{ url_for('tracking') }}">{{ t('nav.tracking') }}</a></li>
+        <li><a href="{{ url_for('jalali_converter') }}">{{ t('nav.jalali') }}</a></li>
       </ul>
     </div>
 
     <div class="footer-col">
-      <h4>خدمات ما</h4>
+      <h4>{{ t('foot.services_t') }}</h4>
       <ul>
         {% for s in nav_services %}
         <li><a href="/{{ s.slug }}/">{{ s.title }}</a></li>
         {% endfor %}
-        <li><a href="{{ url_for('consultation') }}">رزرو نوبت آنلاین</a></li>
-        <li><a href="{{ url_for('news_list') }}">اخبار و مقالات</a></li>
-        <li><a href="{{ url_for('about') }}">درباره ما</a></li>
+        <li><a href="{{ url_for('consultation') }}">{{ t('foot.online_booking') }}</a></li>
+        <li><a href="{{ url_for('news_list') }}">{{ t('foot.news_articles') }}</a></li>
+        <li><a href="{{ url_for('about') }}">{{ t('foot.about_us') }}</a></li>
       </ul>
     </div>
 
     <div class="footer-col">
-      <h4>اطلاعات تماس</h4>
+      <h4>{{ t('foot.contact_t') }}</h4>
       <ul class="footer-contact">
         <li><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 00-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"/></svg><span>{{ settings.address }}</span></li>
         <li><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg><span><a href="tel:{{ settings.phone1 }}">{{ settings.phone1 }}</a><br><a href="tel:{{ settings.phone2 }}">{{ settings.phone2 }}</a></span></li>
         <li><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg><span>{{ settings.email }}</span></li>
       </ul>
+      {% if settings.stats_enabled == '1' %}
+      <div class="footer-stats">
+        <span>👁 {{ t('foot.visits_today') }}: <b>{{ n_loc(footer_stats.today) }}</b></span>
+        <span>∑ {{ t('foot.visits_total') }}: <b>{{ n_loc(footer_stats.total) }}</b></span>
+        <span>🟢 {{ t('foot.online_now') }}: <b>{{ n_loc(footer_stats.online) }}</b></span>
+      </div>
+      {% endif %}
     </div>
   </div>
 
   <div class="footer-bottom">
     <div class="container footer-bottom-inner">
-      <p>© تمامی حقوق برای <strong>{{ settings.site_name }}</strong> محفوظ است.</p>
+      <p>{{ t('foot.rights') }} <strong>{{ settings.site_name }}</strong> {{ t('foot.is_reserved') }}</p>
       <p class="footer-links">
-        <a href="{{ url_for('consultation') }}">رزرو نوبت</a> ·
-        <a href="{{ url_for('courses') }}">دوره‌ها</a> ·
-        <a href="{{ url_for('forum_index') }}">انجمن‌ها</a> ·
-        <a href="{{ url_for('feedback') }}">پیشنهاد و انتقاد</a>
+        <a href="{{ url_for('consultation') }}">{{ t('foot.online_booking') }}</a> ·
+        <a href="{{ url_for('courses') }}">{{ t('nav.courses') }}</a> ·
+        <a href="{{ url_for('forum_index') }}">{{ t('nav.forums') }}</a> ·
+        <a href="{{ url_for('feedback') }}">{{ t('nav.feedback') }}</a>
       </p>
     </div>
   </div>
 </footer>
 
-<button class="scroll-top" id="scrollTop" aria-label="بازگشت به بالا"><svg viewBox="0 0 24 24"><path d="M7.4 15.4L12 10.8l4.6 4.6L18 14l-6-6-6 6z"/></svg></button>
+<button class="scroll-top" id="scrollTop" aria-label="{{ t('common.back_home') }}"><svg viewBox="0 0 24 24"><path d="M7.4 15.4L12 10.8l4.6 4.6L18 14l-6-6-6 6z"/></svg></button>
+
+<!-- ================= پنل شخصی‌سازی و دسترسی‌پذیری ================= -->
+<button class="prefs-fab" id="prefsFab" aria-label="{{ t('prefs.t') }}" aria-expanded="false">🎨</button>
+
+<div class="prefs-panel" id="prefsPanel" role="dialog" aria-label="{{ t('prefs.t') }}">
+  <h3>🎨 {{ t('prefs.t') }}</h3>
+  <p class="prefs-desc">{{ t('prefs.desc') }}</p>
+
+  <div class="prefs-group">
+    <label>🌐 {{ t('prefs.language') }}</label>
+    <div class="prefs-chips">
+      {% for L in SUPPORTED_LOCALES %}
+      <a href="/set-locale/{{ L.code }}" data-locale="{{ L.code }}" class="prefs-chip {{ 'active' if L.code == locale }}" style="text-decoration:none">{{ L.flag }} {{ L.short }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="prefs-group">
+    <label>{{ t('prefs.font') }}</label>
+    <div class="prefs-chips">
+      <button class="prefs-chip" data-group="font" data-value="vazir">{{ t('prefs.font.vazir') }}</button>
+      <button class="prefs-chip" data-group="font" data-value="system">{{ t('prefs.font.system') }}</button>
+      <button class="prefs-chip" data-group="font" data-value="tahoma">{{ t('prefs.font.tahoma') }}</button>
+      <button class="prefs-chip" data-group="font" data-value="serif">{{ t('prefs.font.serif') }}</button>
+    </div>
+  </div>
+
+  <div class="prefs-group">
+    <label>{{ t('prefs.size') }}</label>
+    <div class="prefs-chips">
+      <button class="prefs-chip" data-group="size" data-value="sm">{{ t('prefs.size.sm') }}</button>
+      <button class="prefs-chip" data-group="size" data-value="md">{{ t('prefs.size.md') }}</button>
+      <button class="prefs-chip" data-group="size" data-value="lg">{{ t('prefs.size.lg') }}</button>
+      <button class="prefs-chip" data-group="size" data-value="xl">{{ t('prefs.size.xl') }}</button>
+    </div>
+  </div>
+
+  <div class="prefs-group">
+    <label>{{ t('prefs.bg') }}</label>
+    <div class="prefs-chips">
+      <button class="prefs-chip" data-group="bg" data-value="default"><span class="prefs-swatch"><i style="background:#ffffff"></i>{{ t('prefs.bg.default') }}</span></button>
+      <button class="prefs-chip" data-group="bg" data-value="cream"><span class="prefs-swatch"><i style="background:#faf6ef"></i>{{ t('prefs.bg.cream') }}</span></button>
+      <button class="prefs-chip" data-group="bg" data-value="mint"><span class="prefs-swatch"><i style="background:#effbf3"></i>{{ t('prefs.bg.mint') }}</span></button>
+      <button class="prefs-chip" data-group="bg" data-value="sky"><span class="prefs-swatch"><i style="background:#eff7fd"></i>{{ t('prefs.bg.sky') }}</span></button>
+      <button class="prefs-chip" data-group="bg" data-value="sand"><span class="prefs-swatch"><i style="background:#f7f2ea"></i>{{ t('prefs.bg.sand') }}</span></button>
+    </div>
+  </div>
+
+  <div class="prefs-group">
+    <label>{{ t('prefs.theme') }}</label>
+    <div class="prefs-chips">
+      <button class="prefs-chip" data-group="theme" data-value="rose"><span class="prefs-swatch"><i style="background:#c2185b"></i>{{ t('prefs.theme.rose') }}</span></button>
+      <button class="prefs-chip" data-group="theme" data-value="emerald"><span class="prefs-swatch"><i style="background:#0f8a5f"></i>{{ t('prefs.theme.emerald') }}</span></button>
+      <button class="prefs-chip" data-group="theme" data-value="ocean"><span class="prefs-swatch"><i style="background:#0e7490"></i>{{ t('prefs.theme.ocean') }}</span></button>
+      <button class="prefs-chip" data-group="theme" data-value="sunset"><span class="prefs-swatch"><i style="background:#c2410c"></i>{{ t('prefs.theme.sunset') }}</span></button>
+      <button class="prefs-chip" data-group="theme" data-value="royal"><span class="prefs-swatch"><i style="background:#6d28d9"></i>{{ t('prefs.theme.royal') }}</span></button>
+      <button class="prefs-chip" data-group="theme" data-value="rainbow"><span class="prefs-swatch"><i style="background:linear-gradient(90deg,#e53935,#fb8c00,#43a047,#3949ab)"></i>{{ t('prefs.theme.rainbow') }}</span></button>
+    </div>
+  </div>
+
+  <div class="prefs-group">
+    <div class="prefs-switch-row"><span>{{ t('prefs.contrast') }}</span><label class="prefs-switch"><input type="checkbox" data-group="contrast" data-on="high"><span></span></label></div>
+    <div class="prefs-switch-row"><span>{{ t('prefs.underline') }}</span><label class="prefs-switch"><input type="checkbox" data-group="links" data-on="on"><span></span></label></div>
+    <div class="prefs-switch-row"><span>{{ t('prefs.reduce_motion') }}</span><label class="prefs-switch"><input type="checkbox" data-group="motion" data-on="off"><span></span></label></div>
+    <div class="prefs-switch-row"><span>{{ t('prefs.wide_lines') }}</span><label class="prefs-switch"><input type="checkbox" data-group="lines" data-on="wide"><span></span></label></div>
+    <div class="prefs-switch-row"><span>{{ t('prefs.dark') }}</span><label class="prefs-switch"><input type="checkbox" data-group="dark" data-on="on"><span></span></label></div>
+  </div>
+
+  <button class="prefs-reset" id="prefsReset">↺ {{ t('prefs.reset') }}</button>
+</div>
 
 <!-- ================= چت آنلاین هوشمند ================= -->
-<button class="chat-fab" id="chatFab" aria-label="چت هوشمند">
+<button class="chat-fab" id="chatFab" aria-label="{{ t('chat.t') }}">
   <span class="chat-pulse"></span>
   <svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.9 2 11.7c0 2.7 1.4 5.1 3.7 6.7-.1 1-.5 2.5-1.6 3.6 0 0 2.6-.2 4.6-1.8 1 .3 2.1.5 3.3.5 5.5 0 10-3.9 10-8.7S17.5 3 12 3zM7.5 13a1.4 1.4 0 110-2.8 1.4 1.4 0 010 2.8zm4.5 0a1.4 1.4 0 110-2.8 1.4 1.4 0 010 2.8zm4.5 0a1.4 1.4 0 110-2.8 1.4 1.4 0 010 2.8z"/></svg>
 </button>
 
-<div class="chat-panel" id="chatPanel" role="dialog" aria-label="چت هوشمند مرکز رز">
+<div class="chat-panel" id="chatPanel" role="dialog" aria-label="{{ t('chat.t') }}">
   <div class="chat-head">
     <div class="bot-av">🤖</div>
     <div>
-      <b>دستیار هوشمند رز</b>
-      <small>آنلاین — پاسخ‌گوی سوالات شما</small>
+      <b>{{ t('chat.t') }}</b>
+      <small>{{ t('chat.online') }}</small>
     </div>
-    <button class="chat-close" id="chatClose" aria-label="بستن">&times;</button>
+    <button class="chat-close" id="chatClose" aria-label="×">&times;</button>
   </div>
   <div class="chat-body" id="chatBody">
-    <div class="chat-msg bot">سلام 👋 به دستیار هوشمند مرکز رز خوش آمدید.<br>هر سوالی درباره خدمات، دوره‌های آموزشی، نوبت‌دهی، مراکز یا فرآیندهای سایت دارید بپرسید. شما را راهنمایی می‌کنم.</div>
+    <div class="chat-msg bot">{{ settings.chat_welcome or t('chat.welcome') }}</div>
   </div>
   <div class="chat-quick" id="chatQuick">
-    <button data-q="چطور نوبت مشاوره بگیرم؟">نوبت مشاوره</button>
-    <button data-q="دوره‌های آموزشی چه هستند؟">دوره‌ها</button>
-    <button data-q="مراکز رز کجا هستند؟">مراکز و نقشه</button>
-    <button data-q="چطور در انجمن فعالیت کنم؟">انجمن‌ها</button>
-    <button data-q="چطور درخواست همکاری ثبت کنم؟">همکاری</button>
+    <button data-q="{{ t('book.t') }}">{{ t('nav.consult') }}</button>
+    <button data-q="{{ t('crs.t') }}">{{ t('nav.courses') }}</button>
+    <button data-q="{{ t('centers.map_title') }}">{{ t('nav.centers') }}</button>
+    <button data-q="{{ t('nav.forums') }}">{{ t('nav.forums') }}</button>
+    <button data-q="{{ t('nav.cooperation') }}">{{ t('nav.cooperation') }}</button>
   </div>
   <form class="chat-input-row" id="chatForm">
-    <input type="text" id="chatInput" placeholder="سوال خود را بنویسید…" autocomplete="off">
-    <button type="submit" class="chat-send" aria-label="ارسال"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    <input type="text" id="chatInput" placeholder="{{ t('chat.ph') }}" autocomplete="off">
+    <button type="submit" class="chat-send" aria-label="{{ t('chat.send') }}"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
   </form>
+  <small style="display:block;padding:6px 12px 10px;color:var(--ink-soft);font-size:.68rem">{{ t('chat.hint') }}</small>
 </div>
 
+<script>
+/* سوییچ زبان topbar — باز و بسته شدن منو */
+(function(){
+  var btn=document.getElementById("localeBtn"),menu=document.getElementById("localeMenu");
+  if(btn&&menu){
+    btn.addEventListener("click",function(e){e.stopPropagation();menu.style.display=menu.style.display==="block"?"none":"block";});
+    document.addEventListener("click",function(){menu.style.display="none";});
+  }
+})();
+</script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script src="{{ url_for('static', filename='js/slider.js') }}"></script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+<script src="{{ url_for('static', filename='js/prefs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/visit-tracker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pwa-register.js') }}"></script>
+<script src="{{ url_for('static', filename='js/read-aloud.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

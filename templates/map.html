@@ -6,33 +6,56 @@
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>نقشه مراکز و کلینیک‌های رز</h1>
-    <p class="lead">تمام مراکز استانی و کلینیک‌های ثبت‌شده را روی نقشه ایران ببینید؛ با کلیک روی هر نشانگر، اطلاعات کامل مرکز نمایش داده می‌شود.</p>
+    <h1>🗺 {{ t('centers.map_title') }}</h1>
+    <p class="lead">{{ t('centers.map_desc') }}</p>
   </div>
 </section>
 
 <section class="section" style="padding-top:34px">
   <div class="container">
     <div class="map-filter">
-      <a href="{{ url_for('centers_map') }}" class="course-tab {{ 'active' if not kind }}">همه ({{ centers|length }})</a>
-      <a href="{{ url_for('centers_map', kind='مرکز استانی') }}" class="course-tab {{ 'active' if kind == 'مرکز استانی' }}">مراکز استانی</a>
-      <a href="{{ url_for('centers_map', kind='کلینیک') }}" class="course-tab {{ 'active' if kind == 'کلینیک' }}">کلینیک‌ها</a>
+      <a href="{{ url_for('centers_map') }}" class="course-tab {{ 'active' if not kind }}">{{ t('centers.all') }} ({{ n_loc(centers|length) }})</a>
+      <a href="{{ url_for('centers_map', kind='مرکز استانی') }}" class="course-tab {{ 'active' if kind == 'مرکز استانی' }}">{{ t('centers.provincial') }}</a>
+      <a href="{{ url_for('centers_map', kind='کلینیک') }}" class="course-tab {{ 'active' if kind == 'کلینیک' }}">{{ t('centers.clinics') }}</a>
       <form method="get" action="{{ url_for('centers_map') }}" style="display:flex;gap:8px;flex:1;min-width:220px">
         <input type="hidden" name="kind" value="{{ kind }}">
-        <input type="text" name="q" value="{{ q }}" placeholder="جستجوی استان، شهر یا توانایی…"
+        <input type="text" name="q" value="{{ q }}" placeholder="{{ t('centers.search_ph') }}"
                style="flex:1;border:1.5px solid var(--line);border-radius:999px;padding:9px 18px;outline:none">
-        <button type="submit" class="btn btn-primary btn-sm">جستجو</button>
+        <button type="submit" class="btn btn-primary btn-sm">{{ t('search.btn') }}</button>
       </form>
-      <a href="{{ url_for('center_register') }}" class="btn btn-lime btn-sm">+ ثبت مرکز / کلینیک</a>
+      <a href="{{ url_for('center_register') }}" class="btn btn-lime btn-sm">+ {{ t('centers.register_t') }}</a>
     </div>
 
     <div class="map-layout">
       <div class="map-box">
         <div id="iranMap"></div>
         <div class="map-legend">
-          <span class="lg"><span class="lg-dot" style="background:var(--rose)"></span> مرکز استانی</span>
-          <span class="lg"><span class="lg-dot" style="background:var(--gold)"></span> کلینیک</span>
-          <span style="margin-inline-start:auto;font-weight:500">🔊 روی نشانگرها کلیک کنید</span>
+          <span class="lg"><span class="lg-dot" style="background:var(--rose)"></span> {{ t('centers.legend_prov') }}</span>
+          <span class="lg"><span class="lg-dot" style="background:var(--gold)"></span> {{ t('centers.legend_clinic') }}</span>
+          <span style="margin-inline-start:auto;font-weight:500">🔊 {{ t('centers.map_hint') }}</span>
+        </div>
+      </div>
+
+      <!-- پنل مسیریابی (منتقل‌شده از home-map سامانه uastemdad) -->
+      <div class="map-side" id="routePanel" style="margin-bottom:14px">
+        <div class="map-item" style="cursor:default">
+          <h4>🧭 {{ t('map.route_t') }}</h4>
+          <p>{{ t('map.route_from') }}:</p>
+          <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+            <input type="text" id="routeOrigin" placeholder="{{ t('map.route_ph') }}"
+                   style="flex:1;min-width:170px;border:1.5px solid var(--line);border-radius:999px;padding:9px 16px;outline:none">
+            <button type="button" id="routeFind" class="btn btn-primary btn-sm">🔍 {{ t('map.route_find') }}</button>
+          </div>
+          <div id="routeResults" style="display:none;margin-top:8px">
+            <select id="routePick" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;font-family:inherit"></select>
+          </div>
+          <div id="routeLinks" style="display:none;gap:6px;margin-top:10px;flex-wrap:wrap">
+            <a id="routeNeshan" class="btn btn-primary btn-sm" target="_blank" rel="noopener">🟢 {{ t('map.route_neshan') }}</a>
+            <a id="routeGoogle" class="btn btn-outline btn-sm" target="_blank" rel="noopener">🌐 {{ t('map.route_google') }}</a>
+            <a id="routeOsm" class="btn btn-outline btn-sm" target="_blank" rel="noopener">🗺 {{ t('map.route_osm') }}</a>
+            <button type="button" id="routeCopy" class="btn btn-outline btn-sm">📋 {{ t('map.copy') }}</button>
+          </div>
+          <p id="routeMsg" style="font-size:.78rem;color:var(--ink-soft);margin-top:6px"></p>
         </div>
       </div>
 
@@ -49,7 +72,7 @@
           {% endif %}
         </a>
         {% else %}
-        <div class="empty-state"><h3>مرکزی برای نمایش یافت نشد</h3></div>
+        <div class="empty-state"><h3>{{ t('centers.not_found') }}</h3></div>
         {% endfor %}
       </div>
     </div>
@@ -92,7 +115,7 @@
       '<span style="font-size:.85em">' + c.address + '</span>' +
       (c.phone ? '<br>☎ ' + c.phone : '') +
       (c.caps ? '<br><span style="font-size:.8em;color:#15803d">✅ ' + c.caps.split('،').slice(0, 3).join('، ') + '</span>' : '') +
-      '<br><a href="/centers/' + c.id + '/" style="font-weight:bold">جزئیات مرکز ←</a>';
+      '<br><a href="/centers/' + c.id + '/" style="font-weight:bold">{{ t('centers.detail_btn') }} ←</a>';
     m.bindPopup(html);
     markers.push(m);
     bounds.push([c.lat, c.lng]);
@@ -102,13 +125,103 @@
   }
 
   // هاور روی فهرست کنار نقشه → باز شدن پاپ‌آپ نشانگر
-  document.querySelectorAll('.map-item').forEach(function (item) {
+  document.querySelectorAll('.map-item[data-idx]').forEach(function (item) {
     item.addEventListener('mouseenter', function () {
       var idx = parseInt(item.getAttribute('data-idx'), 10);
       if (markers[idx]) {
         map.flyTo(markers[idx].getLatLng(), 8, { duration: .6 });
         markers[idx].openPopup();
       }
+    });
+  });
+
+  /* ---------------- مسیریابی: مبدأ → مقصد (مثل uastemdad) ---------------- */
+  var T = {
+    originNotFound: "{{ t('tr.not_found') }}",
+    enterOrigin: "{{ t('map.route_ph') }}",
+    copied: "{{ t('map.copied') }}"
+  };
+  var firstCenter = centers.find(function (c) { return c.lat && c.lng; }) ||
+    { lat: parseFloat("{{ settings.map_lat }}") || 35.7626, lng: parseFloat("{{ settings.map_lng }}") || 51.4737, name: "{{ settings.site_name }}" };
+
+  var originInput = document.getElementById('routeOrigin');
+  var findBtn = document.getElementById('routeFind');
+  var resultsBox = document.getElementById('routeResults');
+  var pickSel = document.getElementById('routePick');
+  var linksBox = document.getElementById('routeLinks');
+  var msgEl = document.getElementById('routeMsg');
+  var selectedOrigin = null;
+
+  if (findBtn) {
+    findBtn.addEventListener('click', function () {
+      var q = (originInput.value || '').trim();
+      if (q.length < 3) { msgEl.textContent = T.enterOrigin; return; }
+      msgEl.textContent = '⏳ …';
+      fetch('/api/geocode?q=' + encodeURIComponent(q))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var rs = data.results || [];
+          if (!rs.length) { msgEl.textContent = T.originNotFound; linksBox.style.display = 'none'; return; }
+          msgEl.textContent = '';
+          pickSel.innerHTML = '';
+          rs.forEach(function (r, i) {
+            var o = document.createElement('option');
+            o.value = i;
+            o.textContent = r.label;
+            pickSel.appendChild(o);
+          });
+          resultsBox.style.display = 'block';
+          selectedOrigin = rs[0];
+          showLinks(rs[0]);
+        })
+        .catch(function () { msgEl.textContent = T.originNotFound; });
+    });
+
+    pickSel.addEventListener('change', function () {
+      var q = (originInput.value || '').trim();
+      fetch('/api/geocode?q=' + encodeURIComponent(q))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var rs = data.results || [];
+          var i = parseInt(pickSel.value, 10) || 0;
+          if (rs[i]) { selectedOrigin = rs[i]; showLinks(rs[i]); }
+        })
+        .catch(function () {});
+    });
+
+    document.getElementById('routeCopy').addEventListener('click', function () {
+      var txt = firstCenter.lat + ',' + firstCenter.lng;
+      if (navigator.clipboard) navigator.clipboard.writeText(txt);
+      var b = this;
+      var old = b.textContent;
+      b.textContent = T.copied;
+      setTimeout(function () { b.textContent = old; }, 1500);
+    });
+
+    function showLinks(origin) {
+      var destLat = firstCenter.lat, destLng = firstCenter.lng;
+      // اگر مرکزی در فهرست هاور انتخاب شده بود همان مرکز است؛ پیش‌فرض اولین مرکز/ستاد
+      linksBox.style.display = 'flex';
+      var neshanUrl = origin
+        ? 'https://neshan.org/maps/routing/car/origin/' + origin.lat + ',' + origin.lng + '/destination/' + destLat + ',' + destLng
+        : 'https://neshan.org/maps/routing/car/destination/' + destLat + ',' + destLng;
+      var googleUrl = 'https://www.google.com/maps/dir/?api=1' +
+        (origin ? '&origin=' + origin.lat + ',' + origin.lng : (originInput.value ? '&origin=' + encodeURIComponent(originInput.value) : '')) +
+        '&destination=' + destLat + ',' + destLng;
+      var osmUrl = 'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=' +
+        (origin ? origin.lat + '%2C' + origin.lng + ';' : '') + destLat + '%2C' + destLng;
+      document.getElementById('routeNeshan').href = neshanUrl;
+      document.getElementById('routeGoogle').href = googleUrl;
+      document.getElementById('routeOsm').href = osmUrl;
+    }
+  }
+
+  // انتخاب مرکز از فهرست → مقصد مسیریابی همان مرکز شود
+  document.querySelectorAll('.map-item[data-lat]').forEach(function (item) {
+    item.addEventListener('click', function () {
+      var lat = parseFloat(item.getAttribute('data-lat'));
+      var lng = parseFloat(item.getAttribute('data-lng'));
+      if (lat && lng) { firstCenter = { lat: lat, lng: lng, name: item.querySelector('h4').textContent.trim() }; }
     });
   });
 })();

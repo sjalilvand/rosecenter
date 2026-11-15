@@ -1,0 +1,36 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+<div class="a-card">
+  <h2 style="font-weight:800;margin-bottom:6px">✉️ مشترکان خبرنامه</h2>
+  <p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px">
+    فهرست اعضای خبرنامه ایمیل سایت — فرم عضویت در پاورقی سایت است.
+    <a href="{{ url_for('admin_newsletter_export') }}">⬇️ خروجی CSV</a>
+  </p>
+  <div style="overflow-x:auto">
+    <table class="mini-table" style="width:100%;min-width:560px">
+      <tr><th>ایمیل</th><th>نام</th><th>وضعیت</th><th>تاریخ عضویت</th><th>عملیات</th></tr>
+      {% for s in subs %}
+      <tr>
+        <td dir="ltr" style="text-align:right">{{ s.email }}</td>
+        <td>{{ s.name or '—' }}</td>
+        <td>{{ 'فعال' if s.is_active else 'غیرفعال' }}</td>
+        <td style="white-space:nowrap">{{ s.created_at[:10] }}</td>
+        <td style="white-space:nowrap">
+          <form method="post" action="{{ url_for('admin_newsletter_toggle', rid=s.id) }}" style="display:inline">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button class="btn btn-outline btn-sm">{{ 'غیرفعال‌سازی' if s.is_active else 'فعال‌سازی' }}</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_newsletter_delete', rid=s.id) }}" style="display:inline"
+                onsubmit="return confirm('این مشترک حذف شود؟')">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button class="btn btn-danger btn-sm">حذف</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:20px">هیچ مشترکی ثبت نشده است.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

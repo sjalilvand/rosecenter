@@ -48,7 +48,74 @@ X-API-Key: rc_xxxx...
   <pre class="api-code" dir="ltr">GET /api/v1/meta/services
 → { "ok": true, "service_types": [...], "statuses": [...], "centers": [...] }</pre>
 
-  <h3 class="api-h3">۷) کدهای خطا</h3>
+  <h3 class="api-h3" style="margin-top:24px;border-top:2px dashed var(--line);padding-top:18px">
+    📱 وب‌سرویس اپلیکیشن (نسخه جدید — مناسب اپ موبایل Rose)
+  </h3>
+  <p style="font-size:.9rem;margin-bottom:8px">
+    این گروه از مسیرها برای اپلیکیشن موبایل (مثل اپ «Rose Psychology») طراحی شده است؛
+    همه با همان کلید API احراز هویت می‌شوند.
+  </p>
+
+  <h3 class="api-h3">۸) اطلاعات عمومی سایت</h3>
+  <pre class="api-code" dir="ltr">GET /api/v1/site
+→ { "ok": true, "site_name", "phones", "email", "address",
+    "instagram", "telegram", "whatsapp", "linkedin",
+    "map": { "lat": 35.7626, "lng": 51.4737 },
+    "service_types": [...], "statuses": [...] }</pre>
+
+  <h3 class="api-h3">۹) خدمات، مراکز، دوره‌ها، اخبار و سوالات متداول</h3>
+  <pre class="api-code" dir="ltr">GET /api/v1/services
+→ { "ok": true, "items": [ { "slug", "title", "subtitle", "summary", "icon" } ] }
+
+GET /api/v1/centers?province=تهران
+→ { "ok": true, "items": [ { "province", "clinic_name", "kind", "address", "clinic_phone",
+                             "manager_name", "work_hours", "lat", "lng", "capabilities" } ] }
+
+GET /api/v1/courses?limit=30&category=&q=
+GET /api/v1/courses/&lt;slug&gt;
+→ { "ok": true, "items": [ { "title", "teacher", "price", "duration", "capacity",
+                             "start_date", "level", "status", "rating", "students", ... } ] }
+
+GET /api/v1/news?limit=20
+GET /api/v1/news/&lt;slug&gt;
+→ { "ok": true, "items": [ { "slug", "title", "summary", "category", "published_at", "views" } ] }
+
+GET /api/v1/faqs
+→ { "ok": true, "items": [ { "category", "question", "answer" } ] }</pre>
+
+  <h3 class="api-h3">۱۰) ثبت نوبت کامل از اپ (با تاریخ و ساعت پیشنهادی)</h3>
+  <pre class="api-code" dir="ltr">POST /api/v1/bookings
+Content-Type: application/json
+X-API-Key: rc_xxxx...
+
+{
+  "full_name": "علی رضایی",
+  "phone": "09123456789",
+  "service_type": "درمان فردی",
+  "center": "تهران",              (اختیاری)
+  "note": "...",                  (اختیاری)
+  "preferred_date": "1404/03/15", (اختیاری — شمسی)
+  "preferred_time": "evening",    (اختیاری — morning/noon/evening/night)
+  "lang": "fa"                    (اختیاری — fa/en/ar/ru/zh)
+}
+
+→ 201 { "ok": true, "tracking_code": "RC-XXXXXXXX", "status": "در انتظار بررسی" }</pre>
+  <p style="font-size:.9rem;margin:6px 0">
+    استعلام وضعیت: <code dir="ltr">GET /api/v1/bookings/RC-XXXXXXXX</code>
+    — همان پاسخ مسیر consultations ولی شامل <code dir="ltr">preferred_date</code> و <code dir="ltr">preferred_time</code>.
+  </p>
+
+  <h3 class="api-h3">۱۱) چت هوشمند چندزبانه از اپ</h3>
+  <pre class="api-code" dir="ltr">POST /api/v1/chat
+Content-Type: application/json
+X-API-Key: rc_xxxx...
+
+{ "message": "چطور نوبت بگیرم؟", "locale": "fa", "session_key": "app-user-1" }
+→ { "ok": true, "answer": "...", "links": [ { "label", "url" } ], "answered": true }
+
+— locale مجاز: fa / en / ar / ru / zh (پاسخ به همان زبان تولید می‌شود)</pre>
+
+  <h3 class="api-h3">۱۲) کدهای خطا</h3>
   <div class="table-responsive">
   <table class="a-table">
     <thead><tr><th>کد HTTP</th><th>error.code</th><th>توضیح</th></tr></thead>

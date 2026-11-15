@@ -2,8 +2,8 @@
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>نتایج جستجو</h1>
-    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>جستجو</span></nav>
+    <h1>{{ t('nav.search') }}</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>{{ t('nav.search') }}</span></nav>
     {% if q %}<p class="lead">نتایج جستجو برای عبارت «{{ q }}»</p>{% endif %}
   </div>
 </section>
@@ -12,8 +12,8 @@
   <div class="container" style="max-width:860px">
     {% if not q %}
     <form action="{{ url_for('search') }}" method="get" class="center-search">
-      <input type="text" name="q" placeholder="چه چیزی جستجو کنید؟" autofocus>
-      <button type="submit" class="btn btn-primary">جستجو</button>
+      <input type="text" name="q" placeholder="{{ t('search.ph') }}" autofocus>
+      <button type="submit" class="btn btn-primary">{{ t('search.btn') }}</button>
     </form>
     {% endif %}
 

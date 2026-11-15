@@ -22,6 +22,13 @@
     sessionKey = "chat-anon";
   }
 
+  // زبان فعال از کوکی rose_locale (نام‌گذاری یکسان با سامانه uastemdad)
+  var LOCALE = "fa";
+  try {
+    var m = document.cookie.match(/(?:^|;\s*)rose_locale=([^;]+)/);
+    if (m) LOCALE = m[1];
+  } catch (e) { /* پیش‌فرض فارسی */ }
+
   function openPanel() {
     panel.classList.add("open");
     setTimeout(function () { input.focus(); }, 250);
@@ -84,7 +91,7 @@
     fetch("/chat/api/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: question, session_key: sessionKey })
+      body: JSON.stringify({ message: question, session_key: sessionKey, locale: LOCALE })
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {

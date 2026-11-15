@@ -71,6 +71,63 @@
         <label>متن فوتر</label>
         <textarea name="footer_text" style="min-height:70px">{{ s.get('footer_text','') }}</textarea>
       </div>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+      <h3 style="font-weight:800;font-size:.95rem;color:var(--rose);margin-bottom:10px">
+        امکانات منتقل‌شده از uastemdad (نقشه، نوار خبری، آمار، خبرنامه، چت)
+      </h3>
+      <div class="form-row">
+        <div class="field">
+          <label>عرض جغرافیایی ستاد (map_lat)</label>
+          <input type="text" name="map_lat" value="{{ s.get('map_lat','') }}" dir="ltr" style="text-align:right">
+        </div>
+        <div class="field">
+          <label>طول جغرافیایی ستاد (map_lng)</label>
+          <input type="text" name="map_lng" value="{{ s.get('map_lng','') }}" dir="ltr" style="text-align:right">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>تم پیش‌فرض سایت (rose / emerald / ocean / sunset / royal / rainbow)</label>
+          <select name="default_theme">
+            {% for th in ['rose','emerald','ocean','sunset','royal','rainbow'] %}
+            <option value="{{ th }}" {{ 'selected' if s.get('default_theme','rose') == th }}>{{ th }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>سرعت نوار خبری (ثانیه)</label>
+          <input type="number" name="ticker_speed" value="{{ s.get('ticker_speed','45') }}" min="15" max="120">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>نوار خبری متحرک</label>
+          <select name="ticker_enabled">
+            <option value="1" {{ 'selected' if s.get('ticker_enabled','1') == '1' }}>فعال</option>
+            <option value="0" {{ 'selected' if s.get('ticker_enabled','1') == '0' }}>غیرفعال</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>شمارنده بازدید در پاورقی</label>
+          <select name="stats_enabled">
+            <option value="1" {{ 'selected' if s.get('stats_enabled','1') == '1' }}>فعال</option>
+            <option value="0" {{ 'selected' if s.get('stats_enabled','1') == '0' }}>غیرفعال</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>خبرنامه ایمیل</label>
+        <select name="newsletter_enabled">
+          <option value="1" {{ 'selected' if s.get('newsletter_enabled','1') == '1' }}>فعال</option>
+          <option value="0" {{ 'selected' if s.get('newsletter_enabled','1') == '0' }}>غیرفعال</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>پیام خوش‌آمد چت هوشمند</label>
+        <textarea name="chat_welcome" style="min-height:60px">{{ s.get('chat_welcome','') }}</textarea>
+      </div>
+
       <button type="submit" class="btn btn-primary">ذخیره تنظیمات</button>
     </form>
   </div>

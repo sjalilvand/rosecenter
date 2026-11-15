@@ -2,17 +2,17 @@
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>مراکز استانی</h1>
-    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>مراکز استانی</span></nav>
-    <p class="lead">کلینیک‌های زنجیره‌ای رز در سراسر کشور؛ برای یافتن نزدیک‌ترین مرکز، استان خود را جستجو کنید.</p>
+    <h1>🏥 {{ t('centers.t') }}</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>{{ t('nav.provincial') }}</span></nav>
+    <p class="lead">{{ t('centers.desc') }}</p>
   </div>
 </section>
 
 <section class="section">
   <div class="container">
     <form class="center-search" method="get" action="{{ url_for('centers') }}">
-      <input type="text" name="q" value="{{ q }}" placeholder="جستجوی استان یا شهر...">
-      <button type="submit" class="btn btn-primary">جستجو</button>
+      <input type="text" name="q" value="{{ q }}" placeholder="{{ t('centers.search_ph') }}">
+      <button type="submit" class="btn btn-primary">{{ t('search.btn') }}</button>
     </form>
 
     <div class="centers-grid">

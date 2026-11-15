@@ -447,6 +447,40 @@ def init_db(app):
         )
     """)
 
+    # ---------- آمار بازدید (منتقل‌شده از uastemdad) ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS visits (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            visitor_id  TEXT NOT NULL DEFAULT '',
+            path        TEXT NOT NULL DEFAULT '',
+            title       TEXT NOT NULL DEFAULT '',
+            browser     TEXT NOT NULL DEFAULT '',
+            os          TEXT NOT NULL DEFAULT '',
+            device      TEXT NOT NULL DEFAULT '',
+            referrer    TEXT NOT NULL DEFAULT '',
+            ip          TEXT NOT NULL DEFAULT '',
+            country     TEXT NOT NULL DEFAULT '',
+            city        TEXT NOT NULL DEFAULT '',
+            created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+    c.execute("CREATE INDEX IF NOT EXISTS idx_visits_created ON visits(created_at)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_visits_visitor ON visits(visitor_id)")
+
+    # جلوگیری از تکرار استان در اجراهای دوباره seed_data
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_centers_province ON centers(province)")
+
+    # ---------- مشترکان خبرنامه ----------
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            email      TEXT UNIQUE NOT NULL,
+            name       TEXT NOT NULL DEFAULT '',
+            is_active  INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
     # ---------- مایگریشن‌های سبک (ستون‌های اضافه‌شده در نسخه‌های بعد) ----------
     def _add_column(table, col_sql):
         cols = {r[1] for r in c.execute(f"PRAGMA table_info({table})")}
@@ -457,6 +491,10 @@ def init_db(app):
     _add_column("bookings", "source TEXT NOT NULL DEFAULT 'وب‌سایت'")
     _add_column("bookings", "user_id INTEGER")
     _add_column("bookings", "api_key_id INTEGER")
+    # رزرو نوبت: تاریخ و ساعت پیشنهادی + زبان ثبت درخواست
+    _add_column("bookings", "preferred_date TEXT NOT NULL DEFAULT ''")
+    _add_column("bookings", "preferred_time TEXT NOT NULL DEFAULT ''")
+    _add_column("bookings", "lang TEXT NOT NULL DEFAULT ''")
     _add_column("course_registrations", "user_id INTEGER")
     _add_column("hr_calls", "user_id INTEGER")
 

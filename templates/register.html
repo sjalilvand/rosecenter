@@ -2,8 +2,8 @@
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>ثبت‌نام در سایت</h1>
-    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>ثبت‌نام</span></nav>
+    <h1>{{ t('au.register_t') }}</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>{{ t('nav.register') }}</span></nav>
     <p class="lead">با ساخت حساب کاربری می‌توانید درخواست‌های خود را مدیریت و در دوره‌ها ثبت‌نام کنید.</p>
   </div>
 </section>
@@ -19,15 +19,15 @@
       <form method="post" action="{{ url_for('register') }}">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <div class="field">
-          <label for="rg_name">نام و نام خانوادگی <span class="req">*</span></label>
+          <label for="rg_name">{{ t('au.full_name') }} <span class="req">*</span></label>
           <input type="text" id="rg_name" name="full_name" required value="{{ request.args.get('full_name', '') }}" placeholder="مثلاً: سارا محمدی">
         </div>
         <div class="field">
-          <label for="rg_email">ایمیل <span class="req">*</span></label>
+          <label for="rg_email">{{ t('au.email') }} <span class="req">*</span></label>
           <input type="email" id="rg_email" name="email" required value="{{ request.args.get('email', '') }}" placeholder="you@example.com" dir="ltr" style="text-align:right">
         </div>
         <div class="field">
-          <label for="rg_phone">شماره همراه (اختیاری)</label>
+          <label for="rg_phone">{{ t('crs.mobile') }} ({{ t('common.optional') }})</label>
           <input type="tel" id="rg_phone" name="phone" placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" style="text-align:right" maxlength="11">
           <p class="hint">در صورت درج شماره، درخواست‌های ثبت‌شده با این شماره هم در پنل شما نمایش داده می‌شود.</p>
         </div>

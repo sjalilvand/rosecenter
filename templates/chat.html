@@ -2,7 +2,7 @@
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>🤖 دستیار هوشمند رز</h1>
+    <h1>🤖 {{ t('chat.t') }}</h1>
     <p class="lead">پاسخ‌گوی سوالات شما درباره خدمات، دوره‌ها، نوبت‌دهی، مراکز و همه بخش‌های سایت — بر پایه مستندات رسمی مجموعه.</p>
   </div>
 </section>
@@ -13,8 +13,8 @@
       <div class="chat-head">
         <div class="bot-av">🤖</div>
         <div>
-          <b>دستیار هوشمند رز</b>
-          <small>آنلاین — پاسخ‌گوی سوالات شما</small>
+          <b>{{ t('chat.t') }}</b>
+          <small>{{ t('chat.online') }}</small>
         </div>
       </div>
       <div class="chat-body" id="pageChatBody" style="height:420px">

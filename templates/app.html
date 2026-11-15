@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>📱 {{ t('app.t') }}</h1>
+    <p class="lead">{{ t('app.desc') }}</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:30px">
+  <div class="container">
+    <div class="app-install-box" style="margin-bottom:26px">
+      <p><b>{{ t('app.web_t') }} —</b> {{ t('app.web_desc') }}</p>
+      <button id="pwaInstallBtn" hidden>⬇️ {{ t('app.open_web') }}</button>
+    </div>
+
+    <div class="app-page-grid">
+      <div class="app-qr-card">
+        <h3 style="color:var(--rose)">{{ t('app.scan_t') }}</h3>
+        <img class="qr-img" src="/qr.svg?url={{ site_url }}" alt="QR" width="200" height="200">
+        <div class="qr-url">{{ site_url }}</div>
+        <p class="app-note">{{ t('app.pwa_note') }}</p>
+      </div>
+
+      <div class="app-steps">
+        <h2 style="margin-bottom:4px">{{ t('app.install_t') }}</h2>
+        <div class="app-step">
+          <h3>🤖 {{ t('app.android_t') }}</h3>
+          <pre>{{ t('app.android_steps') }}</pre>
+        </div>
+        <div class="app-step">
+          <h3>🍎 {{ t('app.ios_t') }}</h3>
+          <pre>{{ t('app.ios_steps') }}</pre>
+        </div>
+        <div class="app-step">
+          <h3>💻 {{ t('app.desktop_t') }}</h3>
+          <pre>{{ t('app.desktop_steps') }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* اگر مرورگر «نصب» را پشتیبانی نکرد، راهنمای QR نمایش داده می‌شود — بدون خطا */
+</script>
+{% endblock %}

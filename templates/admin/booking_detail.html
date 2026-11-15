@@ -13,6 +13,15 @@
     <div class="detail-item"><dt>شماره تماس</dt><dd dir="ltr" style="text-align:right">{{ row.phone }}</dd></div>
     <div class="detail-item"><dt>نوع درمان</dt><dd>{{ row.service_type }}</dd></div>
     <div class="detail-item"><dt>مرکز مورد نظر</dt><dd>{{ row.center or '—' }}</dd></div>
+    {% if row.preferred_date %}
+    <div class="detail-item"><dt>تاریخ پیشنهادی مراجع</dt><dd>{{ row.preferred_date }}</dd></div>
+    {% endif %}
+    {% if row.preferred_time %}
+    <div class="detail-item"><dt>زمان پیشنهادی مراجع</dt><dd>{{ row.preferred_time }}</dd></div>
+    {% endif %}
+    {% if row.lang %}
+    <div class="detail-item"><dt>زبان ثبت درخواست</dt><dd dir="ltr" style="text-align:right">{{ row.lang }}</dd></div>
+    {% endif %}
     <div class="detail-item"><dt>تاریخ ثبت</dt><dd>{{ row.created_at }}</dd></div>
     <div class="detail-item"><dt>توضیحات مراجع</dt><dd>{{ row.note or '—' }}</dd></div>
   </dl>

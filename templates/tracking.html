@@ -2,9 +2,9 @@
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>پیگیری درخواست</h1>
-    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>پیگیری درخواست</span></nav>
-    <p class="lead">با ثبت شماره پیگیری، می‌توانید روند درخواست خود را مشاهده کنید.</p>
+    <h1>🔎 {{ t('tr.t') }}</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">{{ t('nav.home') }}</a><span class="sep">/</span><span>{{ t('tr.t') }}</span></nav>
+    <p class="lead">{{ t('tr.desc') }}</p>
   </div>
 </section>
 
@@ -13,9 +13,9 @@
     <div class="form-card">
       <form method="get" action="{{ url_for('tracking') }}" style="display:flex;gap:12px;flex-wrap:wrap">
         <div class="field" style="flex:1;margin-bottom:0">
-          <input type="text" name="code" value="{{ code }}" placeholder="مثلاً: RC-AB12CD34" dir="ltr" style="text-align:right" required>
+          <input type="text" name="code" value="{{ code }}" placeholder="{{ t('tr.code_ph') }}" dir="ltr" style="text-align:right" required>
         </div>
-        <button type="submit" class="btn btn-primary">پیگیری</button>
+        <button type="submit" class="btn btn-primary">{{ t('tr.btn') }}</button>
       </form>
       <p class="hint" style="font-size:.82rem;color:var(--ink-soft);margin-top:12px">
         کدهای پیگیری با فرمت RC-... (درخواست نوبت) و HR-... (درخواست همکاری) صادر می‌شوند.
@@ -25,7 +25,7 @@
       <div class="tracking-result">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
           <div>
-            <span style="font-size:.82rem;color:var(--ink-soft)">کد پیگیری</span>
+            <span style="font-size:.82rem;color:var(--ink-soft)">{{ t('pn.code') }}</span>
             <div class="code" dir="ltr" style="text-align:right">{{ result.tracking_code }}</div>
           </div>
           <span class="status-pill st-{{ result.status | replace(' ', '-') }}">{{ result.status }}</span>

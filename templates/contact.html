@@ -2,9 +2,9 @@
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>تماس با ما</h1>
-    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>تماس با ما</span></nav>
-    <p class="lead">ما اینجا هستیم تا پاسخ‌گوی شما باشیم؛ از هر راهی که راحت‌تر هستید با ما در ارتباط باشید.</p>
+    <h1>{{ t('ct.t') }}</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">{{ t('nav.home') }}</a><span class="sep">/</span><span>{{ t('ct.t') }}</span></nav>
+    <p class="lead">{{ t('ct.desc') }}</p>
   </div>
 </section>
 
@@ -32,7 +32,7 @@
 
     <div>
       <div class="prose" style="margin-bottom:24px">
-        <h2 style="margin-top:0">فرم ارسال پیام</h2>
+        <h2 style="margin-top:0">{{ t('ct.send') }}</h2>
         <p>سوال، درخواست یا پیشنهاد خود را برای ما بنویسید؛ کارشناسان ما در اسرع وقت پاسخ خواهند داد.</p>
       </div>
       <div class="form-card">
@@ -40,21 +40,21 @@
           <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <div class="form-row">
             <div class="field">
-              <label>نام و نام خانوادگی <span class="req">*</span></label>
+              <label>{{ t('ct.name') }} <span class="req">*</span></label>
               <input type="text" name="name" required placeholder="نام شما">
             </div>
             <div class="field">
-              <label>شماره تماس</label>
-              <input type="tel" name="phone" placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" style="text-align:right">
+              <label>{{ t('ct.phone') }}</label>
+              <input type="tel" name="phone" placeholder="09123456789" dir="ltr" style="text-align:{{ 'left' if page_dir == 'ltr' else 'right' }}">
             </div>
           </div>
           <div class="form-row">
             <div class="field">
-              <label>ایمیل</label>
+              <label>{{ t('ct.email') }}</label>
               <input type="email" name="email" placeholder="example@mail.com" dir="ltr" style="text-align:right">
             </div>
             <div class="field">
-              <label>موضوع</label>
+              <label>{{ t('ct.subject') }}</label>
               <select name="subject">
                 <option value="درخواست اطلاعات">درخواست اطلاعات</option>
                 <option value="پشتیبانی خدمات">پشتیبانی خدمات</option>
@@ -65,10 +65,10 @@
             </div>
           </div>
           <div class="field">
-            <label>متن پیام <span class="req">*</span></label>
+            <label>{{ t('ct.message') }} <span class="req">*</span></label>
             <textarea name="message" required placeholder="پیام خود را بنویسید..."></textarea>
           </div>
-          <button type="submit" class="btn btn-primary btn-block">ارسال پیام</button>
+          <button type="submit" class="btn btn-primary btn-block">{{ t('ct.send') }}</button>
         </form>
       </div>
     </div>

@@ -2,9 +2,9 @@
 {% block content %}
 <section class="page-hero">
   <div class="container">
-    <h1>پیشنهاد و انتقاد</h1>
-    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>پیشنهاد و انتقاد</span></nav>
-    <p class="lead">نظر شما برای ما ارزشمند است؛ با ثبت پیشنهاد یا انتقاد خود به بهبود کیفیت خدمات کمک کنید.</p>
+    <h1>💬 {{ t('fb.t') }}</h1>
+    <nav class="breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span class="sep">/</span><span>{{ t('nav.feedback') }}</span></nav>
+    <p class="lead">{{ t('fb.desc') }}</p>
   </div>
 </section>
 
@@ -15,16 +15,16 @@
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <div class="form-row">
           <div class="field">
-            <label>نام (اختیاری)</label>
+            <label>{{ t('au.full_name') }} ({{ t('common.optional') }})</label>
             <input type="text" name="name" placeholder="نام شما">
           </div>
           <div class="field">
-            <label>راه تماس (اختیاری)</label>
+            <label>{{ t('fb.contact') }}</label>
             <input type="text" name="contact" placeholder="شماره تماس یا ایمیل" dir="ltr" style="text-align:right">
           </div>
         </div>
         <div class="field">
-          <label>نوع پیام <span class="req">*</span></label>
+          <label>{{ t('fb.kind') }} <span class="req">*</span></label>
           <div class="radio-grid" style="grid-template-columns:repeat(3,1fr)">
             <label class="radio-pill"><input type="radio" name="kind" value="پیشنهاد" checked><span>پیشنهاد</span></label>
             <label class="radio-pill"><input type="radio" name="kind" value="انتقاد"><span>انتقاد</span></label>
